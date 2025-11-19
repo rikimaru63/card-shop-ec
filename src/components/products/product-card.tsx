@@ -1,11 +1,14 @@
 "use client"
 
-import Image from "next/image"
+import { useState } from "react"
 import Link from "next/link"
-import { Heart, ShoppingCart, Star } from "lucide-react"
+import Image from "next/image"
+import { Heart, ShoppingCart, Star, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatPrice } from "@/lib/utils"
+import { useCartStore } from "@/store/cart-store"
+import { useWishlistStore } from "@/store/wishlist-store"
 
 interface ProductCardProps {
   id: string
@@ -36,9 +39,48 @@ export function ProductCard({
   isNew = false,
   isFeatured = false
 }: ProductCardProps) {
+  const [showAddedToCart, setShowAddedToCart] = useState(false)
+  const addToCart = useCartStore((state) => state.addItem)
+  const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
+  const isWishlisted = isInWishlist(id)
+  
   const discount = comparePrice ? Math.round(((comparePrice - price) / comparePrice) * 100) : 0
   const isOutOfStock = stock === 0
   const isLowStock = stock > 0 && stock <= 5
+  
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    addToCart({
+      id,
+      name,
+      image,
+      price,
+      category,
+      rarity,
+      condition,
+      stock
+    })
+    setShowAddedToCart(true)
+    setTimeout(() => setShowAddedToCart(false), 2000)
+  }
+  
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (isWishlisted) {
+      removeFromWishlist(id)
+    } else {
+      addToWishlist({
+        id,
+        name,
+        image,
+        price,
+        category,
+        rarity,
+        condition,
+        stock
+      })
+    }
+  }
 
   return (
     <div className="group relative bg-white rounded-xl border shadow-sm hover:shadow-lg transition-all duration-300">
@@ -62,18 +104,27 @@ export function ProductCard({
       </div>
 
       {/* ウィッシュリストボタン */}
-      <button className="absolute top-3 right-3 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-        <Heart className="h-4 w-4 text-muted-foreground hover:text-red-500 transition-colors" />
+      <button 
+        onClick={handleToggleWishlist}
+        className="absolute top-3 right-3 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <Heart className={cn(
+          "h-4 w-4 transition-colors",
+          isWishlisted ? "fill-red-500 text-red-500" : "text-muted-foreground hover:text-red-500"
+        )} />
       </button>
 
       <Link href={`/products/${id}`}>
         {/* 画像 */}
         <div className="relative aspect-[3/4] overflow-hidden rounded-t-xl bg-gradient-to-b from-secondary to-background">
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <img
+          <Image
             src={image}
             alt={name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            priority={isFeatured}
           />
           
           {isOutOfStock && (
@@ -157,15 +208,20 @@ export function ProductCard({
         <Button
           size="sm"
           className="w-full"
-          disabled={isOutOfStock}
-          onClick={(e) => {
-            e.preventDefault()
-            // TODO: カート追加処理
-            console.log("Add to cart:", id)
-          }}
+          disabled={isOutOfStock || showAddedToCart}
+          onClick={handleAddToCart}
         >
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+          {showAddedToCart ? (
+            <>
+              <Check className="h-4 w-4 mr-2" />
+              Added to Cart
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+            </>
+          )}
         </Button>
       </div>
     </div>

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -9,30 +8,30 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 const slides = [
   {
     id: 1,
-    title: "Latest Pokemon TCG Collection",
-    subtitle: "Scarlet & Violet Series Now Available",
-    description: "Get the newest Pokemon cards with exclusive pre-order bonuses",
+    title: "Pokemon Trading Cards",
+    subtitle: "Latest Sets & Rare Cards",
+    description: "From SAR to UR - Discover our extensive collection of premium Pokemon cards",
     image: "https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?w=1920&h=600&fit=crop",
-    cta: "Shop Pokemon",
-    href: "/products/pokemon"
+    cta: "Shop Now",
+    href: "/products"
   },
   {
     id: 2,
-    title: "Graded Cards Collection",
-    subtitle: "PSA 10 & BGS 9.5+ Cards",
-    description: "Premium graded cards from trusted authentication services",
+    title: "PSA & BGS Graded Cards",
+    subtitle: "Certified Authentic",
+    description: "High-grade certified cards from trusted grading companies",
     image: "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=1920&h=600&fit=crop",
     cta: "View Graded Cards",
-    href: "/products/graded"
+    href: "/products?graded=true"
   },
   {
     id: 3,
-    title: "One Piece Card Game",
-    subtitle: "Romance Dawn & Pillars of Strength",
-    description: "Join the adventure with the hottest TCG of 2024",
+    title: "Pre-Order New Releases",
+    subtitle: "Launch Day Delivery",
+    description: "Reserve the latest booster packs and secure your cards",
     image: "https://images.unsplash.com/photo-1578662996442-48f60103fc4e?w=1920&h=600&fit=crop",
-    cta: "Shop One Piece",
-    href: "/products/onepiece"
+    cta: "Pre-Order Now",
+    href: "/products?preorder=true"
   }
 ]
 
