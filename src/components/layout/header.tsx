@@ -38,7 +38,11 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState("")
   const [locale, setLocale] = useState("en")
   const [showLangMenu, setShowLangMenu] = useState(false)
-  const cartItems = useCartStore((state) => state.getTotalItems())
+  const cartItems = useCartStore((state) => {
+    const total = state.getTotalItems()
+    console.log('🔢 Header: Cart total items:', total)
+    return total
+  })
   const wishlistItems = useWishlistStore((state) => state.getTotalItems())
 
   const languages = [

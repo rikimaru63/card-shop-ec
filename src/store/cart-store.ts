@@ -29,24 +29,29 @@ export const useCartStore = create<CartStore>()(
       items: [],
       
       addItem: (item) => {
+        console.log('🏪 Cart Store: addItem called with:', item)
+        
         set((state) => {
+          console.log('📊 Current cart state:', state.items)
           const existingItem = state.items.find((i) => i.id === item.id)
           
           if (existingItem) {
+            console.log('🔄 Item exists, incrementing quantity')
             // アイテムが既に存在する場合、数量を増やす
-            return {
-              items: state.items.map((i) =>
-                i.id === item.id
-                  ? { ...i, quantity: Math.min(i.quantity + 1, i.stock) }
-                  : i
-              ),
-            }
+            const newItems = state.items.map((i) =>
+              i.id === item.id
+                ? { ...i, quantity: Math.min(i.quantity + 1, i.stock) }
+                : i
+            )
+            console.log('✅ Updated cart:', newItems)
+            return { items: newItems }
           }
           
+          console.log('➕ Adding new item to cart')
           // 新しいアイテムを追加
-          return {
-            items: [...state.items, { ...item, quantity: 1 }],
-          }
+          const newItems = [...state.items, { ...item, quantity: 1 }]
+          console.log('✅ New cart:', newItems)
+          return { items: newItems }
         })
       },
       

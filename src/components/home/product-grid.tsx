@@ -78,7 +78,11 @@ export function ProductGrid() {
 
   const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.preventDefault()
-    addToCart({
+    e.stopPropagation() // Prevent Link navigation
+    
+    console.log('🛒 Adding to cart:', product.name)
+    
+    const cartItem = {
       id: product.id,
       name: product.name,
       image: product.image,
@@ -87,9 +91,16 @@ export function ProductGrid() {
       rarity: product.rarity || undefined,
       condition: product.condition || undefined,
       stock: product.stock
-    })
+    }
+    
+    console.log('📦 Cart item:', cartItem)
+    addToCart(cartItem)
+    
+    // Visual feedback
     setAddedToCart(product.id)
     setTimeout(() => setAddedToCart(null), 2000)
+    
+    console.log('✅ Added to cart successfully')
   }
 
   const handleToggleWishlist = (product: Product, e: React.MouseEvent) => {
