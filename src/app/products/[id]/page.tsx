@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProductCard } from "@/components/products/product-card"
+import { useCartStore } from "@/store/cart-store"
 import { cn } from "@/lib/utils"
 
 // Mock data - 実際はAPIから取得
@@ -136,8 +137,19 @@ export default function ProductDetailPage({ params: _params }: { params: { id: s
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [showAddedToCart, setShowAddedToCart] = useState(false)
 
+  const addToCart = useCartStore((state) => state.addItem)
+
   const handleAddToCart = () => {
-    // TODO: カート追加ロジック実装
+    addToCart({
+      id: product.id,
+      name: product.name,
+      image: product.images[0],
+      price: product.price,
+      category: product.category,
+      rarity: product.rarity,
+      condition: product.condition,
+      stock: product.stock
+    })
     setShowAddedToCart(true)
     setTimeout(() => setShowAddedToCart(false), 3000)
   }
@@ -149,7 +161,7 @@ export default function ProductDetailPage({ params: _params }: { params: { id: s
     }
   }
 
-  const discount = product.comparePrice 
+  const discount = product.comparePrice
     ? Math.round((1 - product.price / product.comparePrice) * 100)
     : 0
 
@@ -195,7 +207,7 @@ export default function ProductDetailPage({ params: _params }: { params: { id: s
                 </Badge>
               )}
             </div>
-            
+
             {/* Thumbnails */}
             <div className="flex gap-2">
               {product.images.map((image, index) => (
@@ -204,8 +216,8 @@ export default function ProductDetailPage({ params: _params }: { params: { id: s
                   onClick={() => setSelectedImage(index)}
                   className={cn(
                     "relative w-20 h-28 rounded-lg border-2 overflow-hidden transition-all",
-                    selectedImage === index 
-                      ? "border-primary ring-2 ring-primary/20" 
+                    selectedImage === index
+                      ? "border-primary ring-2 ring-primary/20"
                       : "border-gray-200 hover:border-gray-300"
                   )}
                 >
@@ -290,7 +302,7 @@ export default function ProductDetailPage({ params: _params }: { params: { id: s
                   </>
                 )}
               </div>
-              
+
               {/* Stock Status */}
               <div className="flex items-center gap-2">
                 {product.stock > 0 ? (
@@ -329,8 +341,8 @@ export default function ProductDetailPage({ params: _params }: { params: { id: s
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                
-                <Button 
+
+                <Button
                   className="flex-1"
                   size="lg"
                   onClick={handleAddToCart}
@@ -354,8 +366,8 @@ export default function ProductDetailPage({ params: _params }: { params: { id: s
               )}
 
               {/* Quick Buy */}
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full"
                 size="lg"
               >
@@ -394,7 +406,7 @@ export default function ProductDetailPage({ params: _params }: { params: { id: s
               <TabsTrigger value="shipping">Shipping</TabsTrigger>
               <TabsTrigger value="reviews">Reviews ({product.reviewCount})</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="description" className="mt-6">
               <div className="space-y-4">
                 <p className="text-muted-foreground">{product.description}</p>
@@ -411,7 +423,7 @@ export default function ProductDetailPage({ params: _params }: { params: { id: s
                 </div>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="specifications" className="mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Object.entries(product.specifications).map(([key, value]) => (
@@ -422,7 +434,7 @@ export default function ProductDetailPage({ params: _params }: { params: { id: s
                 ))}
               </div>
             </TabsContent>
-            
+
             <TabsContent value="shipping" className="mt-6">
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
@@ -454,7 +466,7 @@ export default function ProductDetailPage({ params: _params }: { params: { id: s
                 </div>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="reviews" className="mt-6">
               <div className="text-center py-8 text-muted-foreground">
                 Reviews section coming soon...
