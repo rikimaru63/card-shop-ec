@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    
+
     // Parse query parameters
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '12')
@@ -16,34 +19,34 @@ export async function GET(request: NextRequest) {
     const maxPrice = searchParams.get('maxPrice')
     const cardSet = searchParams.get('cardSet')
     const sortBy = searchParams.get('sortBy') || 'newest'
-    
+
     // Build where clause
     const where: any = {
       published: true
     }
-    
+
     // Category filter
     if (category) {
       where.category = {
         slug: category
       }
     }
-    
+
     // Rarity filter
     if (rarity) {
       where.rarity = rarity
     }
-    
+
     // Condition filter
     if (condition) {
       where.condition = condition
     }
-    
+
     // Card set filter
     if (cardSet) {
       where.cardSet = cardSet
     }
-    
+
     // Search filter (name or description)
     if (search) {
       where.OR = [
@@ -52,17 +55,17 @@ export async function GET(request: NextRequest) {
         { description: { contains: search, mode: 'insensitive' } }
       ]
     }
-    
+
     // Price range filter
     if (minPrice || maxPrice) {
       where.price = {}
       if (minPrice) where.price.gte = parseFloat(minPrice)
       if (maxPrice) where.price.lte = parseFloat(maxPrice)
     }
-    
+
     // Determine sort order
     let orderBy: any = { createdAt: 'desc' } // Default: newest
-    
+
     switch (sortBy) {
       case 'price-asc':
         orderBy = { price: 'asc' }
@@ -78,10 +81,10 @@ export async function GET(request: NextRequest) {
         orderBy = { createdAt: 'desc' }
         break
     }
-    
+
     // Calculate pagination
     const skip = (page - 1) * limit
-    
+
     // Execute queries in parallel
     const [products, total] = await Promise.all([
       prisma.product.findMany({
@@ -105,7 +108,7 @@ export async function GET(request: NextRequest) {
       }),
       prisma.product.count({ where })
     ])
-    
+
     // Format response
     const formattedProducts = products.map(product => ({
       id: product.id,
@@ -131,9 +134,9 @@ export async function GET(request: NextRequest) {
       grade: product.grade,
       featured: product.featured
     }))
-    
+
     const totalPages = Math.ceil(total / limit)
-    
+
     return NextResponse.json({
       products: formattedProducts,
       pagination: {
@@ -144,7 +147,7 @@ export async function GET(request: NextRequest) {
         hasMore: page < totalPages
       }
     })
-    
+
   } catch (error) {
     console.error('Error fetching products:', error)
     return NextResponse.json(
