@@ -1,13 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { 
-  Search, 
-  ShoppingCart, 
-  Menu, 
-  X, 
+import {
+  Search,
+  ShoppingCart,
+  Menu,
+  X,
   ChevronDown,
   User,
   Heart,
@@ -44,12 +44,17 @@ export function Header() {
     return total
   })
   const wishlistItems = useWishlistStore((state) => state.getTotalItems())
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const languages = [
     { code: "en", name: "English", flag: "🇺🇸" },
     { code: "ja", name: "日本語", flag: "🇯🇵" },
   ]
-  
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
@@ -92,7 +97,7 @@ export function Header() {
                   {category.name}
                   <ChevronDown className="h-3 w-3" />
                 </Link>
-                
+
                 {/* ドロップダウンメニュー */}
                 {activeCategory === category.name && (
                   <div className="absolute top-full left-0 w-56 bg-white rounded-lg shadow-lg border mt-1 py-2">
@@ -146,9 +151,8 @@ export function Header() {
                         setLocale(lang.code)
                         setShowLangMenu(false)
                       }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-secondary flex items-center gap-2 ${
-                        locale === lang.code ? "bg-secondary font-medium" : ""
-                      }`}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-secondary flex items-center gap-2 ${locale === lang.code ? "bg-secondary font-medium" : ""
+                        }`}
                     >
                       <span>{lang.flag}</span>
                       <span>{lang.name}</span>
@@ -171,7 +175,7 @@ export function Header() {
             <Link href="/wishlist">
               <Button variant="ghost" size="icon" className="relative">
                 <Heart className="h-5 w-5" />
-                {wishlistItems > 0 && (
+                {mounted && wishlistItems > 0 && (
                   <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                     {wishlistItems}
                   </span>
@@ -188,7 +192,7 @@ export function Header() {
             <Link href="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
-                {cartItems > 0 && (
+                {mounted && cartItems > 0 && (
                   <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
                     {cartItems}
                   </span>

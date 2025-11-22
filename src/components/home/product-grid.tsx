@@ -39,7 +39,7 @@ export function ProductGrid() {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortBy, setSortBy] = useState("newest")
   const [addedToCart, setAddedToCart] = useState<string | null>(null)
-  
+
   const addToCart = useCartStore((state) => state.addItem)
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
 
@@ -48,20 +48,20 @@ export function ProductGrid() {
     async function fetchProducts() {
       setLoading(true)
       setError(null)
-      
+
       try {
         const params = new URLSearchParams({
           page: currentPage.toString(),
           limit: '12',
           sortBy: sortBy
         })
-        
+
         const response = await fetch(`/api/products?${params}`)
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch products')
         }
-        
+
         const data = await response.json()
         setProducts(data.products)
         setPagination(data.pagination)
@@ -72,16 +72,16 @@ export function ProductGrid() {
         setLoading(false)
       }
     }
-    
+
     fetchProducts()
   }, [currentPage, sortBy])
 
   const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.preventDefault()
-    e.stopPropagation() // Prevent Link navigation
-    
+    e.stopPropagation()
+
     console.log('🛒 Adding to cart:', product.name)
-    
+
     const cartItem = {
       id: product.id,
       name: product.name,
@@ -92,14 +92,14 @@ export function ProductGrid() {
       condition: product.condition || undefined,
       stock: product.stock
     }
-    
+
     console.log('📦 Cart item:', cartItem)
     addToCart(cartItem)
-    
+
     // Visual feedback
     setAddedToCart(product.id)
     setTimeout(() => setAddedToCart(null), 2000)
-    
+
     console.log('✅ Added to cart successfully')
   }
 
@@ -208,98 +208,99 @@ export function ProductGrid() {
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map((product) => (
-              <Link
+              <div
                 key={product.id}
-                href={`/products/${product.id}`}
-                className="group"
+                className="group bg-white rounded-lg border overflow-hidden hover:shadow-lg transition-shadow"
               >
-                <div className="bg-white rounded-lg border overflow-hidden hover:shadow-lg transition-shadow">
-                  {/* 商品画像 */}
-                  <div className="relative aspect-[3/4] bg-gray-100">
+                {/* 商品画像 */}
+                <div className="relative aspect-[3/4] bg-gray-100">
+                  <Link href={`/products/${product.id}`} className="absolute inset-0 z-0">
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-gray-400 text-center">
                         <p className="text-sm font-medium">{product.name}</p>
                         <p className="text-xs mt-1">{product.cardSet}</p>
                       </div>
                     </div>
-                    
-                    {/* バッジ */}
-                    <div className="absolute top-2 left-2 flex flex-col gap-1">
-                      {product.featured && (
-                        <Badge className="text-xs bg-blue-500">
-                          Featured
-                        </Badge>
-                      )}
-                      {product.lowStock && product.stock > 0 && (
-                        <Badge variant="destructive" className="text-xs">
-                          Only {product.stock} left
-                        </Badge>
-                      )}
-                      {product.rarity && ['SECRET_RARE', 'ULTRA_RARE'].includes(product.rarity) && (
-                        <Badge className={cn(
-                          "text-xs",
-                          product.rarity === 'SECRET_RARE' ? "bg-yellow-500" : "bg-purple-500"
-                        )}>
-                          {formatRarity(product.rarity)}
-                        </Badge>
-                      )}
-                    </div>
+                  </Link>
 
-                    {/* ホバーアクション */}
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="h-8 w-8"
-                        onClick={(e) => handleToggleWishlist(product, e)}
-                      >
-                        <Heart className={cn(
-                          "h-4 w-4 transition-colors",
-                          isInWishlist(product.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
-                        )} />
-                      </Button>
-                    </div>
+                  {/* バッジ */}
+                  <div className="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none z-10">
+                    {product.featured && (
+                      <Badge className="text-xs bg-blue-500">
+                        Featured
+                      </Badge>
+                    )}
+                    {product.lowStock && product.stock > 0 && (
+                      <Badge variant="destructive" className="text-xs">
+                        Only {product.stock} left
+                      </Badge>
+                    )}
+                    {product.rarity && ['SECRET_RARE', 'ULTRA_RARE'].includes(product.rarity) && (
+                      <Badge className={cn(
+                        "text-xs",
+                        product.rarity === 'SECRET_RARE' ? "bg-yellow-500" : "bg-purple-500"
+                      )}>
+                        {formatRarity(product.rarity)}
+                      </Badge>
+                    )}
                   </div>
 
-                  {/* 商品情報 */}
-                  <div className="p-3">
-                    <h3 className="font-medium text-sm line-clamp-2 mb-1">
-                      {product.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      {product.cardSet} {product.cardNumber}
-                    </p>
-                    
-                    <div className="flex items-center gap-1 mb-2">
-                      {product.rarity && (
-                        <Badge variant="outline" className="text-xs">
-                          {formatRarity(product.rarity)}
-                        </Badge>
-                      )}
-                      {product.condition && (
-                        <Badge variant="secondary" className="text-xs">
-                          {formatCondition(product.condition)}
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-blue-600">
-                        ¥{product.price.toLocaleString()}
-                      </span>
-                      <Button
-                        size="sm"
-                        className="h-8"
-                        onClick={(e) => handleAddToCart(product, e)}
-                        disabled={addedToCart === product.id || product.stock === 0}
-                      >
-                        <ShoppingCart className="h-3 w-3 mr-1" />
-                        {addedToCart === product.id ? "Added!" : product.stock === 0 ? "Out" : "Add"}
-                      </Button>
-                    </div>
+                  {/* ホバーアクション */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="h-8 w-8"
+                      onClick={(e) => handleToggleWishlist(product, e)}
+                    >
+                      <Heart className={cn(
+                        "h-4 w-4 transition-colors",
+                        isInWishlist(product.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                      )} />
+                    </Button>
                   </div>
                 </div>
-              </Link>
+
+                {/* 商品情報 */}
+                <div className="p-3">
+                  <Link href={`/products/${product.id}`}>
+                    <h3 className="font-medium text-sm line-clamp-2 mb-1 hover:text-primary transition-colors">
+                      {product.name}
+                    </h3>
+                  </Link>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {product.cardSet} {product.cardNumber}
+                  </p>
+
+                  <div className="flex items-center gap-1 mb-2">
+                    {product.rarity && (
+                      <Badge variant="outline" className="text-xs">
+                        {formatRarity(product.rarity)}
+                      </Badge>
+                    )}
+                    {product.condition && (
+                      <Badge variant="secondary" className="text-xs">
+                        {formatCondition(product.condition)}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold text-blue-600">
+                      ¥{product.price.toLocaleString()}
+                    </span>
+                    <Button
+                      size="sm"
+                      className="h-8"
+                      onClick={(e) => handleAddToCart(product, e)}
+                      disabled={addedToCart === product.id || product.stock === 0}
+                    >
+                      <ShoppingCart className="h-3 w-3 mr-1" />
+                      {addedToCart === product.id ? "Added!" : product.stock === 0 ? "Out" : "Add"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
 
@@ -307,15 +308,15 @@ export function ProductGrid() {
           {pagination && pagination.totalPages > 1 && (
             <div className="mt-8 flex justify-center">
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 >
                   Previous
                 </Button>
-                
+
                 {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                   let pageNum: number
                   if (pagination.totalPages <= 5) {
@@ -327,7 +328,7 @@ export function ProductGrid() {
                   } else {
                     pageNum = currentPage - 2 + i
                   }
-                  
+
                   return (
                     <Button
                       key={pageNum}
@@ -339,10 +340,10 @@ export function ProductGrid() {
                     </Button>
                   )
                 })}
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={currentPage === pagination.totalPages}
                   onClick={() => setCurrentPage(p => Math.min(pagination.totalPages, p + 1))}
                 >
