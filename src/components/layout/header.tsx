@@ -47,6 +47,7 @@ export function Header() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    console.log('🚀 App Version: 2025-11-22-v2 (Cart Fix)')
     setMounted(true)
   }, [])
 
