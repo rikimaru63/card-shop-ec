@@ -34,53 +34,53 @@ model User {
 // ==================== Products ====================
 
 model Product {
-  id           String   @id @default(cuid())
-  sku          String   @unique
-  name         String
-  nameJa       String? // Japanese name
-  slug         String   @unique
-  description  String?  @db.Text
-  
+  id          String  @id @default(cuid())
+  sku         String  @unique
+  name        String
+  nameJa      String? // Japanese name
+  slug        String  @unique
+  description String? @db.Text
+
   // Card specific fields
-  cardSet      String?
-  cardNumber   String?
-  rarity       Rarity?
-  condition    Condition?
-  language     String   @default("EN")
-  foil         Boolean  @default(false)
-  firstEdition Boolean  @default(false)
-  graded       Boolean  @default(false)
+  cardSet        String?
+  cardNumber     String?
+  rarity         Rarity?
+  condition      Condition?
+  language       String     @default("EN")
+  foil           Boolean    @default(false)
+  firstEdition   Boolean    @default(false)
+  graded         Boolean    @default(false)
   gradingCompany String? // PSA, BGS, CGC
-  grade        String?  // 10, 9.5, etc
-  
+  grade          String? // 10, 9.5, etc
+
   // Pricing
   price        Decimal  @db.Money
   comparePrice Decimal? @db.Money
   cost         Decimal? @db.Money
-  
+
   // Inventory
-  stock        Int      @default(0)
-  lowStock     Int      @default(5)
-  trackStock   Boolean  @default(true)
-  
+  stock      Int     @default(0)
+  lowStock   Int     @default(5)
+  trackStock Boolean @default(true)
+
   // SEO & Display
-  featured     Boolean  @default(false)
-  published    Boolean  @default(true)
-  
+  featured  Boolean @default(false)
+  published Boolean @default(true)
+
   // Relations
-  categoryId   String
-  category     Category @relation(fields: [categoryId], references: [id])
-  images       ProductImage[]
-  tags         ProductTag[]
-  orderItems   OrderItem[]
-  cartItems    CartItem[]
+  categoryId    String
+  category      Category       @relation(fields: [categoryId], references: [id])
+  images        ProductImage[]
+  tags          ProductTag[]
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
   wishlistItems Wishlist[]
-  reviews      Review[]
-  
+  reviews       Review[]
+
   // Timestamps
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([categoryId])
   @@index([sku])
   @@index([slug])
@@ -102,7 +102,7 @@ model Category {
   products    Product[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  
+
   @@index([slug])
   @@index([parentId])
 }
@@ -115,7 +115,7 @@ model ProductImage {
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
-  
+
   @@index([productId])
 }
 
@@ -131,55 +131,55 @@ model ProductTag {
   tagId     String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  
+
   @@id([productId, tagId])
 }
 
 // ==================== Orders ====================
 
 model Order {
-  id             String        @id @default(cuid())
-  orderNumber    String        @unique @default(cuid())
-  userId         String?
-  user           User?         @relation(fields: [userId], references: [id])
-  
+  id          String  @id @default(cuid())
+  orderNumber String  @unique @default(cuid())
+  userId      String?
+  user        User?   @relation(fields: [userId], references: [id])
+
   // Customer info (for guest checkout)
-  email          String
-  phone          String?
-  
+  email String
+  phone String?
+
   // Amounts
-  subtotal       Decimal       @db.Money
-  tax            Decimal       @db.Money
-  shipping       Decimal       @db.Money
-  discount       Decimal       @default(0) @db.Money
-  total          Decimal       @db.Money
-  currency       String        @default("USD")
-  
+  subtotal Decimal @db.Money
+  tax      Decimal @db.Money
+  shipping Decimal @db.Money
+  discount Decimal @default(0) @db.Money
+  total    Decimal @db.Money
+  currency String  @default("USD")
+
   // Status
-  status         OrderStatus   @default(PENDING)
-  paymentStatus  PaymentStatus @default(PENDING)
-  paymentMethod  String?
-  
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentMethod String?
+
   // Addresses
   shippingAddress Json
   billingAddress  Json
-  
+
   // Tracking
   trackingNumber String?
   shippedAt      DateTime?
   deliveredAt    DateTime?
-  
+
   // Relations
-  items          OrderItem[]
-  payment        Payment?
-  
+  items   OrderItem[]
+  payment Payment?
+
   // Metadata
-  notes          String?
-  metadata       Json?
-  
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  
+  notes    String?
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
   @@index([orderNumber])
   @@index([status])
@@ -187,41 +187,41 @@ model Order {
 }
 
 model OrderItem {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  
-  quantity  Int
-  price     Decimal  @db.Money
-  total     Decimal  @db.Money
-  
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity Int
+  price    Decimal @db.Money
+  total    Decimal @db.Money
+
   // Snapshot of product data at time of order
-  snapshot  Json
-  
+  snapshot Json
+
   createdAt DateTime @default(now())
-  
+
   @@index([orderId])
   @@index([productId])
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  orderId         String        @unique
-  order           Order         @relation(fields: [orderId], references: [id])
-  
-  amount          Decimal       @db.Money
-  currency        String
-  status          PaymentStatus
-  method          String        // wise, stripe, paypal
-  
+  id      String @id @default(cuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  amount   Decimal       @db.Money
+  currency String
+  status   PaymentStatus
+  method   String // wise, stripe, paypal
+
   // Provider specific
   providerPaymentId String?
-  providerData    Json?
-  
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  providerData      Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ==================== Cart & Wishlist ====================
@@ -245,7 +245,7 @@ model CartItem {
   quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@unique([cartId, productId])
   @@index([cartId])
   @@index([productId])
@@ -258,7 +258,7 @@ model Wishlist {
   productId String
   product   Product  @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now())
-  
+
   @@unique([userId, productId])
   @@index([userId])
   @@index([productId])
@@ -267,20 +267,20 @@ model Wishlist {
 // ==================== Reviews ====================
 
 model Review {
-  id        String   @id @default(cuid())
-  rating    Int
-  title     String?
-  comment   String?  @db.Text
-  verified  Boolean  @default(false)
-  
+  id       String  @id @default(cuid())
+  rating   Int
+  title    String?
+  comment  String? @db.Text
+  verified Boolean @default(false)
+
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
   productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  
+  product   Product @relation(fields: [productId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@unique([userId, productId])
   @@index([productId])
   @@index([rating])
@@ -289,27 +289,27 @@ model Review {
 // ==================== Address ====================
 
 model Address {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  type         AddressType @default(SHIPPING)
-  isDefault    Boolean  @default(false)
-  
-  firstName    String
-  lastName     String
-  company      String?
-  street1      String
-  street2      String?
-  city         String
-  state        String
-  postalCode   String
-  country      String
-  phone        String?
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      AddressType @default(SHIPPING)
+  isDefault Boolean     @default(false)
+
+  firstName  String
+  lastName   String
+  company    String?
+  street1    String
+  street2    String?
+  city       String
+  state      String
+  postalCode String
+  country    String
+  phone      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
 }
 
