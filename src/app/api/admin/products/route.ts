@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { generateSKU, generateUniqueSlug } from '@/lib/utils/sku'
+import { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const published = searchParams.get('published')
     
-    const where: any = {}
+    const where: Prisma.ProductWhereInput = {}
     
     if (search) {
       where.OR = [
@@ -195,11 +196,11 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(product, { status: 201 })
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating product:', error)
     
     // Handle unique constraint violations
-    if (error.code === 'P2002') {
+    if (error instanceof Error && (error as any).code === 'P2002') {
       return NextResponse.json(
         { error: 'Product with this SKU or slug already exists' },
         { status: 409 }

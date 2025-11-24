@@ -73,8 +73,12 @@ export default function SignUpPage() {
 
       router.push("/")
       router.refresh()
-    } catch (error: any) {
-      setError(error.message || "Failed to create account")
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message || "Failed to create account");
+      } else {
+        setError("An unknown error occurred.");
+      }
     } finally {
       setIsLoading(false)
     }

@@ -103,11 +103,13 @@ export async function updateProduct(id: string, formData: FormData) {
         price,
         stock,
         images: {
-          upsert: {
-            where: { productId: id },
-            create: { url: imageUrl || 'https://placehold.co/400x600', alt: name },
-            update: { url: imageUrl || 'https://placehold.co/400x600', alt: name },
-          },
+          deleteMany: {}, // Delete all existing images
+          create: imageUrl // Create a new one if imageUrl is provided
+            ? {
+                url: imageUrl,
+                alt: name,
+              }
+            : undefined,
         },
       },
     });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function PUT(
   request: NextRequest,
@@ -46,32 +47,25 @@ export async function PUT(
     }
     
     // Prepare update data
-    const updateData: any = {}
-    
-    // Only update fields that are provided
-    const fieldsToUpdate = [
+    const updateData: Prisma.ProductUpdateInput = {};
+    const bodyKeys: (keyof typeof body)[] = [
       'name', 'nameJa', 'description', 'cardSet', 'cardNumber',
       'rarity', 'condition', 'language', 'foil', 'firstEdition',
       'graded', 'gradingCompany', 'grade', 'featured', 'published',
-      'lowStock'
-    ]
-    
-    fieldsToUpdate.forEach(field => {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field]
+      'lowStock', 'price', 'comparePrice', 'stock'
+    ];
+
+    bodyKeys.forEach(key => {
+      if (body[key] !== undefined) {
+        if (key === 'price' || key === 'comparePrice') {
+          (updateData as any)[key] = body[key] ? parseFloat(body[key]) : null;
+        } else if (key === 'stock' || key === 'lowStock') {
+          (updateData as any)[key] = parseInt(body[key], 10);
+        } else {
+          (updateData as any)[key] = body[key];
+        }
       }
-    })
-    
-    // Handle numeric fields
-    if (body.price !== undefined) {
-      updateData.price = parseFloat(body.price)
-    }
-    if (body.comparePrice !== undefined) {
-      updateData.comparePrice = body.comparePrice ? parseFloat(body.comparePrice) : null
-    }
-    if (body.stock !== undefined) {
-      updateData.stock = parseInt(body.stock)
-    }
+    });
     
     // Update product
     const product = await prisma.product.update({
@@ -85,10 +79,10 @@ export async function PUT(
     
     return NextResponse.json(product)
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating product:', error)
     
-    if (error.code === 'P2002') {
+    if (error instanceof Error && (error as any).code === 'P2002') {
       return NextResponse.json(
         { error: 'Product with this SKU or slug already exists' },
         { status: 409 }
@@ -152,7 +146,7 @@ export async function DELETE(
       { status: 200 }
     )
     
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error deleting product:', error)
     return NextResponse.json(
       { error: 'Failed to delete product' },

@@ -93,12 +93,27 @@ const searchProducts = (query: string) => {
   )
 }
 
+interface Product {
+  id: string;
+  name: string;
+  image: string;
+  price: number;
+  comparePrice?: number;
+  category: string;
+  rarity?: string;
+  condition?: string;
+  stock: number;
+  rating?: number;
+  isNew: boolean;
+  isFeatured: boolean;
+}
+
 export default function SearchPage() {
   const searchParams = useSearchParams()
   const initialQuery = searchParams.get("q") || ""
   
   const [searchQuery, setSearchQuery] = useState(initialQuery)
-  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchResults, setSearchResults] = useState<Product[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [sortBy, setSortBy] = useState("relevance")

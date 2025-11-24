@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'newest'
 
     // Build where clause
-    const where: any = {
+    const where: Prisma.ProductWhereInput = {
       published: true
     }
 
@@ -34,12 +35,12 @@ export async function GET(request: NextRequest) {
 
     // Rarity filter
     if (rarity) {
-      where.rarity = rarity
+      where.rarity = { equals: rarity as any }
     }
 
     // Condition filter
     if (condition) {
-      where.condition = condition
+      where.condition = { equals: condition as any }
     }
 
     // Card set filter
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Determine sort order
-    let orderBy: any = { createdAt: 'desc' } // Default: newest
+    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' } // Default: newest
 
     switch (sortBy) {
       case 'price-asc':
