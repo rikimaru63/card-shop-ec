@@ -14,14 +14,12 @@ import {
   Minus,
   Plus,
   Check,
-  AlertCircle,
   TrendingUp,
   Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ProductCard } from "@/components/products/product-card"
 import { useCartStore } from "@/store/cart-store"
 import { cn } from "@/lib/utils"
 
