@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { sendInvoiceEmail } from "@/lib/email"
 
 type CartItem = {
   productId: string
@@ -76,8 +77,8 @@ export async function createOrder(input: CreateOrderInput): Promise<{
         status: "PENDING",
         paymentStatus: "PENDING",
         paymentMethod: "wise",
-        shippingAddress: shippingAddress as any,
-        billingAddress: shippingAddress as any,
+        shippingAddress: shippingAddress as object,
+        billingAddress: shippingAddress as object,
         items: {
           create: items.map(item => ({
             productId: item.productId,
@@ -96,6 +97,27 @@ export async function createOrder(input: CreateOrderInput): Promise<{
         items: true
       }
     })
+
+    // Send invoice email
+    const emailResult = await sendInvoiceEmail({
+      to: user.email,
+      orderNumber: order.orderNumber,
+      customerName: user.name || user.email,
+      items: items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price
+      })),
+      subtotal,
+      shipping,
+      total,
+      currency: "USD"
+    })
+
+    if (!emailResult.success) {
+      console.warn("Failed to send invoice email:", emailResult.error)
+      // Don't fail the order if email fails, just log it
+    }
 
     // Revalidate orders page
     revalidatePath("/account/orders")
