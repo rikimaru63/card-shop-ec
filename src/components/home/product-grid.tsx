@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ShoppingCart, Heart, Loader2 } from "lucide-react"
+import { ShoppingCart, Heart, Loader2, TrendingUp, TrendingDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useCartStore } from "@/store/cart-store"
@@ -17,6 +17,7 @@ interface Product {
   rarity: string | null
   condition: string | null
   price: number
+  previousPrice: number | null
   image: string
   stock: number
   lowStock: boolean
@@ -80,8 +81,6 @@ export function ProductGrid() {
     e.preventDefault()
     e.stopPropagation()
 
-    console.log('🛒 Adding to cart:', product.name)
-
     const cartItem = {
       id: product.id,
       name: product.name,
@@ -93,14 +92,9 @@ export function ProductGrid() {
       stock: product.stock
     }
 
-    console.log('📦 Cart item:', cartItem)
     addToCart(cartItem)
-
-    // Visual feedback
     setAddedToCart(product.id)
     setTimeout(() => setAddedToCart(null), 2000)
-
-    console.log('✅ Added to cart successfully')
   }
 
   const handleToggleWishlist = (product: Product, e: React.MouseEvent) => {
@@ -150,6 +144,18 @@ export function ProductGrid() {
     return map[condition] || condition
   }
 
+  // Price change indicator
+  const getPriceChange = (product: Product) => {
+    if (!product.previousPrice || product.previousPrice === product.price) return null
+    const isUp = product.price > product.previousPrice
+    return {
+      isUp,
+      icon: isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />,
+      label: isUp ? 'Up' : 'Down',
+      color: isUp ? 'text-red-500 bg-red-50 border-red-200' : 'text-green-500 bg-green-50 border-green-200'
+    }
+  }
+
   if (error) {
     return (
       <div className="text-center py-12">
@@ -166,7 +172,7 @@ export function ProductGrid() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Pokemon Cards</h1>
+          <h1 className="text-2xl font-bold">All Products</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {loading ? 'Loading...' : `${pagination?.total || 0} products`}
           </p>
@@ -207,104 +213,120 @@ export function ProductGrid() {
       {!loading && products.length > 0 && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="group bg-white rounded-lg border overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                {/* 商品画像 */}
-                <div className="relative aspect-[3/4] bg-gray-100">
-                  <Link href={`/products/${product.id}`} className="absolute inset-0 z-0">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-gray-400 text-center">
-                        <p className="text-sm font-medium">{product.name}</p>
-                        <p className="text-xs mt-1">{product.cardSet}</p>
+            {products.map((product) => {
+              const priceChange = getPriceChange(product)
+              return (
+                <div
+                  key={product.id}
+                  className="group bg-white rounded-lg border overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  {/* Product Image */}
+                  <div className="relative aspect-[3/4] bg-gray-100">
+                    <Link href={`/products/${product.id}`} className="absolute inset-0 z-0">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-gray-400 text-center">
+                          <p className="text-sm font-medium">{product.name}</p>
+                          <p className="text-xs mt-1">{product.cardSet}</p>
+                        </div>
                       </div>
+                    </Link>
+
+                    {/* Badges */}
+                    <div className="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none z-10">
+                      {priceChange && (
+                        <Badge className={`text-xs border ${priceChange.color}`}>
+                          {priceChange.icon}
+                          <span className="ml-1">{priceChange.label}</span>
+                        </Badge>
+                      )}
+                      {product.featured && (
+                        <Badge className="text-xs bg-blue-500">
+                          Featured
+                        </Badge>
+                      )}
+                      {product.lowStock && product.stock > 0 && (
+                        <Badge variant="destructive" className="text-xs">
+                          Only {product.stock} left
+                        </Badge>
+                      )}
+                      {product.rarity && ['SECRET_RARE', 'ULTRA_RARE'].includes(product.rarity) && (
+                        <Badge className={cn(
+                          "text-xs",
+                          product.rarity === 'SECRET_RARE' ? "bg-yellow-500" : "bg-purple-500"
+                        )}>
+                          {formatRarity(product.rarity)}
+                        </Badge>
+                      )}
                     </div>
-                  </Link>
 
-                  {/* バッジ */}
-                  <div className="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none z-10">
-                    {product.featured && (
-                      <Badge className="text-xs bg-blue-500">
-                        Featured
-                      </Badge>
-                    )}
-                    {product.lowStock && product.stock > 0 && (
-                      <Badge variant="destructive" className="text-xs">
-                        Only {product.stock} left
-                      </Badge>
-                    )}
-                    {product.rarity && ['SECRET_RARE', 'ULTRA_RARE'].includes(product.rarity) && (
-                      <Badge className={cn(
-                        "text-xs",
-                        product.rarity === 'SECRET_RARE' ? "bg-yellow-500" : "bg-purple-500"
-                      )}>
-                        {formatRarity(product.rarity)}
-                      </Badge>
-                    )}
+                    {/* Wishlist Button */}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="h-8 w-8"
+                        onClick={(e) => handleToggleWishlist(product, e)}
+                      >
+                        <Heart className={cn(
+                          "h-4 w-4 transition-colors",
+                          isInWishlist(product.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                        )} />
+                      </Button>
+                    </div>
                   </div>
 
-                  {/* ホバーアクション */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      className="h-8 w-8"
-                      onClick={(e) => handleToggleWishlist(product, e)}
-                    >
-                      <Heart className={cn(
-                        "h-4 w-4 transition-colors",
-                        isInWishlist(product.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
-                      )} />
-                    </Button>
-                  </div>
-                </div>
+                  {/* Product Info */}
+                  <div className="p-3">
+                    <Link href={`/products/${product.id}`}>
+                      <h3 className="font-medium text-sm line-clamp-2 mb-1 hover:text-primary transition-colors">
+                        {product.name}
+                      </h3>
+                    </Link>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {product.cardSet} {product.cardNumber}
+                    </p>
 
-                {/* 商品情報 */}
-                <div className="p-3">
-                  <Link href={`/products/${product.id}`}>
-                    <h3 className="font-medium text-sm line-clamp-2 mb-1 hover:text-primary transition-colors">
-                      {product.name}
-                    </h3>
-                  </Link>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    {product.cardSet} {product.cardNumber}
-                  </p>
+                    <div className="flex items-center gap-1 mb-2">
+                      {product.rarity && (
+                        <Badge variant="outline" className="text-xs">
+                          {formatRarity(product.rarity)}
+                        </Badge>
+                      )}
+                      {product.condition && (
+                        <Badge variant="secondary" className="text-xs">
+                          {formatCondition(product.condition)}
+                        </Badge>
+                      )}
+                    </div>
 
-                  <div className="flex items-center gap-1 mb-2">
-                    {product.rarity && (
-                      <Badge variant="outline" className="text-xs">
-                        {formatRarity(product.rarity)}
-                      </Badge>
-                    )}
-                    {product.condition && (
-                      <Badge variant="secondary" className="text-xs">
-                        {formatCondition(product.condition)}
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-blue-600">
-                      ¥{product.price.toLocaleString()}
-                    </span>
-                    <Button
-                      size="sm"
-                      className="h-8"
-                      onClick={(e) => handleAddToCart(product, e)}
-                      disabled={addedToCart === product.id || product.stock === 0}
-                    >
-                      <ShoppingCart className="h-3 w-3 mr-1" />
-                      {addedToCart === product.id ? "Added!" : product.stock === 0 ? "Out" : "Add"}
-                    </Button>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-lg font-bold text-blue-600">
+                          ¥{product.price.toLocaleString()}
+                        </span>
+                        {product.previousPrice && product.previousPrice !== product.price && (
+                          <span className="text-xs text-muted-foreground line-through ml-1">
+                            ¥{product.previousPrice.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        className="h-8"
+                        onClick={(e) => handleAddToCart(product, e)}
+                        disabled={addedToCart === product.id || product.stock === 0}
+                      >
+                        <ShoppingCart className="h-3 w-3 mr-1" />
+                        {addedToCart === product.id ? "Added!" : product.stock === 0 ? "Out" : "Add"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
-          {/* ページネーション */}
+          {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
             <div className="mt-8 flex justify-center">
               <div className="flex gap-2">

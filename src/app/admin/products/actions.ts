@@ -22,6 +22,8 @@ const productSchema = z.object({
     z.number().int().min(0, 'Stock cannot be negative')
   ),
   imageUrl: z.string().url('Invalid image URL').optional().or(z.literal('')),
+  isNewArrival: z.preprocess((a) => a === 'true' || a === true, z.boolean()).optional(),
+  isRecommended: z.preprocess((a) => a === 'true' || a === true, z.boolean()).optional(),
 });
 
 export async function createProduct(formData: FormData) {
@@ -31,6 +33,8 @@ export async function createProduct(formData: FormData) {
       basePrice: formData.get('basePrice'),
       stock: formData.get('stock'),
       imageUrl: formData.get('imageUrl'),
+      isNewArrival: formData.get('isNewArrival'),
+      isRecommended: formData.get('isRecommended'),
     });
 
     if (!validatedFields.success) {
@@ -40,7 +44,7 @@ export async function createProduct(formData: FormData) {
       };
     }
 
-    const { name, basePrice, stock, imageUrl } = validatedFields.data;
+    const { name, basePrice, stock, imageUrl, isNewArrival, isRecommended } = validatedFields.data;
 
     // 原価に関税20%を上乗せして販売価格を算出
     const sellingPrice = basePrice * DUTY_RATE;
@@ -64,6 +68,8 @@ export async function createProduct(formData: FormData) {
         price: sellingPrice, // 販売価格（関税込み）を保存
         cost: basePrice, // 原価を cost カラムに保存（オプション）
         stock,
+        isNewArrival: isNewArrival || false,
+        isRecommended: isRecommended || false,
         categoryId: pokemonCategory.id,
         images: imageUrl
           ? {
@@ -77,6 +83,7 @@ export async function createProduct(formData: FormData) {
     });
 
     revalidatePath('/admin/products');
+    revalidatePath('/');
     return { success: true, product: newProduct };
   } catch (error) {
     console.error('Error creating product:', error);
@@ -91,6 +98,8 @@ export async function updateProduct(id: string, formData: FormData) {
       basePrice: formData.get('basePrice'),
       stock: formData.get('stock'),
       imageUrl: formData.get('imageUrl'),
+      isNewArrival: formData.get('isNewArrival'),
+      isRecommended: formData.get('isRecommended'),
     });
 
     if (!validatedFields.success) {
@@ -100,19 +109,41 @@ export async function updateProduct(id: string, formData: FormData) {
       };
     }
 
-    const { name, basePrice, stock, imageUrl } = validatedFields.data;
+    const { name, basePrice, stock, imageUrl, isNewArrival, isRecommended } = validatedFields.data;
 
     // 原価に関税20%を上乗せして販売価格を算出
-    const sellingPrice = basePrice * DUTY_RATE;
+    const newSellingPrice = basePrice * DUTY_RATE;
+
+    // 現在の商品情報を取得（価格変動チェック用）
+    const existingProduct = await prisma.product.findUnique({
+      where: { id },
+      select: { price: true }
+    });
+
+    // 価格変動データを準備
+    let priceChangeData = {};
+    if (existingProduct) {
+      const currentPrice = Number(existingProduct.price);
+      // 価格が変わった場合のみ履歴を保存
+      if (Math.abs(currentPrice - newSellingPrice) > 0.01) {
+        priceChangeData = {
+          previousPrice: currentPrice,
+          lastPriceChange: new Date(),
+        };
+      }
+    }
 
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
         name,
         slug: name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
-        price: sellingPrice, // 販売価格（関税込み）を保存
+        price: newSellingPrice, // 販売価格（関税込み）を保存
         cost: basePrice, // 原価を cost カラムに保存（オプション）
         stock,
+        isNewArrival: isNewArrival || false,
+        isRecommended: isRecommended || false,
+        ...priceChangeData, // 価格変動があった場合のみ更新
         images: {
           deleteMany: {}, // Delete all existing images
           create: imageUrl // Create a new one if imageUrl is provided
@@ -126,6 +157,7 @@ export async function updateProduct(id: string, formData: FormData) {
     });
 
     revalidatePath('/admin/products');
+    revalidatePath('/');
     return { success: true, product: updatedProduct };
   } catch (error) {
     console.error('Error updating product:', error);
@@ -140,6 +172,7 @@ export async function deleteProduct(id: string) {
     });
 
     revalidatePath('/admin/products');
+    revalidatePath('/');
     return { success: true, message: 'Product deleted successfully.' };
   } catch (error) {
     console.error('Error deleting product:', error);

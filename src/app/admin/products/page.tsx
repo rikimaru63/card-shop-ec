@@ -3,6 +3,9 @@
 import { PrismaClient } from '@prisma/client';
 import { ProductList } from '@/components/admin/ProductList';
 
+// Force dynamic rendering to avoid build-time DB queries
+export const dynamic = 'force-dynamic';
+
 const prisma = new PrismaClient();
 
 export default async function AdminProductsPage() {

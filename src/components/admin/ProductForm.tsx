@@ -6,6 +6,7 @@ import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useFormStatus } from 'react-dom';
 import { createProduct, updateProduct } from '@/app/admin/products/actions';
 import { toast } from '@/hooks/use-toast';
@@ -41,6 +42,8 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
     : '';
 
   const [basePrice, setBasePrice] = useState(initialBasePrice);
+  const [isNewArrival, setIsNewArrival] = useState(initialData?.isNewArrival || false);
+  const [isRecommended, setIsRecommended] = useState(initialData?.isRecommended || false);
 
   // 販売価格のリアルタイム計算
   const sellingPrice = useMemo(() => {
@@ -54,6 +57,8 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
 
     // basePriceをformDataに追加（Server Actionで使用）
     formData.set('basePrice', basePrice);
+    formData.set('isNewArrival', isNewArrival.toString());
+    formData.set('isRecommended', isRecommended.toString());
 
     let result;
     if (isEditing) {
@@ -144,6 +149,38 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
         <Input id="imageUrl" name="imageUrl" type="url" className="col-span-3" defaultValue={initialData?.images?.[0]?.url || 'https://placehold.co/400x600'} />
         {errors.imageUrl && <p className="col-span-4 text-right text-red-500 text-sm">{errors.imageUrl[0]}</p>}
       </div>
+
+      {/* Feature Flags */}
+      <div className="grid grid-cols-4 items-start gap-4 pt-2">
+        <Label className="text-right pt-1">
+          Features
+        </Label>
+        <div className="col-span-3 space-y-3">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="isNewArrival"
+              checked={isNewArrival}
+              onCheckedChange={(checked) => setIsNewArrival(checked === true)}
+            />
+            <Label htmlFor="isNewArrival" className="text-sm font-normal cursor-pointer">
+              New Arrival
+              <span className="ml-2 text-xs text-muted-foreground">(Show in "New Arrivals" section)</span>
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="isRecommended"
+              checked={isRecommended}
+              onCheckedChange={(checked) => setIsRecommended(checked === true)}
+            />
+            <Label htmlFor="isRecommended" className="text-sm font-normal cursor-pointer">
+              Recommended
+              <span className="ml-2 text-xs text-muted-foreground">(Show in "Recommended Picks" section)</span>
+            </Label>
+          </div>
+        </div>
+      </div>
+
       <div className="flex justify-end">
         <SubmitButton isEditing={isEditing} />
       </div>

@@ -1,4 +1,5 @@
 import { HeroSection } from "@/components/home/hero-section"
+import { FeaturedSections } from "@/components/home/featured-sections"
 import { ProductGrid } from "@/components/home/product-grid"
 import { FilterSidebar } from "@/components/home/filter-sidebar"
 
@@ -6,6 +7,11 @@ export default function Home() {
   return (
     <>
       <HeroSection />
+
+      {/* Featured Sections (Recommended + New Arrivals) */}
+      <FeaturedSections />
+
+      {/* All Products Section */}
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-6">
           <aside className="w-full md:w-64 shrink-0">

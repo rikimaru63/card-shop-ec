@@ -54,9 +54,11 @@ model Product {
   grade          String? // 10, 9.5, etc
 
   // Pricing
-  price        Decimal  @db.Money
-  comparePrice Decimal? @db.Money
-  cost         Decimal? @db.Money
+  price           Decimal   @db.Money
+  comparePrice    Decimal?  @db.Money
+  cost            Decimal?  @db.Money
+  previousPrice   Decimal?  @db.Money  // Previous selling price for price change tracking
+  lastPriceChange DateTime?            // When price was last changed
 
   // Inventory
   stock      Int     @default(0)
@@ -64,8 +66,10 @@ model Product {
   trackStock Boolean @default(true)
 
   // SEO & Display
-  featured  Boolean @default(false)
-  published Boolean @default(true)
+  featured      Boolean @default(false)
+  published     Boolean @default(true)
+  isNewArrival  Boolean @default(false)  // Featured as new arrival
+  isRecommended Boolean @default(false)  // Featured as recommended
 
   // Relations
   categoryId    String
@@ -88,6 +92,8 @@ model Product {
   @@index([cardSet])
   @@index([price])
   @@index([stock])
+  @@index([isNewArrival])
+  @@index([isRecommended])
 }
 
 model Category {

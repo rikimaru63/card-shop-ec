@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { Prisma, Rarity, Condition } from '@prisma/client'
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
@@ -20,10 +20,20 @@ export async function GET(request: NextRequest) {
     const maxPrice = searchParams.get('maxPrice')
     const cardSet = searchParams.get('cardSet')
     const sortBy = searchParams.get('sortBy') || 'newest'
+    const isNewArrival = searchParams.get('isNewArrival')
+    const isRecommended = searchParams.get('isRecommended')
 
     // Build where clause
     const where: Prisma.ProductWhereInput = {
       published: true
+    }
+
+    // Feature filters
+    if (isNewArrival === 'true') {
+      where.isNewArrival = true
+    }
+    if (isRecommended === 'true') {
+      where.isRecommended = true
     }
 
     // Category filter
@@ -35,12 +45,12 @@ export async function GET(request: NextRequest) {
 
     // Rarity filter
     if (rarity) {
-      where.rarity = { equals: rarity as any }
+      where.rarity = rarity as Rarity
     }
 
     // Condition filter
     if (condition) {
-      where.condition = { equals: condition as any }
+      where.condition = condition as Condition
     }
 
     // Card set filter
@@ -123,6 +133,8 @@ export async function GET(request: NextRequest) {
       condition: product.condition,
       price: product.price.toNumber(),
       comparePrice: product.comparePrice?.toNumber(),
+      previousPrice: product.previousPrice?.toNumber() || null,
+      lastPriceChange: product.lastPriceChange?.toISOString() || null,
       stock: product.stock,
       lowStock: product.stock <= product.lowStock,
       image: product.images[0]?.url || '/placeholder-card.jpg',
@@ -133,7 +145,9 @@ export async function GET(request: NextRequest) {
       graded: product.graded,
       gradingCompany: product.gradingCompany,
       grade: product.grade,
-      featured: product.featured
+      featured: product.featured,
+      isNewArrival: product.isNewArrival,
+      isRecommended: product.isRecommended
     }))
 
     const totalPages = Math.ceil(total / limit)
