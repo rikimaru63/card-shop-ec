@@ -1,12 +1,13 @@
-
 import { NextRequest, NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
-export function middleware(req: NextRequest) {
-  // Only apply Basic Auth to /admin routes
-  if (req.nextUrl.pathname.startsWith('/admin')) {
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // Admin routes - Basic Auth
+  if (pathname.startsWith('/admin')) {
     const basicAuth = req.headers.get('authorization');
-    
-    // Get credentials from environment variables with defaults
+
     const user = process.env.ADMIN_USER || 'admin';
     const password = process.env.ADMIN_PASSWORD || 'password';
 
@@ -19,7 +20,6 @@ export function middleware(req: NextRequest) {
       }
     }
 
-    // If authentication fails, request it
     return new NextResponse('Unauthorized', {
       status: 401,
       headers: {
@@ -28,10 +28,23 @@ export function middleware(req: NextRequest) {
     });
   }
 
-  // For all other routes, do nothing
+  // Protected routes - Require authentication
+  if (pathname.startsWith('/account')) {
+    const token = await getToken({
+      req,
+      secret: process.env.NEXTAUTH_SECRET
+    });
+
+    if (!token) {
+      const signInUrl = new URL('/auth/signin', req.url);
+      signInUrl.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: '/admin/:path*',
+  matcher: ['/admin/:path*', '/account/:path*'],
 };
