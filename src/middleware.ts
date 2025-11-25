@@ -29,7 +29,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Protected routes - Require authentication
-  if (pathname.startsWith('/account')) {
+  if (pathname.startsWith('/account') || pathname.startsWith('/checkout')) {
     const token = await getToken({
       req,
       secret: process.env.NEXTAUTH_SECRET
@@ -46,5 +46,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/account/:path*'],
+  matcher: ['/admin/:path*', '/account/:path*', '/checkout/:path*'],
 };
