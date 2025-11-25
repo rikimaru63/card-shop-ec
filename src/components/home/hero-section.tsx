@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
@@ -11,7 +12,6 @@ const slides = [
     title: "Pokemon Trading Cards",
     subtitle: "Latest Sets & Rare Cards",
     description: "From SAR to UR - Discover our extensive collection of premium Pokemon cards",
-    image: "https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?w=1920&h=600&fit=crop",
     cta: "Shop Now",
     href: "/products"
   },
@@ -20,7 +20,6 @@ const slides = [
     title: "PSA & BGS Graded Cards",
     subtitle: "Certified Authentic",
     description: "High-grade certified cards from trusted grading companies",
-    image: "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=1920&h=600&fit=crop",
     cta: "View Graded Cards",
     href: "/products?graded=true"
   },
@@ -29,7 +28,6 @@ const slides = [
     title: "Pre-Order New Releases",
     subtitle: "Launch Day Delivery",
     description: "Reserve the latest booster packs and secure your cards",
-    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc4e?w=1920&h=600&fit=crop",
     cta: "Pre-Order Now",
     href: "/products?preorder=true"
   }
@@ -54,82 +52,106 @@ export function HeroSection() {
   }
 
   return (
-    <section className="relative w-full h-[500px] md:h-[600px] overflow-hidden bg-gradient-to-b from-secondary to-background">
-      {/* スライド */}
-      <div className="relative h-full">
+    <section className="relative w-full h-[500px] md:h-[600px] overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0">
+        <Image
+          src="/hero-bg.png"
+          alt="Pokemon Trading Cards Background"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+        />
+        {/* Dark Overlay for text readability */}
+        <div className="absolute inset-0 bg-black/50" />
+        {/* Gradient overlay from left for text area */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+        {/* Bottom gradient for smooth transition */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+      </div>
+
+      {/* Slides Content */}
+      <div className="relative h-full z-10">
         {slides.map((slide, index) => (
           <div
             key={slide.id}
             className={`absolute inset-0 transition-all duration-700 ease-in-out ${
-              index === currentSlide 
-                ? "opacity-100 translate-x-0" 
-                : index < currentSlide 
-                ? "opacity-0 -translate-x-full" 
+              index === currentSlide
+                ? "opacity-100 translate-x-0"
+                : index < currentSlide
+                ? "opacity-0 -translate-x-full"
                 : "opacity-0 translate-x-full"
             }`}
           >
-            {/* 背景画像 */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent z-10" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
-            
-            {/* コンテンツ */}
-            <div className="relative z-20 h-full container mx-auto px-4 flex items-center">
+            {/* Content */}
+            <div className="relative h-full container mx-auto px-4 flex items-center">
               <div className="max-w-2xl text-white">
-                <p className="text-primary text-sm font-semibold mb-2 uppercase tracking-wider">
+                <p className="text-primary text-sm font-semibold mb-2 uppercase tracking-wider drop-shadow-lg">
                   {slide.subtitle}
                 </p>
-                <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
+                <h1
+                  className="text-4xl md:text-6xl font-bold mb-4 leading-tight"
+                  style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}
+                >
                   {slide.title}
                 </h1>
-                <p className="text-lg md:text-xl mb-8 text-gray-200">
+                <p
+                  className="text-lg md:text-xl mb-8 text-gray-100"
+                  style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}
+                >
                   {slide.description}
                 </p>
                 <div className="flex gap-4">
                   <Link href={slide.href}>
-                    <Button size="lg" className="font-semibold">
+                    <Button size="lg" className="font-semibold shadow-lg">
                       {slide.cta}
                     </Button>
                   </Link>
                   <Link href="/products">
-                    <Button size="lg" variant="outline" className="font-semibold bg-white/10 border-white text-white hover:bg-white hover:text-foreground">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="font-semibold bg-white/10 border-white text-white hover:bg-white hover:text-foreground backdrop-blur-sm shadow-lg"
+                    >
                       Browse All
                     </Button>
                   </Link>
                 </div>
               </div>
             </div>
-
-            {/* 装飾的な要素 */}
-            <div className="absolute right-10 top-1/2 -translate-y-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl z-0" />
           </div>
         ))}
       </div>
 
-      {/* ナビゲーションボタン */}
+      {/* Decorative glow effect */}
+      <div className="absolute right-10 top-1/2 -translate-y-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl z-0 pointer-events-none" />
+
+      {/* Navigation Buttons */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors shadow-lg"
         aria-label="Previous slide"
       >
         <ChevronLeft className="h-6 w-6" />
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors shadow-lg"
         aria-label="Next slide"
       >
         <ChevronRight className="h-6 w-6" />
       </button>
 
-      {/* インジケーター */}
+      {/* Slide Indicators */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentSlide(index)}
-            className={`h-2 transition-all duration-300 rounded-full ${
-              index === currentSlide 
-                ? "w-8 bg-primary" 
+            className={`h-2 transition-all duration-300 rounded-full shadow-md ${
+              index === currentSlide
+                ? "w-8 bg-primary"
                 : "w-2 bg-white/50 hover:bg-white/70"
             }`}
             aria-label={`Go to slide ${index + 1}`}
