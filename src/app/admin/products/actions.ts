@@ -8,11 +8,14 @@ import { revalidatePath } from 'next/cache';
 
 const prisma = new PrismaClient();
 
+// 関税率（20%）
+const DUTY_RATE = 1.2;
+
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
-  price: z.preprocess(
+  basePrice: z.preprocess(
     (a) => parseFloat(z.string().parse(a)),
-    z.number().positive('Price must be a positive number')
+    z.number().positive('Base price must be a positive number')
   ),
   stock: z.preprocess(
     (a) => parseInt(z.string().parse(a), 10),
@@ -25,7 +28,7 @@ export async function createProduct(formData: FormData) {
   try {
     const validatedFields = productSchema.safeParse({
       name: formData.get('name'),
-      price: formData.get('price'),
+      basePrice: formData.get('basePrice'),
       stock: formData.get('stock'),
       imageUrl: formData.get('imageUrl'),
     });
@@ -37,7 +40,10 @@ export async function createProduct(formData: FormData) {
       };
     }
 
-    const { name, price, stock, imageUrl } = validatedFields.data;
+    const { name, basePrice, stock, imageUrl } = validatedFields.data;
+
+    // 原価に関税20%を上乗せして販売価格を算出
+    const sellingPrice = basePrice * DUTY_RATE;
 
     // For simplicity, we'll assign to the existing 'Pokemon Cards' category
     // In a real app, you'd likely have a selection for categories
@@ -55,7 +61,8 @@ export async function createProduct(formData: FormData) {
         slug: name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
         sku: `PKM-${name.toUpperCase().replace(/ /g, '')}-${Math.floor(Math.random() * 1000)}`,
         description: `A product created via admin dashboard: ${name}`,
-        price,
+        price: sellingPrice, // 販売価格（関税込み）を保存
+        cost: basePrice, // 原価を cost カラムに保存（オプション）
         stock,
         categoryId: pokemonCategory.id,
         images: imageUrl
@@ -81,7 +88,7 @@ export async function updateProduct(id: string, formData: FormData) {
   try {
     const validatedFields = productSchema.safeParse({
       name: formData.get('name'),
-      price: formData.get('price'),
+      basePrice: formData.get('basePrice'),
       stock: formData.get('stock'),
       imageUrl: formData.get('imageUrl'),
     });
@@ -93,14 +100,18 @@ export async function updateProduct(id: string, formData: FormData) {
       };
     }
 
-    const { name, price, stock, imageUrl } = validatedFields.data;
+    const { name, basePrice, stock, imageUrl } = validatedFields.data;
+
+    // 原価に関税20%を上乗せして販売価格を算出
+    const sellingPrice = basePrice * DUTY_RATE;
 
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
         name,
         slug: name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
-        price,
+        price: sellingPrice, // 販売価格（関税込み）を保存
+        cost: basePrice, // 原価を cost カラムに保存（オプション）
         stock,
         images: {
           deleteMany: {}, // Delete all existing images
