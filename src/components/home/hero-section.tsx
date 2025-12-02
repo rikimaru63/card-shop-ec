@@ -12,6 +12,7 @@ const slides = [
     title: "Pokemon Trading Cards",
     subtitle: "Latest Sets & Rare Cards",
     description: "From SAR to UR - Discover our extensive collection of premium Pokemon cards",
+    image: "/hero-bg-1.png",
     cta: "Shop Now",
     href: "/products"
   },
@@ -20,6 +21,7 @@ const slides = [
     title: "PSA & BGS Graded Cards",
     subtitle: "Certified Authentic",
     description: "High-grade certified cards from trusted grading companies",
+    image: "/hero-bg-2.png",
     cta: "View Graded Cards",
     href: "/products?graded=true"
   },
@@ -28,6 +30,7 @@ const slides = [
     title: "Pre-Order New Releases",
     subtitle: "Launch Day Delivery",
     description: "Reserve the latest booster packs and secure your cards",
+    image: "/hero-bg-3.png",
     cta: "Pre-Order Now",
     href: "/products?preorder=true"
   }
@@ -53,39 +56,37 @@ export function HeroSection() {
 
   return (
     <section className="relative w-full h-[500px] md:h-[600px] overflow-hidden">
-      {/* Background Image */}
-      <div className="absolute inset-0">
-        <Image
-          src="/hero-bg.png"
-          alt="Pokemon Trading Cards Background"
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-        />
-        {/* Dark Overlay for text readability */}
-        <div className="absolute inset-0 bg-black/50" />
-        {/* Gradient overlay from left for text area */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-        {/* Bottom gradient for smooth transition */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-      </div>
-
-      {/* Slides Content */}
-      <div className="relative h-full z-10">
+      {/* Slides */}
+      <div className="relative h-full">
         {slides.map((slide, index) => (
           <div
             key={slide.id}
             className={`absolute inset-0 transition-all duration-700 ease-in-out ${
               index === currentSlide
-                ? "opacity-100 translate-x-0"
-                : index < currentSlide
-                ? "opacity-0 -translate-x-full"
-                : "opacity-0 translate-x-full"
+                ? "opacity-100 scale-100"
+                : "opacity-0 scale-105"
             }`}
           >
+            {/* Background Image for each slide */}
+            <div className="absolute inset-0">
+              <Image
+                src={slide.image}
+                alt={`${slide.title} Background`}
+                fill
+                priority={index === 0}
+                className="object-cover"
+                sizes="100vw"
+              />
+              {/* Dark Overlay for text readability */}
+              <div className="absolute inset-0 bg-black/50" />
+              {/* Gradient overlay from left for text area */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+              {/* Bottom gradient for smooth transition */}
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+            </div>
+
             {/* Content */}
-            <div className="relative h-full container mx-auto px-4 flex items-center">
+            <div className="relative z-10 h-full container mx-auto px-4 flex items-center">
               <div className="max-w-2xl text-white">
                 <p className="text-primary text-sm font-semibold mb-2 uppercase tracking-wider drop-shadow-lg">
                   {slide.subtitle}
@@ -120,12 +121,12 @@ export function HeroSection() {
                 </div>
               </div>
             </div>
+
+            {/* Decorative glow effect */}
+            <div className="absolute right-10 top-1/2 -translate-y-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl z-0 pointer-events-none" />
           </div>
         ))}
       </div>
-
-      {/* Decorative glow effect */}
-      <div className="absolute right-10 top-1/2 -translate-y-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl z-0 pointer-events-none" />
 
       {/* Navigation Buttons */}
       <button
