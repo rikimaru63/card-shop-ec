@@ -25,6 +25,9 @@ export default function AdminLayout({
           <Link href="/admin/users" className="block px-3 py-2 rounded-md hover:bg-gray-700">
             顧客管理
           </Link>
+          <Link href="/admin/announcements" className="block px-3 py-2 rounded-md hover:bg-gray-700">
+            お知らせ管理
+          </Link>
           <hr className="my-4 border-gray-600" />
           <Link href="/" className="block px-3 py-2 rounded-md hover:bg-gray-700 text-gray-400">
             サイトを見る →

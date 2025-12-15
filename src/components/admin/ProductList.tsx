@@ -34,6 +34,8 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { deleteProduct } from '@/app/admin/products/actions';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ImageIcon } from 'lucide-react';
 
 type ProductWithImages = Product & { images: ProductImage[] };
 
@@ -45,16 +47,9 @@ export function ProductList({ initialProducts }: ProductListProps) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
-  const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductWithImages | null>(null);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [productToDeleteId, setProductToDeleteId] = useState<string | null>(null);
-
-  const handleEditClick = (product: ProductWithImages) => {
-    setSelectedProduct(product);
-    setIsEditProductModalOpen(true);
-  };
 
   const handleDeleteClick = (productId: string) => {
     setProductToDeleteId(productId);
@@ -85,7 +80,6 @@ export function ProductList({ initialProducts }: ProductListProps) {
 
   const handleSuccess = () => {
     setIsAddProductModalOpen(false);
-    setIsEditProductModalOpen(false);
     router.refresh();
   }
 
@@ -133,14 +127,16 @@ export function ProductList({ initialProducts }: ProductListProps) {
                 <TableCell>¥{Number(product.price).toLocaleString()}</TableCell>
                 <TableCell>{product.stock}</TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mr-2"
-                    onClick={() => handleEditClick(product)}
-                  >
-                    編集
-                  </Button>
+                  <Link href={`/admin/products/${product.id}/edit`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mr-2"
+                    >
+                      <ImageIcon className="h-4 w-4 mr-1" />
+                      編集
+                    </Button>
+                  </Link>
                   <Button
                     variant="destructive"
                     size="sm"
@@ -154,21 +150,6 @@ export function ProductList({ initialProducts }: ProductListProps) {
           </TableBody>
         </Table>
       </div>
-
-      {selectedProduct && (
-        <Dialog open={isEditProductModalOpen} onOpenChange={setIsEditProductModalOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>商品を編集</DialogTitle>
-            </DialogHeader>
-            <ProductForm
-              initialData={selectedProduct}
-              productId={selectedProduct.id}
-              onSuccess={handleSuccess}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>

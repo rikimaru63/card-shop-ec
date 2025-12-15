@@ -3,14 +3,15 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle } from "lucide-react"
+import { ArrowLeft, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, FileDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function ImportProductsPage() {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{success: number, failed: number, errors: string[]} | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const [result, setResult] = useState<{success: number, failed: number, errors: string[], created?: number, updated?: number, message?: string} | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -46,16 +47,36 @@ export default function ImportProductsPage() {
   }
 
   const downloadTemplate = () => {
-    const csvContent = `カード名,パック名,カードナンバー,レアリティ,コンディション,価格,在庫数,言語,キラカード,初版,グレーディング済み,鑑定会社,グレード,商品説明
-ピカチュウex,スカーレットex,025/165,RR (ダブルレア),A (極美品),1500,10,JP,TRUE,FALSE,FALSE,,,
-リザードンex,バイオレットex,006/078,SAR (スペシャルアートレア),S (完美品),15000,1,JP,TRUE,FALSE,TRUE,PSA,10,PSA10 美品
-ミュウツーV,151,150/165,SR (スーパーレア),B (美品),3000,5,JP,TRUE,FALSE,FALSE,,,
+    const csvContent = `namae,kosuu,kakaku,codition,categori
+ピカチュウex,10,1500,New,Pokemon
+リザードンex,1,15000,Used A,Pokemon
+ミュウツーV,5,3000,Used B,Pokemon
 `
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = 'pokemon_card_template.csv'
+    link.download = 'product_template.csv'
     link.click()
+  }
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const response = await fetch('/api/admin/products/export')
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `products_export_${new Date().toISOString().split('T')[0]}.csv`
+        link.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch (error) {
+      console.error('Export error:', error)
+    } finally {
+      setExporting(false)
+    }
   }
 
   return (
@@ -80,6 +101,27 @@ export default function ImportProductsPage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto space-y-6">
+          {/* 現在の商品をエクスポート */}
+          <div className="bg-white rounded-lg border p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-green-50 rounded-lg">
+                <FileDown className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-semibold mb-2">
+                  現在の商品をエクスポート
+                </h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  登録済みの商品データをCSVファイルでダウンロードできます。
+                </p>
+                <Button onClick={handleExport} disabled={exporting} variant="outline">
+                  <FileDown className="h-4 w-4 mr-2" />
+                  {exporting ? 'エクスポート中...' : '商品データをエクスポート'}
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {/* テンプレートダウンロード */}
           <div className="bg-white rounded-lg border p-6">
             <div className="flex items-start gap-4">
@@ -91,7 +133,7 @@ export default function ImportProductsPage() {
                   CSVテンプレートをダウンロード
                 </h2>
                 <p className="text-sm text-muted-foreground mb-4">
-                  まず、テンプレートファイルをダウンロードして、商品情報を入力してください。
+                  新しく商品を登録する場合は、テンプレートをダウンロードして商品情報を入力してください。
                 </p>
                 <Button onClick={downloadTemplate} variant="outline">
                   <FileSpreadsheet className="h-4 w-4 mr-2" />
@@ -104,26 +146,53 @@ export default function ImportProductsPage() {
           {/* CSVフォーマット説明 */}
           <div className="bg-white rounded-lg border p-6">
             <h2 className="text-lg font-semibold mb-4">CSVフォーマット</h2>
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-medium">必須項目:</div>
-                <div className="text-muted-foreground">
-                  カード名, パック名, レアリティ, コンディション, 価格, 在庫数
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-medium">オプション:</div>
-                <div className="text-muted-foreground">
-                  カードナンバー, 言語, キラカード, 初版, グレーディング情報, 商品説明
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-medium">TRUE/FALSE:</div>
-                <div className="text-muted-foreground">
-                  キラカード, 初版, グレーディング済み (TRUE または FALSE で入力)
-                </div>
-              </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border px-3 py-2 text-left">カラム名</th>
+                    <th className="border px-3 py-2 text-left">説明</th>
+                    <th className="border px-3 py-2 text-left">必須</th>
+                    <th className="border px-3 py-2 text-left">例</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border px-3 py-2 font-mono">namae</td>
+                    <td className="border px-3 py-2">商品名</td>
+                    <td className="border px-3 py-2 text-green-600">必須</td>
+                    <td className="border px-3 py-2">ピカチュウex</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-3 py-2 font-mono">kosuu</td>
+                    <td className="border px-3 py-2">在庫数</td>
+                    <td className="border px-3 py-2 text-gray-500">任意</td>
+                    <td className="border px-3 py-2">10</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-3 py-2 font-mono">kakaku</td>
+                    <td className="border px-3 py-2">価格（円）</td>
+                    <td className="border px-3 py-2 text-green-600">必須</td>
+                    <td className="border px-3 py-2">1500</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-3 py-2 font-mono">codition</td>
+                    <td className="border px-3 py-2">状態</td>
+                    <td className="border px-3 py-2 text-gray-500">任意</td>
+                    <td className="border px-3 py-2">New, Used A, Used B, Used C, Used D, Damaged</td>
+                  </tr>
+                  <tr>
+                    <td className="border px-3 py-2 font-mono">categori</td>
+                    <td className="border px-3 py-2">カテゴリ</td>
+                    <td className="border px-3 py-2 text-gray-500">任意</td>
+                    <td className="border px-3 py-2">Pokemon</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              ※ 同じ商品名が既に存在する場合は、価格・在庫数・状態・カテゴリが更新されます。
+            </p>
           </div>
 
           {/* ファイルアップロード */}
@@ -181,11 +250,22 @@ export default function ImportProductsPage() {
               <h2 className="text-lg font-semibold mb-4">インポート結果</h2>
               
               <div className="space-y-4">
-                <div className="flex items-center gap-3">
+                {result.message && (
+                  <p className="text-green-700 bg-green-50 px-4 py-2 rounded-lg">
+                    {result.message}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-2 text-green-600">
                     <CheckCircle2 className="h-5 w-5" />
                     <span className="font-medium">成功: {result.success}件</span>
                   </div>
+                  {result.created !== undefined && result.created > 0 && (
+                    <span className="text-sm text-blue-600">（新規: {result.created}件）</span>
+                  )}
+                  {result.updated !== undefined && result.updated > 0 && (
+                    <span className="text-sm text-orange-600">（更新: {result.updated}件）</span>
+                  )}
                   {result.failed > 0 && (
                     <div className="flex items-center gap-2 text-red-600">
                       <XCircle className="h-5 w-5" />
