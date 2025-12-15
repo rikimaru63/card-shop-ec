@@ -1,250 +1,211 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Mail, Lock, User, ArrowLeft, Chrome } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { signIn } from "next-auth/react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, CheckCircle, Mail } from "lucide-react"
 
 export default function SignUpPage() {
-  const router = useRouter()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: ""
   })
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setError("")
+    setLoading(true)
 
     // Validation
+    if (!formData.name || !formData.email || !formData.password) {
+      setError("名前、メールアドレス、パスワードは必須です")
+      setLoading(false)
+      return
+    }
+
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match")
-      setIsLoading(false)
+      setError("パスワードが一致しません")
+      setLoading(false)
       return
     }
 
     if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters")
-      setIsLoading(false)
+      setError("パスワードは8文字以上で入力してください")
+      setLoading(false)
       return
     }
 
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          password: formData.password,
-        }),
+          phone: formData.phone || undefined,
+          password: formData.password
+        })
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || "Something went wrong")
+        setError(data.message || "登録に失敗しました")
+        setLoading(false)
+        return
       }
 
-      // Auto sign in after registration
-      await signIn("credentials", {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      })
-
-      router.push("/")
-      router.refresh()
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message || "Failed to create account");
-      } else {
-        setError("An unknown error occurred.");
-      }
+      // Show success message
+      setSuccess(true)
+    } catch (err) {
+      setError("登録に失敗しました。もう一度お試しください。")
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const handleGoogleSignUp = async () => {
-    setIsLoading(true)
-    try {
-      await signIn("google", { callbackUrl: "/" })
-    } catch (error) {
-      setError("Failed to sign up with Google")
-      setIsLoading(false)
-    }
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4">
+              <Mail className="h-16 w-16 text-primary" />
+            </div>
+            <CardTitle>確認メールを送信しました</CardTitle>
+            <CardDescription>
+              {formData.email} に確認メールを送信しました。
+              メール内のリンクをクリックして、登録を完了してください。
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                メールが届かない場合は、迷惑メールフォルダをご確認ください。
+              </AlertDescription>
+            </Alert>
+            <Link href="/auth/signin">
+              <Button variant="outline" className="w-full">
+                ログインページへ
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Back Button */}
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-8">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Store
-        </Link>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">アカウント作成</CardTitle>
+          <CardDescription>
+            CardShopへようこそ。必要事項を入力してください。
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-        {/* Sign Up Card */}
-        <div className="bg-white rounded-lg border shadow-lg p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold mb-2">Create Account</h1>
-            <p className="text-muted-foreground">Join CardShop today</p>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-
-          {/* Google Sign Up */}
-          <Button
-            variant="outline"
-            className="w-full mb-6"
-            onClick={handleGoogleSignUp}
-            disabled={isLoading}
-          >
-            <Chrome className="h-5 w-5 mr-2" />
-            Continue with Google
-          </Button>
-
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-
-          {/* Registration Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="name">Full Name</Label>
-              <div className="relative mt-1">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="name"
-                  name="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="pl-10"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">お名前 *</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="山田 太郎"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
             </div>
 
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="pl-10"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">メールアドレス *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="example@email.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
             </div>
 
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="pl-10"
-                  required
-                  disabled={isLoading}
-                  minLength={8}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Must be at least 8 characters
-              </p>
+            <div className="space-y-2">
+              <Label htmlFor="phone">電話番号（任意）</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="090-1234-5678"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+              <p className="text-xs text-gray-500">配送に関するご連絡に使用します</p>
             </div>
 
-            <div>
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="pl-10"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">パスワード *</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="8文字以上"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+                minLength={8}
+              />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Creating account..." : "Create Account"}
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">パスワード（確認） *</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="もう一度入力"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                required
+              />
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex flex-col gap-4">
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  登録中...
+                </>
+              ) : (
+                "アカウントを作成"
+              )}
             </Button>
-          </form>
 
-          {/* Sign In Link */}
-          <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Already have an account? </span>
-            <Link href="/auth/signin" className="text-primary font-semibold hover:underline">
-              Sign In
-            </Link>
-          </div>
-        </div>
-
-        {/* Terms */}
-        <p className="text-center text-xs text-muted-foreground mt-8">
-          By creating an account, you agree to our{" "}
-          <Link href="/terms" className="underline">
-            Terms of Service
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="underline">
-            Privacy Policy
-          </Link>
-        </p>
-      </div>
+            <p className="text-sm text-center text-gray-600">
+              既にアカウントをお持ちですか？{" "}
+              <Link href="/auth/signin" className="text-primary hover:underline">
+                ログイン
+              </Link>
+            </p>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   )
 }

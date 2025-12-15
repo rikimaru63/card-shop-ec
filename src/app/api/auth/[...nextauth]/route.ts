@@ -20,7 +20,7 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials")
+          throw new Error("メールアドレスとパスワードを入力してください")
         }
 
         const user = await prisma.user.findUnique({
@@ -30,7 +30,12 @@ const handler = NextAuth({
         })
 
         if (!user || !user.hashedPassword) {
-          throw new Error("Invalid credentials")
+          throw new Error("メールアドレスまたはパスワードが正しくありません")
+        }
+
+        // Check email verification
+        if (!user.emailVerified) {
+          throw new Error("UNVERIFIED_EMAIL")
         }
 
         const isCorrectPassword = await bcrypt.compare(
@@ -39,7 +44,7 @@ const handler = NextAuth({
         )
 
         if (!isCorrectPassword) {
-          throw new Error("Invalid credentials")
+          throw new Error("メールアドレスまたはパスワードが正しくありません")
         }
 
         return {

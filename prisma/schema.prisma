@@ -13,16 +13,20 @@ datasource db {
 // ==================== User & Auth ====================
 
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
-  name           String?
-  password       String?
-  hashedPassword String?
-  image          String?
-  role           UserRole  @default(CUSTOMER)
-  emailVerified  DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id                       String    @id @default(cuid())
+  email                    String    @unique
+  name                     String?
+  password                 String?
+  hashedPassword           String?
+  image                    String?
+  phone                    String?   // 電話番号（任意）
+  role                     UserRole  @default(CUSTOMER)
+  emailVerified            DateTime?
+  emailVerificationToken   String?   // メール確認トークン
+  emailVerificationExpiry  DateTime? // トークン有効期限
+  wiseUserId               String?   // Wise ユーザーID
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
   orders    Order[]
   cart      Cart?
