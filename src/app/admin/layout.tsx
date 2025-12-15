@@ -12,15 +12,15 @@ export default function AdminLayout({
     <div className="flex min-h-screen">
       <aside className="w-64 bg-gray-800 text-white p-4">
         <nav className="space-y-2">
-          <h2 className="text-xl font-bold mb-4">Admin Panel</h2>
-          <Link href="/admin/dashboard" className="block px-3 py-2 rounded-md hover:bg-gray-700">
-            Dashboard
+          <h2 className="text-xl font-bold mb-4">管理パネル</h2>
+          <Link href="/admin" className="block px-3 py-2 rounded-md hover:bg-gray-700">
+            ダッシュボード
           </Link>
           <Link href="/admin/products" className="block px-3 py-2 rounded-md hover:bg-gray-700">
-            Products
+            商品管理
           </Link>
           <Link href="/admin/orders" className="block px-3 py-2 rounded-md hover:bg-gray-700">
-            Orders
+            注文管理
           </Link>
         </nav>
       </aside>

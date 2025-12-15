@@ -1,8 +1,8 @@
 import Link from "next/link"
-import { 
-  Package, 
-  ShoppingCart, 
-  Users, 
+import {
+  Package,
+  ShoppingCart,
+  Users,
   DollarSign,
   TrendingUp,
   AlertCircle,
@@ -14,30 +14,30 @@ import { Button } from "@/components/ui/button"
 // Mock data
 const stats = [
   {
-    title: "Total Revenue",
+    title: "総売上",
     value: "$45,231.89",
-    change: "+20.1% from last month",
+    change: "先月比 +20.1%",
     icon: DollarSign,
     trend: "up"
   },
   {
-    title: "Orders",
+    title: "注文数",
     value: "2,350",
-    change: "+180.1% from last month",
+    change: "先月比 +180.1%",
     icon: ShoppingCart,
     trend: "up"
   },
   {
-    title: "Products",
+    title: "商品数",
     value: "12,234",
-    change: "+19% from last month",
+    change: "先月比 +19%",
     icon: Package,
     trend: "up"
   },
   {
-    title: "Active Users",
+    title: "アクティブユーザー",
     value: "573",
-    change: "+201 since last hour",
+    change: "1時間前から +201",
     icon: Users,
     trend: "up"
   }
@@ -46,46 +46,51 @@ const stats = [
 const recentOrders = [
   {
     id: "ORD-001",
-    customer: "John Doe",
-    product: "Charizard VMAX",
+    customer: "田中 太郎",
+    product: "リザードン VMAX",
     amount: "$189.99",
-    status: "completed"
+    status: "completed",
+    statusLabel: "完了"
   },
   {
     id: "ORD-002",
-    customer: "Jane Smith",
-    product: "Blue-Eyes White Dragon",
+    customer: "鈴木 花子",
+    product: "ピカチュウ VMAX",
     amount: "$499.99",
-    status: "processing"
+    status: "processing",
+    statusLabel: "処理中"
   },
   {
     id: "ORD-003",
-    customer: "Bob Johnson",
-    product: "Black Lotus",
+    customer: "佐藤 一郎",
+    product: "ミュウツー SAR",
     amount: "$49,999.99",
-    status: "pending"
+    status: "pending",
+    statusLabel: "保留中"
   },
   {
     id: "ORD-004",
-    customer: "Alice Williams",
-    product: "Pikachu VMAX",
+    customer: "高橋 美咲",
+    product: "ピカチュウ ex",
     amount: "$79.99",
-    status: "completed"
+    status: "completed",
+    statusLabel: "完了"
   },
   {
     id: "ORD-005",
-    customer: "Charlie Brown",
-    product: "Dark Magician",
+    customer: "山田 健太",
+    product: "レックウザ SAR",
     amount: "$34.99",
-    status: "shipped"
+    status: "shipped",
+    statusLabel: "発送済"
   }
 ]
 
 const lowStockProducts = [
-  { name: "Charizard VMAX", stock: 2, category: "Pokemon" },
-  { name: "Blue-Eyes White Dragon", stock: 1, category: "Yu-Gi-Oh!" },
-  { name: "Black Lotus", stock: 1, category: "MTG" },
-  { name: "The One Ring", stock: 1, category: "MTG" }
+  { name: "リザードン VMAX", stock: 2, category: "ポケモン" },
+  { name: "ピカチュウ SAR", stock: 1, category: "ポケモン" },
+  { name: "ミュウツー ex", stock: 1, category: "ポケモン" },
+  { name: "レックウザ SAR", stock: 1, category: "ポケモン" }
 ]
 
 export default function AdminDashboard() {
@@ -96,18 +101,18 @@ export default function AdminDashboard() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Welcome back, Admin</p>
+              <h1 className="text-2xl font-bold">管理ダッシュボード</h1>
+              <p className="text-sm text-muted-foreground">おかえりなさい、管理者様</p>
             </div>
             <div className="flex gap-2">
               <Link href="/">
                 <Button variant="outline">
-                  View Store
+                  ストアを表示
                 </Button>
               </Link>
               <Button>
                 <BarChart3 className="h-4 w-4 mr-2" />
-                View Reports
+                レポート
               </Button>
             </div>
           </div>
@@ -144,10 +149,10 @@ export default function AdminDashboard() {
           <div className="lg:col-span-2 bg-white rounded-lg border">
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Recent Orders</h2>
+                <h2 className="text-lg font-semibold">最近の注文</h2>
                 <Link href="/admin/orders">
                   <Button variant="ghost" size="sm">
-                    View All
+                    すべて表示
                     <ArrowUpRight className="h-4 w-4 ml-1" />
                   </Button>
                 </Link>
@@ -165,7 +170,7 @@ export default function AdminDashboard() {
                     <div className="text-right">
                       <p className="font-semibold">{order.amount}</p>
                       <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                        order.status === "completed" 
+                        order.status === "completed"
                           ? "bg-green-100 text-green-800"
                           : order.status === "processing"
                           ? "bg-blue-100 text-blue-800"
@@ -173,7 +178,7 @@ export default function AdminDashboard() {
                           ? "bg-purple-100 text-purple-800"
                           : "bg-yellow-100 text-yellow-800"
                       }`}>
-                        {order.status}
+                        {order.statusLabel}
                       </span>
                     </div>
                   </div>
@@ -186,7 +191,7 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg border">
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Low Stock Alert</h2>
+                <h2 className="text-lg font-semibold">在庫アラート</h2>
                 <AlertCircle className="h-5 w-5 text-orange-500" />
               </div>
             </div>
@@ -200,7 +205,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="text-right">
                       <span className="inline-block px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded">
-                        {product.stock} left
+                        残り{product.stock}点
                       </span>
                     </div>
                   </div>
@@ -208,7 +213,7 @@ export default function AdminDashboard() {
               </div>
               <Link href="/admin/products">
                 <Button variant="outline" className="w-full mt-4">
-                  Manage Inventory
+                  在庫管理
                 </Button>
               </Link>
             </div>
@@ -220,25 +225,25 @@ export default function AdminDashboard() {
           <Link href="/admin/products/new">
             <Button className="w-full" variant="outline">
               <Package className="h-4 w-4 mr-2" />
-              Add Product
+              商品を追加
             </Button>
           </Link>
           <Link href="/admin/orders">
             <Button className="w-full" variant="outline">
               <ShoppingCart className="h-4 w-4 mr-2" />
-              View Orders
+              注文を確認
             </Button>
           </Link>
           <Link href="/admin/customers">
             <Button className="w-full" variant="outline">
               <Users className="h-4 w-4 mr-2" />
-              Customers
+              顧客管理
             </Button>
           </Link>
           <Link href="/admin/reports">
             <Button className="w-full" variant="outline">
               <BarChart3 className="h-4 w-4 mr-2" />
-              Analytics
+              分析
             </Button>
           </Link>
         </div>

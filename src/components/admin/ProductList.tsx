@@ -66,15 +66,15 @@ export function ProductList({ initialProducts }: ProductListProps) {
       const result = await deleteProduct(productToDeleteId);
       if (result.success) {
         toast({
-          title: "Success",
-          description: "Product deleted successfully.",
+          title: "成功",
+          description: "商品を削除しました。",
         });
         setProducts(products.filter(product => product.id !== productToDeleteId));
         router.refresh();
       } else {
         toast({
-          title: "Error",
-          description: result.message || "Failed to delete product.",
+          title: "エラー",
+          description: result.message || "商品の削除に失敗しました。",
           variant: "destructive",
         });
       }
@@ -94,11 +94,11 @@ export function ProductList({ initialProducts }: ProductListProps) {
       <div className="flex justify-end mb-4">
         <Dialog open={isAddProductModalOpen} onOpenChange={setIsAddProductModalOpen}>
           <DialogTrigger asChild>
-            <Button>Add Product</Button>
+            <Button>商品を追加</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
+              <DialogTitle>新規商品登録</DialogTitle>
             </DialogHeader>
             <ProductForm onSuccess={handleSuccess} />
           </DialogContent>
@@ -108,11 +108,11 @@ export function ProductList({ initialProducts }: ProductListProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px]">Image</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Stock</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[100px]">画像</TableHead>
+              <TableHead>商品名</TableHead>
+              <TableHead>価格</TableHead>
+              <TableHead>在庫</TableHead>
+              <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -130,7 +130,7 @@ export function ProductList({ initialProducts }: ProductListProps) {
                   )}
                 </TableCell>
                 <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell>${Number(product.price).toFixed(2)}</TableCell>
+                <TableCell>¥{Number(product.price).toLocaleString()}</TableCell>
                 <TableCell>{product.stock}</TableCell>
                 <TableCell className="text-right">
                   <Button
@@ -139,14 +139,14 @@ export function ProductList({ initialProducts }: ProductListProps) {
                     className="mr-2"
                     onClick={() => handleEditClick(product)}
                   >
-                    Edit
+                    編集
                   </Button>
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDeleteClick(product.id)}
                   >
-                    Delete
+                    削除
                   </Button>
                 </TableCell>
               </TableRow>
@@ -159,7 +159,7 @@ export function ProductList({ initialProducts }: ProductListProps) {
         <Dialog open={isEditProductModalOpen} onOpenChange={setIsEditProductModalOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Edit Product</DialogTitle>
+              <DialogTitle>商品を編集</DialogTitle>
             </DialogHeader>
             <ProductForm
               initialData={selectedProduct}
@@ -173,15 +173,14 @@ export function ProductList({ initialProducts }: ProductListProps) {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the product
-              and remove its data from our servers.
+              この操作は取り消せません。商品データは完全に削除されます。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>削除する</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 export default async function AdminProductsPage() {
   const products = await prisma.product.findMany({
     include: {
-      images: true, // Include product images
+      images: true,
     },
     orderBy: {
       createdAt: 'desc'
@@ -20,7 +20,7 @@ export default async function AdminProductsPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Product Management</h1>
+      <h1 className="text-3xl font-bold mb-6">商品管理</h1>
       <ProductList initialProducts={products} />
     </div>
   );

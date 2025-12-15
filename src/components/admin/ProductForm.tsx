@@ -26,7 +26,7 @@ function SubmitButton({ isEditing }: { isEditing: boolean }) {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending}>
-      {pending ? (isEditing ? 'Saving...' : 'Adding...') : isEditing ? 'Save Changes' : 'Add Product'}
+      {pending ? (isEditing ? '保存中...' : '登録中...') : isEditing ? '変更を保存' : '商品を登録'}
     </Button>
   );
 }
@@ -70,14 +70,14 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
     if (!result.success && result.errors) {
       setErrors(result.errors);
       toast({
-        title: 'Error',
-        description: result.message || `Failed to ${isEditing ? 'update' : 'add'} product.`,
+        title: 'エラー',
+        description: result.message || `商品の${isEditing ? '更新' : '登録'}に失敗しました。`,
         variant: 'destructive',
       });
     } else if (result.success) {
       toast({
-        title: 'Success',
-        description: `Product ${isEditing ? 'updated' : 'added'} successfully.`,
+        title: '成功',
+        description: `商品を${isEditing ? '更新' : '登録'}しました。`,
       });
       router.refresh();
       if (onSuccess) {
@@ -85,7 +85,7 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
       }
     } else if (result.message) {
       toast({
-        title: 'Error',
+        title: 'エラー',
         description: result.message,
         variant: 'destructive',
       });
@@ -96,14 +96,14 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
     <form action={handleSubmit} className="grid gap-4 py-4">
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="name" className="text-right">
-          Name
+          商品名
         </Label>
         <Input id="name" name="name" className="col-span-3" defaultValue={initialData?.name || ''} />
         {errors.name && <p className="col-span-4 text-right text-red-500 text-sm">{errors.name[0]}</p>}
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="basePrice" className="text-right">
-          Base Price
+          原価
         </Label>
         <div className="col-span-3 space-y-2">
           <div className="relative">
@@ -124,27 +124,27 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
           {sellingPrice && (
             <div className="bg-green-50 border border-green-200 rounded-md px-3 py-2">
               <p className="text-sm text-green-800">
-                <span className="font-medium">Selling Price (incl. 20% duty):</span>{' '}
+                <span className="font-medium">販売価格（関税20%込）:</span>{' '}
                 <span className="font-bold">${sellingPrice}</span>
               </p>
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            Enter the base price. 20% duty will be automatically added for the selling price.
+            原価を入力してください。販売価格は自動的に20%の関税が加算されます。
           </p>
         </div>
         {errors.basePrice && <p className="col-span-4 text-right text-red-500 text-sm">{errors.basePrice[0]}</p>}
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="stock" className="text-right">
-          Stock
+          在庫数
         </Label>
         <Input id="stock" name="stock" type="number" className="col-span-3" defaultValue={initialData?.stock !== undefined ? initialData.stock.toString() : ''} />
         {errors.stock && <p className="col-span-4 text-right text-red-500 text-sm">{errors.stock[0]}</p>}
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="imageUrl" className="text-right">
-          Image URL
+          画像URL
         </Label>
         <Input id="imageUrl" name="imageUrl" type="url" className="col-span-3" defaultValue={initialData?.images?.[0]?.url || 'https://placehold.co/400x600'} />
         {errors.imageUrl && <p className="col-span-4 text-right text-red-500 text-sm">{errors.imageUrl[0]}</p>}
@@ -153,7 +153,7 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
       {/* Feature Flags */}
       <div className="grid grid-cols-4 items-start gap-4 pt-2">
         <Label className="text-right pt-1">
-          Features
+          表示設定
         </Label>
         <div className="col-span-3 space-y-3">
           <div className="flex items-center space-x-2">
@@ -163,8 +163,8 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
               onCheckedChange={(checked) => setIsNewArrival(checked === true)}
             />
             <Label htmlFor="isNewArrival" className="text-sm font-normal cursor-pointer">
-              New Arrival
-              <span className="ml-2 text-xs text-muted-foreground">(Show in "New Arrivals" section)</span>
+              新着商品
+              <span className="ml-2 text-xs text-muted-foreground">(「新着商品」セクションに表示)</span>
             </Label>
           </div>
           <div className="flex items-center space-x-2">
@@ -174,8 +174,8 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
               onCheckedChange={(checked) => setIsRecommended(checked === true)}
             />
             <Label htmlFor="isRecommended" className="text-sm font-normal cursor-pointer">
-              Recommended
-              <span className="ml-2 text-xs text-muted-foreground">(Show in "Recommended Picks" section)</span>
+              おすすめ商品
+              <span className="ml-2 text-xs text-muted-foreground">(「おすすめ商品」セクションに表示)</span>
             </Label>
           </div>
         </div>
