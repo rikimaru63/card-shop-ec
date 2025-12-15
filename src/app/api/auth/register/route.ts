@@ -7,7 +7,7 @@ import { sendVerificationEmail } from "@/lib/email"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { name, email, password, phone } = body
+    const { name, email, password, phone, address } = body
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -45,6 +45,17 @@ export async function POST(request: Request) {
       )
     }
 
+    // Validate address if provided
+    if (address) {
+      if (!address.firstName || !address.lastName || !address.country ||
+          !address.postalCode || !address.state || !address.city || !address.street1) {
+        return NextResponse.json(
+          { message: "配送先住所の必須項目を入力してください" },
+          { status: 400 }
+        )
+      }
+    }
+
     // Generate verification token
     const verificationToken = crypto.randomBytes(32).toString('hex')
     const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
@@ -52,16 +63,41 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        hashedPassword,
-        phone: phone || null,
-        emailVerificationToken: verificationToken,
-        emailVerificationExpiry: verificationExpiry,
+    // Create user with address in a transaction
+    const user = await prisma.$transaction(async (tx) => {
+      // Create user
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          hashedPassword,
+          phone: phone || null,
+          emailVerificationToken: verificationToken,
+          emailVerificationExpiry: verificationExpiry,
+        }
+      })
+
+      // Create address if provided
+      if (address) {
+        await tx.address.create({
+          data: {
+            userId: newUser.id,
+            type: 'SHIPPING',
+            isDefault: true,
+            firstName: address.firstName,
+            lastName: address.lastName,
+            street1: address.street1,
+            street2: address.street2 || null,
+            city: address.city,
+            state: address.state,
+            postalCode: address.postalCode,
+            country: address.country,
+            phone: address.phone || null,
+          }
+        })
       }
+
+      return newUser
     })
 
     // Send verification email
@@ -76,7 +112,6 @@ export async function POST(request: Request) {
 
     if (!emailResult.success) {
       console.error('Failed to send verification email:', emailResult.error)
-      // Don't fail registration, but log the error
     }
 
     return NextResponse.json(
