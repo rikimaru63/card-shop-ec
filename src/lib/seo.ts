@@ -110,7 +110,7 @@ export function generateProductSchema(product: {
     offers: {
       "@type": "Offer",
       price: product.price,
-      priceCurrency: "USD",
+      priceCurrency: "JPY",
       availability: `https://schema.org/${product.availability}`,
     },
     ...(product.rating && {

@@ -64,13 +64,13 @@ const conditions = [
 ]
 
 const priceRanges = [
-  { id: "0-25", label: "Under $25", min: 0, max: 25 },
-  { id: "25-50", label: "$25 - $50", min: 25, max: 50 },
-  { id: "50-100", label: "$50 - $100", min: 50, max: 100 },
-  { id: "100-250", label: "$100 - $250", min: 100, max: 250 },
-  { id: "250-500", label: "$250 - $500", min: 250, max: 500 },
-  { id: "500-1000", label: "$500 - $1000", min: 500, max: 1000 },
-  { id: "1000+", label: "Over $1000", min: 1000, max: 100000 }
+  { id: "0-3000", label: "¥3,000未満", min: 0, max: 3000 },
+  { id: "3000-5000", label: "¥3,000 - ¥5,000", min: 3000, max: 5000 },
+  { id: "5000-10000", label: "¥5,000 - ¥10,000", min: 5000, max: 10000 },
+  { id: "10000-30000", label: "¥10,000 - ¥30,000", min: 10000, max: 30000 },
+  { id: "30000-50000", label: "¥30,000 - ¥50,000", min: 30000, max: 50000 },
+  { id: "50000-100000", label: "¥50,000 - ¥100,000", min: 50000, max: 100000 },
+  { id: "100000+", label: "¥100,000以上", min: 100000, max: 10000000 }
 ]
 
 export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps) {
@@ -146,7 +146,7 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
   const handleClearAll = () => {
     onFiltersChange({
       categories: [],
-      priceRange: [0, 100000],
+      priceRange: [0, 10000000],
       rarities: [],
       conditions: [],
       inStock: false
@@ -219,7 +219,7 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
                 className="pl-2 pr-1 py-1 cursor-pointer hover:bg-secondary/80"
                 onClick={() => handlePriceRangeChange([0, 100000])}
               >
-                ${filters.priceRange[0]} - ${filters.priceRange[1]}
+                ¥{filters.priceRange[0].toLocaleString()} - ¥{filters.priceRange[1].toLocaleString()}
                 <X className="h-3 w-3 ml-1" />
               </Badge>
             )}
@@ -290,11 +290,11 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
               />
               <div className="flex items-center justify-between text-sm">
                 <div className="px-3 py-1 bg-secondary rounded">
-                  ${filters.priceRange[0]}
+                  ¥{filters.priceRange[0].toLocaleString()}
                 </div>
                 <span className="text-muted-foreground">to</span>
                 <div className="px-3 py-1 bg-secondary rounded">
-                  ${filters.priceRange[1]}+
+                  ¥{filters.priceRange[1].toLocaleString()}+
                 </div>
               </div>
               <div className="space-y-2 pt-2">

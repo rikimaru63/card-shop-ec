@@ -12,15 +12,15 @@ export function formatPrice(
     notation?: Intl.NumberFormatOptions["notation"]
   } = {}
 ) {
-  const { currency = "USD", notation = "standard" } = options
+  const { currency = "JPY", notation = "standard" } = options
 
   const numericPrice = typeof price === "string" ? parseFloat(price) : price
 
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("ja-JP", {
     style: "currency",
     currency,
     notation,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: currency === "JPY" ? 0 : 2,
   }).format(numericPrice)
 }
 

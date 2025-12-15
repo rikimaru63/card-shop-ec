@@ -248,7 +248,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Truck className="h-4 w-4" />
-                  <span>Free shipping over $100</span>
+                  <span>¥10,000以上で送料無料</span>
                 </div>
               </div>
 

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 const stats = [
   {
     title: "総売上",
-    value: "$45,231.89",
+    value: "¥4,523,189",
     change: "先月比 +20.1%",
     icon: DollarSign,
     trend: "up"
@@ -48,7 +48,7 @@ const recentOrders = [
     id: "ORD-001",
     customer: "田中 太郎",
     product: "リザードン VMAX",
-    amount: "$189.99",
+    amount: "¥18,999",
     status: "completed",
     statusLabel: "完了"
   },
@@ -56,7 +56,7 @@ const recentOrders = [
     id: "ORD-002",
     customer: "鈴木 花子",
     product: "ピカチュウ VMAX",
-    amount: "$499.99",
+    amount: "¥49,999",
     status: "processing",
     statusLabel: "処理中"
   },
@@ -64,7 +64,7 @@ const recentOrders = [
     id: "ORD-003",
     customer: "佐藤 一郎",
     product: "ミュウツー SAR",
-    amount: "$49,999.99",
+    amount: "¥4,999,999",
     status: "pending",
     statusLabel: "保留中"
   },
@@ -72,7 +72,7 @@ const recentOrders = [
     id: "ORD-004",
     customer: "高橋 美咲",
     product: "ピカチュウ ex",
-    amount: "$79.99",
+    amount: "¥7,999",
     status: "completed",
     statusLabel: "完了"
   },
@@ -80,7 +80,7 @@ const recentOrders = [
     id: "ORD-005",
     customer: "山田 健太",
     product: "レックウザ SAR",
-    amount: "$34.99",
+    amount: "¥3,499",
     status: "shipped",
     statusLabel: "発送済"
   }

@@ -125,7 +125,7 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
             <div className="bg-green-50 border border-green-200 rounded-md px-3 py-2">
               <p className="text-sm text-green-800">
                 <span className="font-medium">販売価格（関税20%込）:</span>{' '}
-                <span className="font-bold">${sellingPrice}</span>
+                <span className="font-bold">¥{sellingPrice}</span>
               </p>
             </div>
           )}
