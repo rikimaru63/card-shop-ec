@@ -266,6 +266,7 @@ export default function UsersPage() {
               <TableHead>ユーザー</TableHead>
               <TableHead>メールアドレス</TableHead>
               <TableHead>ロール</TableHead>
+              <TableHead>認証状態</TableHead>
               <TableHead>注文数</TableHead>
               <TableHead>登録日</TableHead>
               <TableHead className="text-right">操作</TableHead>
@@ -274,13 +275,13 @@ export default function UsersPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   読み込み中...
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                   ユーザーが見つかりません
                 </TableCell>
               </TableRow>
@@ -306,6 +307,13 @@ export default function UsersPage() {
                     <Badge className={roleColors[user.role]}>
                       {roleLabels[user.role]}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {user.emailVerified ? (
+                      <Badge className="bg-green-100 text-green-800">認証済み</Badge>
+                    ) : (
+                      <Badge className="bg-orange-100 text-orange-800">未認証</Badge>
+                    )}
                   </TableCell>
                   <TableCell>{user._count.orders}件</TableCell>
                   <TableCell>{formatDate(user.createdAt)}</TableCell>
