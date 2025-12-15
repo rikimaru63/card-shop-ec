@@ -111,7 +111,7 @@ export async function PUT(request: Request) {
 
     const { sendVerificationEmail } = await import('@/lib/email')
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-    const cleanBaseUrl = baseUrl.replace(//$/, '')
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
     const verificationUrl = cleanBaseUrl + '/auth/verify?token=' + verificationToken
 
     await sendVerificationEmail({
