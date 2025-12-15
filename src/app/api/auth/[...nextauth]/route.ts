@@ -33,10 +33,10 @@ const handler = NextAuth({
           throw new Error("メールアドレスまたはパスワードが正しくありません")
         }
 
-        // Check email verification
-        if (!user.emailVerified) {
-          throw new Error("UNVERIFIED_EMAIL")
-        }
+        // Email verification check disabled
+        // if (!user.emailVerified) {
+        //   throw new Error("UNVERIFIED_EMAIL")
+        // }
 
         const isCorrectPassword = await bcrypt.compare(
           credentials.password,
