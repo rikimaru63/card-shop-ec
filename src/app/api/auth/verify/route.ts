@@ -1,6 +1,24 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+// GET endpoint for testing API connectivity
+export async function GET() {
+  try {
+    const count = await prisma.user.count()
+    return NextResponse.json({
+      status: "ok",
+      message: "Verify API is working",
+      userCount: count
+    })
+  } catch (error) {
+    console.error("Database connection error:", error)
+    return NextResponse.json({
+      status: "error",
+      message: error instanceof Error ? error.message : "Unknown error"
+    }, { status: 500 })
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { token } = await request.json()
@@ -12,7 +30,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Find user by verification token
     const user = await prisma.user.findFirst({
       where: {
         emailVerificationToken: token,
@@ -29,7 +46,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Update user as verified
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -46,13 +62,12 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Verification error:", error)
     return NextResponse.json(
-      { message: "確認に失敗しました" },
+      { message: "確認に失敗しました: " + (error instanceof Error ? error.message : "Unknown") },
       { status: 500 }
     )
   }
 }
 
-// Resend verification email
 export async function PUT(request: Request) {
   try {
     const { email } = await request.json()
@@ -69,7 +84,6 @@ export async function PUT(request: Request) {
     })
 
     if (!user) {
-      // Don't reveal if user exists
       return NextResponse.json({
         message: "確認メールを再送信しました",
         success: true
@@ -83,7 +97,6 @@ export async function PUT(request: Request) {
       )
     }
 
-    // Generate new token
     const crypto = await import('crypto')
     const verificationToken = crypto.randomBytes(32).toString('hex')
     const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
@@ -96,10 +109,10 @@ export async function PUT(request: Request) {
       }
     })
 
-    // Send verification email
     const { sendVerificationEmail } = await import('@/lib/email')
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const verificationUrl = `${baseUrl}/auth/verify?token=${verificationToken}`
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const cleanBaseUrl = baseUrl.replace(//$/, '')
+    const verificationUrl = cleanBaseUrl + '/auth/verify?token=' + verificationToken
 
     await sendVerificationEmail({
       to: email,
