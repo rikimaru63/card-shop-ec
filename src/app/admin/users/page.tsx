@@ -83,7 +83,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [roleFilter, setRoleFilter] = useState("")
+  const [roleFilter, setRoleFilter] = useState("all")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
@@ -101,13 +101,13 @@ export default function UsersPage() {
     try {
       const params = new URLSearchParams()
       if (search) params.set('search', search)
-      if (roleFilter) params.set('role', roleFilter)
+      if (roleFilter && roleFilter !== "all") params.set('role', roleFilter)
       params.set('page', page.toString())
 
       const response = await fetch(`/api/admin/users?${params}`)
       const data = await response.json()
 
-      setUsers(data.users)
+      setUsers(data.users || [])
       setTotalPages(data.pagination.totalPages)
       setTotal(data.pagination.total)
     } catch (error) {
@@ -249,7 +249,7 @@ export default function UsersPage() {
             <SelectValue placeholder="ロール" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">すべて</SelectItem>
+            <SelectItem value="all">すべて</SelectItem>
             <SelectItem value="CUSTOMER">顧客</SelectItem>
             <SelectItem value="STAFF">スタッフ</SelectItem>
             <SelectItem value="ADMIN">管理者</SelectItem>
