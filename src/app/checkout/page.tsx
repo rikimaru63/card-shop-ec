@@ -139,7 +139,7 @@ export default function CheckoutPage() {
   // Generate Wise payment URL with amount
   const getWisePaymentUrl = () => {
     const amount = Math.round(orderTotal)
-    return `${WISE_PAY_BASE_URL}#amount=${amount}&currency=JPY&reference=${orderNumber}`
+    return `${WISE_PAY_BASE_URL}?amount=${amount}&currency=JPY&description=${encodeURIComponent(`注文番号: ${orderNumber}`)}`
   }
 
   const copyToClipboard = (text: string) => {
