@@ -73,17 +73,22 @@ export default function EditProductPage() {
   ]
 
   const rarities = [
-    "C (コモン)", "U (アンコモン)", "R (レア)",
-    "RR (ダブルレア)", "RRR (トリプルレア)",
-    "SR (スーパーレア)", "UR (ウルトラレア)",
-    "SAR (スペシャルアートレア)", "AR (アートレア)",
-    "K (かがやく)", "CHR (キャラクターレア)",
-    "CSR (キャラクタースーパーレア)", "プロモ"
+    { value: "COMMON", label: "C (コモン)" },
+    { value: "UNCOMMON", label: "U (アンコモン)" },
+    { value: "RARE", label: "R (レア)" },
+    { value: "SUPER_RARE", label: "SR (スーパーレア)" },
+    { value: "ULTRA_RARE", label: "UR (ウルトラレア)" },
+    { value: "SECRET_RARE", label: "SAR (シークレットレア)" },
+    { value: "PROMO", label: "プロモ" }
   ]
 
   const conditions = [
-    "S (完美品)", "A (極美品)", "B (美品)",
-    "C (良好)", "D (並品)", "E (劣化品)"
+    { value: "MINT", label: "S (完美品)" },
+    { value: "NEAR_MINT", label: "A (極美品)" },
+    { value: "LIGHTLY_PLAYED", label: "B (美品)" },
+    { value: "MODERATELY_PLAYED", label: "C (良好)" },
+    { value: "HEAVILY_PLAYED", label: "D (並品)" },
+    { value: "DAMAGED", label: "E (劣化品)" }
   ]
 
   const gradingCompanies = [
@@ -263,7 +268,7 @@ export default function EditProductPage() {
                   >
                     <option value="">選択してください</option>
                     {rarities.map(rarity => (
-                      <option key={rarity} value={rarity}>{rarity}</option>
+                      <option key={rarity.value} value={rarity.value}>{rarity.label}</option>
                     ))}
                   </select>
                 </div>
@@ -285,7 +290,7 @@ export default function EditProductPage() {
                   >
                     <option value="">選択してください</option>
                     {conditions.map(condition => (
-                      <option key={condition} value={condition}>{condition}</option>
+                      <option key={condition.value} value={condition.value}>{condition.label}</option>
                     ))}
                   </select>
                 </div>
