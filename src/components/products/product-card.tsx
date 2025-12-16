@@ -120,14 +120,38 @@ export function ProductCard({
 
       <Link href={`/products/${id}`}>
         {/* 画像 */}
-        <div className="relative aspect-[3/4] overflow-hidden rounded-t-xl bg-slate-200">
+        <div
+          className="relative overflow-hidden rounded-t-xl"
+          style={{ aspectRatio: '3/4', backgroundColor: '#e2e8f0' }}
+        >
           {/* プレースホルダー（常に表示、画像がロードされたら隠れる） */}
           {!(hasValidImage && imageLoaded) && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-200">
-              <div className="w-20 h-20 rounded-full bg-slate-300 flex items-center justify-center mb-3">
-                <span className="text-4xl text-slate-400">🖼</span>
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#e2e8f0'
+              }}
+            >
+              <div
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  backgroundColor: '#cbd5e1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '12px'
+                }}
+              >
+                <span style={{ fontSize: '32px' }}>🖼️</span>
               </div>
-              <span className="text-sm font-medium text-slate-500">No Image</span>
+              <span style={{ fontSize: '14px', fontWeight: 500, color: '#64748b' }}>No Image</span>
             </div>
           )}
 
@@ -136,7 +160,14 @@ export function ProductCard({
             <img
               src={image}
               alt={name}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
+              className="group-hover:scale-105 transition-transform duration-500"
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
             />
