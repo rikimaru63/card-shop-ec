@@ -791,7 +791,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Truck className="h-4 w-4" />
-                    <span>Free shipping over ¥10,000</span>
+                    <span>Worldwide shipping available</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Package className="h-4 w-4" />

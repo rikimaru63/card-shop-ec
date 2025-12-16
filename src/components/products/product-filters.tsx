@@ -26,17 +26,6 @@ interface ProductFiltersProps {
   onFiltersChange: (filters: Filters) => void
 }
 
-const categories = [
-  { id: "pokemon", label: "Pokemon", count: 1245 },
-  { id: "yugioh", label: "Yu-Gi-Oh!", count: 892 },
-  { id: "mtg", label: "Magic: The Gathering", count: 2341 },
-  { id: "onepiece", label: "One Piece", count: 456 },
-  { id: "sports", label: "Sports Cards", count: 678 },
-  { id: "digimon", label: "Digimon", count: 234 },
-  { id: "cardfight", label: "Cardfight!! Vanguard", count: 123 },
-  { id: "weiss", label: "Weiss Schwarz", count: 89 }
-]
-
 const rarities = [
   { id: "common", label: "Common" },
   { id: "uncommon", label: "Uncommon" },
@@ -44,9 +33,7 @@ const rarities = [
   { id: "super-rare", label: "Super Rare" },
   { id: "ultra-rare", label: "Ultra Rare" },
   { id: "secret-rare", label: "Secret Rare" },
-  { id: "mythic-rare", label: "Mythic Rare" },
-  { id: "leader", label: "Leader" },
-  { id: "rookie", label: "Rookie" }
+  { id: "promo", label: "Promo" }
 ]
 
 const conditions = [
@@ -75,27 +62,11 @@ const priceRanges = [
 
 export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps) {
   const [openSections, setOpenSections] = useState({
-    category: true,
     price: true,
     rarity: true,
     condition: false,
     availability: false
   })
-
-  const handleCategoryChange = (categoryId: string, checked: boolean) => {
-    const label = categories.find(c => c.id === categoryId)?.label || categoryId
-    if (checked) {
-      onFiltersChange({
-        ...filters,
-        categories: [...filters.categories, label]
-      })
-    } else {
-      onFiltersChange({
-        ...filters,
-        categories: filters.categories.filter(c => c !== label)
-      })
-    }
-  }
 
   const handleRarityChange = (rarityId: string, checked: boolean) => {
     const label = rarities.find(r => r.id === rarityId)?.label || rarityId
@@ -153,10 +124,9 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
     })
   }
 
-  const activeFiltersCount = 
-    filters.categories.length + 
-    filters.rarities.length + 
-    filters.conditions.length + 
+  const activeFiltersCount =
+    filters.rarities.length +
+    filters.conditions.length +
     (filters.inStock ? 1 : 0) +
     (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 100000 ? 1 : 0)
 
@@ -181,20 +151,6 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
       {activeFiltersCount > 0 && (
         <div className="mb-6">
           <div className="flex flex-wrap gap-2">
-            {filters.categories.map(category => (
-              <Badge
-                key={category}
-                variant="secondary"
-                className="pl-2 pr-1 py-1 cursor-pointer hover:bg-secondary/80"
-                onClick={() => handleCategoryChange(
-                  categories.find(c => c.label === category)?.id || "",
-                  false
-                )}
-              >
-                {category}
-                <X className="h-3 w-3 ml-1" />
-              </Badge>
-            ))}
             {filters.rarities.map(rarity => (
               <Badge
                 key={rarity}
@@ -229,46 +185,6 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
 
       {/* Filter Sections */}
       <div className="space-y-6">
-        {/* Category Filter */}
-        <Collapsible
-          open={openSections.category}
-          onOpenChange={(open) => setOpenSections(prev => ({ ...prev, category: open }))}
-        >
-          <CollapsibleTrigger className="flex items-center justify-between w-full">
-            <h4 className="font-semibold">Category</h4>
-            <ChevronDown className={`h-4 w-4 transition-transform ${openSections.category ? "rotate-180" : ""}`} />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4">
-            <div className="space-y-3">
-              {categories.map(category => {
-                const isChecked = filters.categories.includes(category.label)
-                return (
-                  <div key={category.id} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id={category.id}
-                        checked={isChecked}
-                        onCheckedChange={(checked) => 
-                          handleCategoryChange(category.id, checked as boolean)
-                        }
-                      />
-                      <Label
-                        htmlFor={category.id}
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {category.label}
-                      </Label>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      ({category.count})
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-
         {/* Price Range Filter */}
         <Collapsible
           open={openSections.price}

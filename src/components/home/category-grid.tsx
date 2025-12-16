@@ -3,52 +3,28 @@ import { ArrowRight } from "lucide-react"
 
 const categories = [
   {
-    name: "Pokemon TCG",
-    description: "Gotta catch 'em all!",
-    image: "🎮",
-    color: "from-yellow-400 to-red-500",
-    href: "/products/pokemon",
-    count: "5,000+ Cards"
-  },
-  {
-    name: "Yu-Gi-Oh!",
-    description: "It's time to duel!",
+    name: "All Pokemon Cards",
+    description: "Browse our full collection",
     image: "⚡",
-    color: "from-purple-500 to-pink-500",
-    href: "/products/yugioh",
-    count: "3,500+ Cards"
+    color: "from-yellow-400 to-red-500",
+    href: "/products",
+    count: "1,000+ Cards"
   },
   {
-    name: "Magic: The Gathering",
-    description: "Planeswalker's paradise",
-    image: "🔮",
-    color: "from-blue-500 to-purple-600",
-    href: "/products/mtg",
-    count: "4,200+ Cards"
-  },
-  {
-    name: "One Piece",
-    description: "Set sail for adventure",
-    image: "⚓",
-    color: "from-blue-400 to-cyan-500",
-    href: "/products/onepiece",
-    count: "1,800+ Cards"
-  },
-  {
-    name: "Sports Cards",
-    description: "Legends collection",
-    image: "🏆",
-    color: "from-green-500 to-emerald-600",
-    href: "/products/sports",
-    count: "2,500+ Cards"
+    name: "Scarlet & Violet",
+    description: "Latest expansion series",
+    image: "🔴",
+    color: "from-red-500 to-violet-600",
+    href: "/products?set=scarlet-violet",
+    count: "New Arrivals"
   },
   {
     name: "Graded Cards",
     description: "PSA, BGS, CGC certified",
     image: "💎",
     color: "from-gray-600 to-gray-800",
-    href: "/products/graded",
-    count: "500+ Cards"
+    href: "/products?graded=true",
+    count: "Premium Quality"
   }
 ]
 

@@ -430,18 +430,18 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 <div className="flex items-start gap-3">
                   <Truck className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <h3 className="font-semibold mb-1">Standard Shipping</h3>
+                    <h3 className="font-semibold mb-1">Worldwide Shipping</h3>
                     <p className="text-sm text-muted-foreground">
-                      Free shipping on orders over ¥10,000. Delivery within 3-5 business days.
+                      We ship to customers worldwide. Shipping costs calculated at checkout based on destination.
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Truck className="h-5 w-5 text-primary mt-0.5" />
+                  <Shield className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <h3 className="font-semibold mb-1">Express Shipping</h3>
+                    <h3 className="font-semibold mb-1">Secure Packaging</h3>
                     <p className="text-sm text-muted-foreground">
-                      ¥1,500 flat rate. Delivery within 1-2 business days.
+                      All cards are carefully packaged with protective sleeves and top loaders.
                     </p>
                   </div>
                 </div>

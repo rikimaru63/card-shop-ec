@@ -1,25 +1,22 @@
 import Link from "next/link"
-import { 
-  Facebook, 
-  Twitter, 
-  Instagram, 
+import {
+  Facebook,
+  Twitter,
+  Instagram,
   Youtube,
   Mail,
   Phone,
   MapPin,
   CreditCard,
-  Shield,
-  Truck
+  Shield
 } from "lucide-react"
 
 const footerLinks = {
   shop: [
     { name: "All Products", href: "/products" },
-    { name: "Pokemon Cards", href: "/products/pokemon" },
-    { name: "Yu-Gi-Oh! Cards", href: "/products/yugioh" },
-    { name: "Magic: The Gathering", href: "/products/mtg" },
-    { name: "One Piece Cards", href: "/products/onepiece" },
-    { name: "Sports Cards", href: "/products/sports" }
+    { name: "New Arrivals", href: "/products?sort=newest" },
+    { name: "Graded Cards", href: "/products?graded=true" },
+    { name: "Featured Cards", href: "/products?featured=true" }
   ],
   support: [
     { name: "Contact Us", href: "/contact" },
@@ -58,15 +55,7 @@ export function Footer() {
       {/* 特徴バー */}
       <div className="border-b bg-white">
         <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <Truck className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Free Worldwide Shipping</h3>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-primary/10 rounded-lg">
                 <Shield className="h-6 w-6 text-primary" />
