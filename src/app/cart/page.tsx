@@ -34,13 +34,13 @@ export default function CartPage() {
           <div className="max-w-2xl mx-auto text-center">
             <div className="bg-white rounded-lg border p-12">
               <ShoppingBag className="h-20 w-20 text-muted-foreground mx-auto mb-6" />
-              <h1 className="text-2xl font-bold mb-4">Your Cart is Empty</h1>
+              <h1 className="text-2xl font-bold mb-4">カートは空です</h1>
               <p className="text-muted-foreground mb-8">
-                Looks like you haven't added anything to your cart yet.
+                まだ商品がカートに追加されていません。
               </p>
-              <Link href="/products">
+              <Link href="/">
                 <Button size="lg">
-                  Start Shopping
+                  買い物を始める
                 </Button>
               </Link>
             </div>
@@ -55,9 +55,9 @@ export default function CartPage() {
       {/* ページヘッダー */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold">Shopping Cart</h1>
+          <h1 className="text-3xl font-bold">ショッピングカート</h1>
           <p className="text-muted-foreground mt-2">
-            {items.length} {items.length === 1 ? "item" : "items"} in your cart
+            {items.length}点の商品
           </p>
         </div>
       </div>
@@ -68,19 +68,19 @@ export default function CartPage() {
           <div className="lg:col-span-2 space-y-4">
             {/* ヘッダーアクション */}
             <div className="bg-white rounded-lg border p-4 flex justify-between items-center">
-              <Link href="/products">
+              <Link href="/">
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Continue Shopping
+                  買い物を続ける
                 </Button>
               </Link>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-destructive hover:text-destructive"
                 onClick={clearCart}
               >
-                Clear Cart
+                カートを空にする
               </Button>
             </div>
 
@@ -179,7 +179,7 @@ export default function CartPage() {
                       {/* 在庫警告 */}
                       {item.stock <= 5 && (
                         <p className="text-xs text-orange-600 mt-2">
-                          Only {item.stock} left in stock
+                          残り{item.stock}点
                         </p>
                       )}
                     </div>
@@ -192,39 +192,39 @@ export default function CartPage() {
           {/* 注文サマリー */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg border p-6 sticky top-24">
-              <h2 className="text-xl font-bold mb-6">Order Summary</h2>
+              <h2 className="text-xl font-bold mb-6">注文内容</h2>
 
               {/* クーポンコード */}
               <div className="mb-6">
                 <label className="text-sm font-medium mb-2 block">
-                  Coupon Code
+                  クーポンコード
                 </label>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Enter code"
+                    placeholder="コードを入力"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
                   />
-                  <Button variant="outline">Apply</Button>
+                  <Button variant="outline">適用</Button>
                 </div>
               </div>
 
               {/* 価格詳細 */}
               <div className="space-y-3 border-t pt-4">
                 <div className="flex justify-between text-sm">
-                  <span>Subtotal</span>
+                  <span>小計</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Shipping</span>
-                  <span>{shipping === 0 ? "FREE" : formatPrice(shipping)}</span>
+                  <span>送料</span>
+                  <span>{shipping === 0 ? "無料" : formatPrice(shipping)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Tax</span>
+                  <span>消費税</span>
                   <span>{formatPrice(tax)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg border-t pt-3">
-                  <span>Total</span>
+                  <span>合計</span>
                   <span className="text-primary">{formatPrice(total)}</span>
                 </div>
               </div>
@@ -232,7 +232,7 @@ export default function CartPage() {
               {/* チェックアウトボタン */}
               <Link href="/checkout">
                 <Button className="w-full mt-6" size="lg">
-                  Proceed to Checkout
+                  レジに進む
                 </Button>
               </Link>
 
@@ -240,11 +240,11 @@ export default function CartPage() {
               <div className="mt-6 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  <span>Secure checkout</span>
+                  <span>安全な決済</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CreditCard className="h-4 w-4" />
-                  <span>Encrypted payment</span>
+                  <span>暗号化された支払い</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Truck className="h-4 w-4" />
@@ -255,7 +255,7 @@ export default function CartPage() {
               {/* 配送情報 */}
               <div className="mt-6 p-4 bg-secondary/50 rounded-lg">
                 <p className="text-xs text-muted-foreground">
-                  Estimated delivery: 3-5 business days
+                  配送予定：3〜5営業日
                 </p>
               </div>
             </div>
@@ -264,10 +264,10 @@ export default function CartPage() {
 
         {/* おすすめ商品セクション */}
         <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">You May Also Like</h2>
+          <h2 className="text-2xl font-bold mb-6">おすすめ商品</h2>
           <div className="bg-white rounded-lg border p-6">
             <p className="text-center text-muted-foreground">
-              Recommended products coming soon...
+              準備中...
             </p>
           </div>
         </div>
