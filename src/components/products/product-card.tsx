@@ -151,7 +151,7 @@ export function ProductCard({
               >
                 <span style={{ fontSize: '32px' }}>🖼️</span>
               </div>
-              <span style={{ fontSize: '14px', fontWeight: 500, color: '#64748b' }}>No Image</span>
+              <span style={{ fontSize: '14px', fontWeight: 500, color: '#64748b' }}>IMAGE TEST v3</span>
             </div>
           )}
 
