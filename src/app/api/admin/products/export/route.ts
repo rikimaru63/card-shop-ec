@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // Reverse condition mapping
 const conditionToString: { [key: string]: string } = {
   'MINT': 'New',
