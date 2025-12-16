@@ -17,11 +17,16 @@ import {
   MessageCircle,
   Shield,
   Truck,
-  Copy
+  Copy,
+  Plus,
+  Check
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useCartStore } from "@/store/cart-store"
-import { createOrder } from "./actions"
+import { createOrder, getUserAddresses } from "./actions"
 import { toast } from "@/hooks/use-toast"
 
 // Wise Pay Link base URL
@@ -35,6 +40,32 @@ interface OrderItem {
   image: string
 }
 
+interface SavedAddress {
+  id: string
+  firstName: string
+  lastName: string
+  street1: string
+  street2?: string | null
+  city: string
+  state: string
+  postalCode: string
+  country: string
+  phone?: string | null
+  isDefault: boolean
+}
+
+interface ShippingAddress {
+  firstName: string
+  lastName: string
+  street1: string
+  street2?: string
+  city: string
+  state: string
+  postalCode: string
+  country: string
+  phone?: string
+}
+
 export default function CheckoutPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -46,9 +77,58 @@ export default function CheckoutPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [mounted, setMounted] = useState(false)
 
+  // Address state
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false)
+  const [saveAddress, setSaveAddress] = useState(true)
+  const [loadingAddresses, setLoadingAddresses] = useState(true)
+
+  // New address form
+  const [newAddress, setNewAddress] = useState<ShippingAddress>({
+    firstName: "",
+    lastName: "",
+    street1: "",
+    street2: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "日本",
+    phone: ""
+  })
+
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Load saved addresses
+  useEffect(() => {
+    const loadAddresses = async () => {
+      if (session?.user?.id) {
+        try {
+          const addresses = await getUserAddresses(session.user.id)
+          setSavedAddresses(addresses as SavedAddress[])
+          // Select default address if exists
+          const defaultAddr = addresses.find((a: SavedAddress) => a.isDefault)
+          if (defaultAddr) {
+            setSelectedAddressId(defaultAddr.id)
+          } else if (addresses.length === 0) {
+            setShowNewAddressForm(true)
+          }
+        } catch (error) {
+          console.error("Failed to load addresses:", error)
+        } finally {
+          setLoadingAddresses(false)
+        }
+      } else {
+        setLoadingAddresses(false)
+        setShowNewAddressForm(true)
+      }
+    }
+    if (mounted && status === "authenticated") {
+      loadAddresses()
+    }
+  }, [session?.user?.id, mounted, status])
 
   // Redirect to signin if not authenticated
   useEffect(() => {
@@ -57,13 +137,48 @@ export default function CheckoutPage() {
     }
   }, [status, router])
 
+  const getSelectedAddress = (): ShippingAddress | null => {
+    if (showNewAddressForm) {
+      // Validate new address
+      if (!newAddress.firstName || !newAddress.lastName || !newAddress.street1 ||
+          !newAddress.city || !newAddress.state || !newAddress.postalCode) {
+        return null
+      }
+      return newAddress
+    }
+
+    const selected = savedAddresses.find(a => a.id === selectedAddressId)
+    if (!selected) return null
+
+    return {
+      firstName: selected.firstName,
+      lastName: selected.lastName,
+      street1: selected.street1,
+      street2: selected.street2 || undefined,
+      city: selected.city,
+      state: selected.state,
+      postalCode: selected.postalCode,
+      country: selected.country,
+      phone: selected.phone || undefined
+    }
+  }
+
   const handleConfirmOrder = async () => {
     if (!session?.user?.email) return
+
+    const address = getSelectedAddress()
+    if (!address) {
+      toast({
+        title: "配送先住所を入力してください",
+        description: "すべての必須項目を入力してください",
+        variant: "destructive"
+      })
+      return
+    }
 
     setIsSubmitting(true)
 
     try {
-      // Prepare cart items for server action
       const cartItems = items.map(item => ({
         productId: item.id,
         name: item.name,
@@ -75,21 +190,13 @@ export default function CheckoutPage() {
       const result = await createOrder({
         items: cartItems,
         email: session.user.email,
-        shippingAddress: {
-          // TODO: Get from user's saved addresses
-          name: session.user.name || "",
-          street1: "",
-          city: "",
-          state: "",
-          postalCode: "",
-          country: "US"
-        }
+        shippingAddress: address,
+        saveAddress: showNewAddressForm && saveAddress
       })
 
       if (result.success && result.orderNumber) {
-        // Save order details before clearing cart
         const currentTotal = getTotalPrice()
-        const shipping = currentTotal > 10000 ? 0 : 1500
+        const shipping = currentTotal >= 10000 ? 0 : 1500
         setOrderTotal(currentTotal + shipping)
         setOrderItems([...items])
         setOrderNumber(result.orderNumber)
@@ -101,16 +208,16 @@ export default function CheckoutPage() {
         })
       } else {
         toast({
-          title: "Error",
-          description: result.message || "Failed to place order",
+          title: "エラー",
+          description: result.message || "注文に失敗しました",
           variant: "destructive"
         })
       }
     } catch (error) {
       console.error("Order error:", error)
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
+        title: "エラー",
+        description: "エラーが発生しました。もう一度お試しください。",
         variant: "destructive"
       })
     } finally {
@@ -136,7 +243,6 @@ export default function CheckoutPage() {
     return null
   }
 
-  // Generate Wise payment URL (Wise Pay Link doesn't support amount pre-fill)
   const getWisePaymentUrl = () => {
     return WISE_PAY_BASE_URL
   }
@@ -232,7 +338,7 @@ export default function CheckoutPage() {
                   Wiseでお支払い
                 </h2>
 
-                {/* Amount to pay - prominent display */}
+                {/* Amount to pay */}
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center">
                   <p className="text-sm text-green-700 mb-1">お支払い金額</p>
                   <div className="flex items-center justify-center gap-2">
@@ -359,8 +465,16 @@ export default function CheckoutPage() {
   }
 
   const subtotal = getTotalPrice()
-  const shipping = subtotal > 10000 ? 0 : 1500
+  const shipping = subtotal >= 10000 ? 0 : 1500
   const total = subtotal + shipping
+
+  const isAddressValid = () => {
+    if (showNewAddressForm) {
+      return newAddress.firstName && newAddress.lastName && newAddress.street1 &&
+             newAddress.city && newAddress.state && newAddress.postalCode
+    }
+    return selectedAddressId !== null
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
@@ -429,13 +543,175 @@ export default function CheckoutPage() {
                 <div className="flex items-center gap-2 mb-4">
                   <MapPin className="h-5 w-5 text-primary" />
                   <h2 className="text-lg font-semibold">配送先住所</h2>
+                  <span className="text-red-500 text-sm">*必須</span>
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-800">
-                    注文確定後にお送りするメールに配送先住所をご返信ください。または、こちらからご連絡いたします。
-                  </p>
-                </div>
+                {loadingAddresses ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <>
+                    {/* Saved Addresses */}
+                    {savedAddresses.length > 0 && !showNewAddressForm && (
+                      <div className="space-y-3 mb-4">
+                        {savedAddresses.map((address) => (
+                          <div
+                            key={address.id}
+                            onClick={() => setSelectedAddressId(address.id)}
+                            className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                              selectedAddressId === address.id
+                                ? "border-primary bg-primary/5"
+                                : "border-gray-200 hover:border-gray-300"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="font-medium">
+                                  {address.lastName} {address.firstName}
+                                  {address.isDefault && (
+                                    <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                      デフォルト
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  〒{address.postalCode}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {address.state}{address.city}{address.street1}
+                                  {address.street2 && ` ${address.street2}`}
+                                </p>
+                                {address.phone && (
+                                  <p className="text-sm text-muted-foreground">
+                                    TEL: {address.phone}
+                                  </p>
+                                )}
+                              </div>
+                              {selectedAddressId === address.id && (
+                                <Check className="h-5 w-5 text-primary" />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+
+                        <button
+                          onClick={() => setShowNewAddressForm(true)}
+                          className="w-full p-4 border border-dashed border-gray-300 rounded-lg text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          新しい住所を追加
+                        </button>
+                      </div>
+                    )}
+
+                    {/* New Address Form */}
+                    {showNewAddressForm && (
+                      <div className="space-y-4">
+                        {savedAddresses.length > 0 && (
+                          <button
+                            onClick={() => setShowNewAddressForm(false)}
+                            className="text-sm text-primary hover:underline mb-2"
+                          >
+                            ← 保存済みの住所から選択
+                          </button>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="lastName">姓 <span className="text-red-500">*</span></Label>
+                            <Input
+                              id="lastName"
+                              value={newAddress.lastName}
+                              onChange={(e) => setNewAddress({...newAddress, lastName: e.target.value})}
+                              placeholder="山田"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="firstName">名 <span className="text-red-500">*</span></Label>
+                            <Input
+                              id="firstName"
+                              value={newAddress.firstName}
+                              onChange={(e) => setNewAddress({...newAddress, firstName: e.target.value})}
+                              placeholder="太郎"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="postalCode">郵便番号 <span className="text-red-500">*</span></Label>
+                          <Input
+                            id="postalCode"
+                            value={newAddress.postalCode}
+                            onChange={(e) => setNewAddress({...newAddress, postalCode: e.target.value})}
+                            placeholder="123-4567"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="state">都道府県 <span className="text-red-500">*</span></Label>
+                          <Input
+                            id="state"
+                            value={newAddress.state}
+                            onChange={(e) => setNewAddress({...newAddress, state: e.target.value})}
+                            placeholder="東京都"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="city">市区町村 <span className="text-red-500">*</span></Label>
+                          <Input
+                            id="city"
+                            value={newAddress.city}
+                            onChange={(e) => setNewAddress({...newAddress, city: e.target.value})}
+                            placeholder="渋谷区"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="street1">番地・建物名 <span className="text-red-500">*</span></Label>
+                          <Input
+                            id="street1"
+                            value={newAddress.street1}
+                            onChange={(e) => setNewAddress({...newAddress, street1: e.target.value})}
+                            placeholder="渋谷1-2-3 ABCビル101"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="street2">建物名・部屋番号（任意）</Label>
+                          <Input
+                            id="street2"
+                            value={newAddress.street2}
+                            onChange={(e) => setNewAddress({...newAddress, street2: e.target.value})}
+                            placeholder=""
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="phone">電話番号（任意）</Label>
+                          <Input
+                            id="phone"
+                            value={newAddress.phone}
+                            onChange={(e) => setNewAddress({...newAddress, phone: e.target.value})}
+                            placeholder="090-1234-5678"
+                          />
+                        </div>
+
+                        <div className="flex items-center space-x-2 pt-2">
+                          <Checkbox
+                            id="saveAddress"
+                            checked={saveAddress}
+                            onCheckedChange={(checked) => setSaveAddress(checked === true)}
+                          />
+                          <Label htmlFor="saveAddress" className="text-sm cursor-pointer">
+                            この住所を保存して次回から使用する
+                          </Label>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* Payment Method Card */}
@@ -472,7 +748,7 @@ export default function CheckoutPage() {
                   className="w-full mb-4"
                   size="lg"
                   onClick={handleConfirmOrder}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isAddressValid()}
                 >
                   {isSubmitting ? (
                     <>
@@ -486,6 +762,12 @@ export default function CheckoutPage() {
                     </>
                   )}
                 </Button>
+
+                {!isAddressValid() && (
+                  <p className="text-sm text-red-500 text-center mb-4">
+                    配送先住所を入力してください
+                  </p>
+                )}
 
                 {/* Secondary CTA */}
                 <Button
