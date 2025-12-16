@@ -65,7 +65,8 @@ export async function PUT(
     }
     
     const body = await request.json()
-    
+    console.log('Update request body:', JSON.stringify(body))
+
     // Validate price and stock if provided
     if (body.price !== undefined && parseFloat(body.price) <= 0) {
       return NextResponse.json(
@@ -83,6 +84,10 @@ export async function PUT(
     
     // Prepare update data
     const updateData: Prisma.ProductUpdateInput = {};
+
+    // Fields that should be converted to null if empty
+    const nullableFields = ['rarity', 'condition', 'cardSet', 'cardNumber', 'gradingCompany', 'grade', 'description'];
+
     const bodyKeys: (keyof typeof body)[] = [
       'name', 'nameJa', 'description', 'cardSet', 'cardNumber',
       'rarity', 'condition', 'language', 'foil', 'firstEdition',
@@ -96,12 +101,17 @@ export async function PUT(
           (updateData as any)[key] = body[key] ? parseFloat(body[key]) : null;
         } else if (key === 'stock' || key === 'lowStock') {
           (updateData as any)[key] = parseInt(body[key], 10);
+        } else if (nullableFields.includes(key)) {
+          // Convert empty strings to null for nullable/enum fields
+          (updateData as any)[key] = body[key] === '' ? null : body[key];
         } else {
           (updateData as any)[key] = body[key];
         }
       }
     });
-    
+
+    console.log('Update data:', JSON.stringify(updateData))
+
     // Update product
     const product = await prisma.product.update({
       where: { id: params.id },
@@ -116,16 +126,33 @@ export async function PUT(
     
   } catch (error: unknown) {
     console.error('Error updating product:', error)
-    
+    console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
+
     if (error instanceof Error && (error as any).code === 'P2002') {
       return NextResponse.json(
         { error: 'Product with this SKU or slug already exists' },
         { status: 409 }
       )
     }
-    
+
+    // Prisma validation error
+    if (error instanceof Error && (error as any).code === 'P2003') {
+      return NextResponse.json(
+        { error: 'Invalid reference value' },
+        { status: 400 }
+      )
+    }
+
+    // Invalid enum value
+    if (error instanceof Error && error.message?.includes('Invalid value for argument')) {
+      return NextResponse.json(
+        { error: 'Invalid value for field. Please check rarity and condition values.' },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
-      { error: 'Failed to update product' },
+      { error: 'Failed to update product', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
