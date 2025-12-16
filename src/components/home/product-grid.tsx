@@ -223,10 +223,24 @@ export function ProductGrid() {
                   {/* Product Image */}
                   <div className="relative aspect-[3/4] bg-gray-100">
                     <Link href={`/products/${product.id}`} className="absolute inset-0 z-0">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-gray-400 text-center">
-                          <p className="text-sm font-medium">{product.name}</p>
-                          <p className="text-xs mt-1">{product.cardSet}</p>
+                      {product.image && product.image.startsWith('http') ? (
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`absolute inset-0 flex items-center justify-center ${product.image && product.image.startsWith('http') ? 'hidden' : ''}`}>
+                        <div className="text-center">
+                          <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-2">
+                            <span className="text-2xl">🖼️</span>
+                          </div>
+                          <p className="text-sm text-gray-400">No Image</p>
                         </div>
                       </div>
                     </Link>

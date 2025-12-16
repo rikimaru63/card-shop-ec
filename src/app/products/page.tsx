@@ -162,9 +162,9 @@ export default function ProductsPage() {
             <span>/</span>
             <span>商品一覧</span>
           </div>
-          <h1 className="text-3xl font-bold">All Products (TEST v3)</h1>
+          <h1 className="text-3xl font-bold">All Products</h1>
           <p className="text-muted-foreground mt-2">
-            {filteredAndSortedProducts.length} products found
+            {filteredAndSortedProducts.length} products
           </p>
         </div>
       </div>
