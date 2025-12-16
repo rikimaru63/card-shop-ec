@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Product, ProductImage } from '@prisma/client';
@@ -12,14 +11,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import Image from 'next/image';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { ProductForm } from '@/components/admin/ProductForm';
 import { useState } from 'react';
 import {
     AlertDialog,
@@ -46,7 +37,6 @@ interface ProductListProps {
 export function ProductList({ initialProducts }: ProductListProps) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
-  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [productToDeleteId, setProductToDeleteId] = useState<string | null>(null);
@@ -78,26 +68,8 @@ export function ProductList({ initialProducts }: ProductListProps) {
     }
   };
 
-  const handleSuccess = () => {
-    setIsAddProductModalOpen(false);
-    router.refresh();
-  }
-
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <Dialog open={isAddProductModalOpen} onOpenChange={setIsAddProductModalOpen}>
-          <DialogTrigger asChild>
-            <Button>商品を追加</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>新規商品登録</DialogTitle>
-            </DialogHeader>
-            <ProductForm onSuccess={handleSuccess} />
-          </DialogContent>
-        </Dialog>
-      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
