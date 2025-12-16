@@ -101,7 +101,7 @@ export async function PUT(
           (updateData as any)[key] = body[key] ? parseFloat(body[key]) : null;
         } else if (key === 'stock' || key === 'lowStock') {
           (updateData as any)[key] = parseInt(body[key], 10);
-        } else if (nullableFields.includes(key)) {
+        } else if (nullableFields.includes(key as string)) {
           // Convert empty strings to null for nullable/enum fields
           (updateData as any)[key] = body[key] === '' ? null : body[key];
         } else {
