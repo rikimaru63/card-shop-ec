@@ -1,164 +1,51 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { ProductCard } from "@/components/products/product-card"
 import { ProductFilters } from "@/components/products/product-filters"
 import { ProductSort } from "@/components/products/product-sort"
-import { 
-  ChevronLeft, 
+import {
+  ChevronLeft,
   ChevronRight,
   LayoutGrid,
   List,
-  Filter
+  Filter,
+  Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-// Mock data - 実際はAPIから取得
-const mockProducts = [
-  {
-    id: "1",
-    name: "Charizard VMAX - Darkness Ablaze",
-    image: "https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?w=400&h=600&fit=crop",
-    price: 189.99,
-    comparePrice: 219.99,
-    category: "Pokemon",
-    rarity: "Ultra Rare",
-    condition: "Near Mint",
-    stock: 5,
-    rating: 4.8,
-    isNew: false,
-    isFeatured: true
-  },
-  {
-    id: "2",
-    name: "Pikachu VMAX - Vivid Voltage",
-    image: "https://images.unsplash.com/photo-1609813040801-8b09a342bd73?w=400&h=600&fit=crop",
-    price: 79.99,
-    comparePrice: 99.99,
-    category: "Pokemon",
-    rarity: "Secret Rare",
-    condition: "Near Mint",
-    stock: 8,
-    rating: 4.9,
-    isNew: true,
-    isFeatured: false
-  },
-  {
-    id: "3",
-    name: "Blue-Eyes White Dragon - LOB-001",
-    image: "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=400&h=600&fit=crop",
-    price: 499.99,
-    comparePrice: 599.99,
-    category: "Yu-Gi-Oh!",
-    rarity: "Secret Rare",
-    condition: "Mint",
-    stock: 1,
-    rating: 5.0,
-    isNew: false,
-    isFeatured: true
-  },
-  {
-    id: "4",
-    name: "Dark Magician - SDY-006",
-    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc4e?w=400&h=600&fit=crop",
-    price: 34.99,
-    category: "Yu-Gi-Oh!",
-    rarity: "Ultra Rare",
-    condition: "Near Mint",
-    stock: 15,
-    rating: 4.5,
-    isNew: false,
-    isFeatured: false
-  },
-  {
-    id: "5",
-    name: "Black Lotus - Alpha Edition",
-    image: "https://images.unsplash.com/photo-1626121602187-1313288432fe?w=400&h=600&fit=crop",
-    price: 49999.99,
-    category: "Magic: The Gathering",
-    rarity: "Mythic Rare",
-    condition: "Lightly Played",
-    stock: 1,
-    rating: 5.0,
-    isNew: false,
-    isFeatured: true
-  },
-  {
-    id: "6",
-    name: "Sol Ring - Commander",
-    image: "https://images.unsplash.com/photo-1609813040801-8b09a342bd73?w=400&h=600&fit=crop",
-    price: 2.99,
-    category: "Magic: The Gathering",
-    rarity: "Common",
-    condition: "Near Mint",
-    stock: 50,
-    rating: 4.3,
-    isNew: false,
-    isFeatured: false
-  },
-  {
-    id: "7",
-    name: "Monkey D. Luffy - OP01-003",
-    image: "https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?w=400&h=600&fit=crop",
-    price: 89.99,
-    comparePrice: 109.99,
-    category: "One Piece",
-    rarity: "Leader",
-    condition: "Near Mint",
-    stock: 10,
-    rating: 4.7,
-    isNew: true,
-    isFeatured: false
-  },
-  {
-    id: "8",
-    name: "Roronoa Zoro - OP01-025",
-    image: "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=400&h=600&fit=crop",
-    price: 45.99,
-    category: "One Piece",
-    rarity: "Super Rare",
-    condition: "Near Mint",
-    stock: 7,
-    rating: 4.6,
-    isNew: true,
-    isFeatured: false
-  },
-  {
-    id: "9",
-    name: "Michael Jordan - 1986 Fleer Rookie",
-    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc4e?w=400&h=600&fit=crop",
-    price: 24999.99,
-    category: "Sports Cards",
-    rarity: "Rookie",
-    condition: "PSA 9",
-    stock: 1,
-    rating: 5.0,
-    isNew: false,
-    isFeatured: true
-  },
-  {
-    id: "10",
-    name: "LeBron James - 2003 Topps Rookie",
-    image: "https://images.unsplash.com/photo-1626121602187-1313288432fe?w=400&h=600&fit=crop",
-    price: 1899.99,
-    category: "Sports Cards",
-    rarity: "Rookie",
-    condition: "PSA 10",
-    stock: 2,
-    rating: 4.9,
-    isNew: false,
-    isFeatured: false
+interface Product {
+  id: string
+  name: string
+  nameJa?: string
+  slug: string
+  price: number
+  comparePrice?: number
+  stock: number
+  condition?: string
+  rarity?: string
+  category?: {
+    id: string
+    name: string
   }
-]
+  images: {
+    id: string
+    url: string
+    alt?: string
+  }[]
+  isNewArrival?: boolean
+  isRecommended?: boolean
+}
 
 export default function ProductsPage() {
-  const [products] = useState(mockProducts)
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [sortBy, setSortBy] = useState("featured")
   const [showMobileFilters, setShowMobileFilters] = useState(false)
-  
+
   // フィルター状態
   const [filters, setFilters] = useState({
     categories: [] as string[],
@@ -168,6 +55,24 @@ export default function ProductsPage() {
     inStock: false
   })
 
+  // 商品データを取得
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/products')
+        if (response.ok) {
+          const data = await response.json()
+          setProducts(data.products || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch products:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [])
+
   const itemsPerPage = 12
 
   // フィルタリングとソート
@@ -176,7 +81,7 @@ export default function ProductsPage() {
 
     // カテゴリーフィルター
     if (filters.categories.length > 0) {
-      filtered = filtered.filter(p => filters.categories.includes(p.category))
+      filtered = filtered.filter(p => p.category && filters.categories.includes(p.category.name))
     }
 
     // 価格フィルター
@@ -211,14 +116,11 @@ export default function ProductsPage() {
         filtered.sort((a, b) => a.name.localeCompare(b.name))
         break
       case "newest":
-        filtered.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0))
-        break
-      case "rating":
-        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        filtered.sort((a, b) => (b.isNewArrival ? 1 : 0) - (a.isNewArrival ? 1 : 0))
         break
       case "featured":
       default:
-        filtered.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0))
+        filtered.sort((a, b) => (b.isRecommended ? 1 : 0) - (a.isRecommended ? 1 : 0))
     }
 
     return filtered
@@ -231,19 +133,42 @@ export default function ProductsPage() {
     currentPage * itemsPerPage
   )
 
+  // 商品データをProductCard用に変換
+  const transformProduct = (product: Product) => ({
+    id: product.id,
+    name: product.nameJa || product.name,
+    image: product.images[0]?.url || "/placeholder.png",
+    price: product.price,
+    comparePrice: product.comparePrice,
+    category: product.category?.name || "その他",
+    rarity: product.rarity,
+    condition: product.condition,
+    stock: product.stock,
+    isNew: product.isNewArrival,
+    isFeatured: product.isRecommended
+  })
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       {/* ページヘッダー */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <a href="/" className="hover:text-primary">Home</a>
+            <a href="/" className="hover:text-primary">ホーム</a>
             <span>/</span>
-            <span>All Products</span>
+            <span>商品一覧</span>
           </div>
-          <h1 className="text-3xl font-bold">All Trading Cards</h1>
+          <h1 className="text-3xl font-bold">商品一覧</h1>
           <p className="text-muted-foreground mt-2">
-            {filteredAndSortedProducts.length} products available
+            {filteredAndSortedProducts.length}件の商品
           </p>
         </div>
       </div>
@@ -252,7 +177,7 @@ export default function ProductsPage() {
         <div className="flex gap-8">
           {/* サイドバーフィルター（デスクトップ） */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
-            <ProductFilters 
+            <ProductFilters
               filters={filters}
               onFiltersChange={setFilters}
             />
@@ -272,17 +197,17 @@ export default function ProductsPage() {
                     onClick={() => setShowMobileFilters(!showMobileFilters)}
                   >
                     <Filter className="h-4 w-4 mr-2" />
-                    Filters
+                    フィルター
                   </Button>
-                  
-                  <ProductSort 
+
+                  <ProductSort
                     value={sortBy}
                     onChange={setSortBy}
                   />
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">View:</span>
+                  <span className="text-sm text-muted-foreground">表示:</span>
                   <Button
                     variant={viewMode === "grid" ? "default" : "ghost"}
                     size="icon"
@@ -304,7 +229,7 @@ export default function ProductsPage() {
             {/* モバイルフィルター */}
             {showMobileFilters && (
               <div className="lg:hidden mb-6">
-                <ProductFilters 
+                <ProductFilters
                   filters={filters}
                   onFiltersChange={setFilters}
                 />
@@ -314,19 +239,19 @@ export default function ProductsPage() {
             {/* 商品グリッド/リスト */}
             {paginatedProducts.length > 0 ? (
               <div className={cn(
-                viewMode === "grid" 
+                viewMode === "grid"
                   ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
                   : "space-y-4"
               )}>
                 {paginatedProducts.map((product) => (
-                  <ProductCard key={product.id} {...product} />
+                  <ProductCard key={product.id} {...transformProduct(product)} />
                 ))}
               </div>
             ) : (
               <div className="text-center py-12 bg-white rounded-lg border">
-                <p className="text-muted-foreground">No products found matching your filters.</p>
-                <Button 
-                  variant="outline" 
+                <p className="text-muted-foreground">条件に一致する商品が見つかりません</p>
+                <Button
+                  variant="outline"
                   className="mt-4"
                   onClick={() => setFilters({
                     categories: [],
@@ -336,7 +261,7 @@ export default function ProductsPage() {
                     inStock: false
                   })}
                 >
-                  Clear Filters
+                  フィルターをクリア
                 </Button>
               </div>
             )}
@@ -353,7 +278,7 @@ export default function ProductsPage() {
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  
+
                   <div className="flex items-center gap-1">
                     {[...Array(totalPages)].map((_, i) => {
                       const page = i + 1
