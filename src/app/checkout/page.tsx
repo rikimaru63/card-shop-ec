@@ -136,10 +136,9 @@ export default function CheckoutPage() {
     return null
   }
 
-  // Generate Wise payment URL with amount
+  // Generate Wise payment URL (Wise Pay Link doesn't support amount pre-fill)
   const getWisePaymentUrl = () => {
-    const amount = Math.round(orderTotal)
-    return `${WISE_PAY_BASE_URL}?amount=${amount}&currency=JPY&description=${encodeURIComponent(`注文番号: ${orderNumber}`)}`
+    return WISE_PAY_BASE_URL
   }
 
   const copyToClipboard = (text: string) => {
@@ -233,20 +232,29 @@ export default function CheckoutPage() {
                   Wiseでお支払い
                 </h2>
 
+                {/* Amount to pay - prominent display */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center">
+                  <p className="text-sm text-green-700 mb-1">お支払い金額</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="text-3xl font-bold text-green-600">¥{orderTotal.toLocaleString()}</p>
+                    <button
+                      onClick={() => copyToClipboard(orderTotal.toString())}
+                      className="text-green-500 hover:text-green-700"
+                      title="金額をコピー"
+                    >
+                      <Copy className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+
                 {/* QR Code */}
                 <div className="flex flex-col items-center mb-4">
                   <div className="p-4 bg-white border-2 border-green-100 rounded-xl mb-3">
                     <QRCodeSVG
                       value={wiseUrl}
-                      size={180}
+                      size={160}
                       level="H"
                       includeMargin={true}
-                      imageSettings={{
-                        src: "/wise-logo.png",
-                        height: 30,
-                        width: 30,
-                        excavate: true,
-                      }}
                     />
                   </div>
                   <p className="text-sm text-muted-foreground text-center">
@@ -262,16 +270,34 @@ export default function CheckoutPage() {
                   className="block w-full"
                 >
                   <Button className="w-full bg-green-600 hover:bg-green-700" size="lg">
-                    Wiseで支払う（¥{orderTotal.toLocaleString()}）
+                    Wiseを開く
                     <ExternalLink className="h-4 w-4 ml-2" />
                   </Button>
                 </a>
 
                 {/* Instructions */}
-                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <p className="text-xs text-amber-800">
-                    <strong>注意：</strong> 送金時のメモ欄に注文番号「{orderNumber}」を必ずご記入ください。
-                  </p>
+                <div className="mt-4 space-y-3">
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm font-semibold text-amber-900 mb-2">お支払い時の入力内容：</p>
+                    <div className="space-y-2 text-sm text-amber-800">
+                      <div className="flex items-center justify-between bg-white rounded px-3 py-2">
+                        <span>金額：</span>
+                        <span className="font-mono font-bold">¥{orderTotal.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between bg-white rounded px-3 py-2">
+                        <span>説明欄：</span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono font-bold text-xs">{orderNumber}</span>
+                          <button
+                            onClick={() => copyToClipboard(orderNumber || '')}
+                            className="text-amber-600 hover:text-amber-800"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
