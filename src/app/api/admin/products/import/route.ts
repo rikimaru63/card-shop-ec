@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { generateSKU, generateUniqueSlug } from '@/lib/utils/sku'
 import { Condition } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 // Condition mapping
 const conditionMap: { [key: string]: Condition } = {
   'New': 'MINT',

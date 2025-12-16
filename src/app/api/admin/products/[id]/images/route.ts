@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { uploadImage, deleteImage } from '@/lib/cloudinary'
 
+export const dynamic = 'force-dynamic'
+
 // GET - Get all images for a product
 export async function GET(
   request: NextRequest,

@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 // GET - Fetch single product
 export async function GET(
   request: NextRequest,
