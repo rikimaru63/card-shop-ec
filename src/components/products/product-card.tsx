@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { Heart, ShoppingCart, Star, Check, ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -25,14 +24,6 @@ interface ProductCardProps {
   isFeatured?: boolean
 }
 
-// Check if image URL is valid (not placeholder or empty)
-function isValidImageUrl(url: string | undefined | null): boolean {
-  if (!url) return false
-  if (url.includes('placeholder')) return false
-  if (url.startsWith('http') || url.startsWith('/')) return true
-  return false
-}
-
 export function ProductCard({
   id,
   name,
@@ -49,6 +40,7 @@ export function ProductCard({
 }: ProductCardProps) {
   const [showAddedToCart, setShowAddedToCart] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
   const addToCart = useCartStore((state) => state.addItem)
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
   const isWishlisted = isInWishlist(id)
@@ -57,8 +49,8 @@ export function ProductCard({
   const isOutOfStock = stock === 0
   const isLowStock = stock > 0 && stock <= 5
 
-  // Check if we should show the actual image or placeholder
-  const hasValidImage = isValidImageUrl(image) && !imageError
+  // Check if image URL is valid - must start with http (Cloudinary)
+  const hasValidImage = image && image.startsWith('http') && !imageError
   
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -128,25 +120,32 @@ export function ProductCard({
 
       <Link href={`/products/${id}`}>
         {/* 画像 */}
-        <div className="relative aspect-[3/4] overflow-hidden rounded-t-xl bg-gradient-to-b from-gray-100 to-gray-200">
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
+        <div className="relative aspect-[3/4] overflow-hidden rounded-t-xl bg-gray-100">
+          {/* プレースホルダー（常に表示、画像がロードされたら隠れる） */}
+          <div className={cn(
+            "absolute inset-0 flex flex-col items-center justify-center bg-gray-100 transition-opacity",
+            hasValidImage && imageLoaded ? "opacity-0" : "opacity-100"
+          )}>
+            <ImageIcon className="h-16 w-16 text-gray-300 mb-2" />
+            <span className="text-xs text-gray-400">No Image</span>
+          </div>
 
-          {hasValidImage ? (
-            <Image
+          {/* 実際の画像 */}
+          {hasValidImage && (
+            <img
               src={image}
               alt={name}
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
-              priority={isFeatured}
+              className={cn(
+                "absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-500",
+                imageLoaded ? "opacity-100" : "opacity-0"
+              )}
+              onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
             />
-          ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100">
-              <ImageIcon className="h-16 w-16 text-gray-300 mb-2" />
-              <span className="text-xs text-gray-400">No Image</span>
-            </div>
           )}
+
+          {/* ホバーオーバーレイ */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
 
           {isOutOfStock && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
