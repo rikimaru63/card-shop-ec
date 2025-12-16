@@ -29,11 +29,7 @@ interface Product {
     id: string
     name: string
   }
-  images: {
-    id: string
-    url: string
-    alt?: string
-  }[]
+  image?: string
   isNewArrival?: boolean
   isRecommended?: boolean
 }
@@ -137,7 +133,7 @@ export default function ProductsPage() {
   const transformProduct = (product: Product) => ({
     id: product.id,
     name: product.nameJa || product.name,
-    image: product.images[0]?.url || "/placeholder.png",
+    image: product.image || "/placeholder.png",
     price: product.price,
     comparePrice: product.comparePrice,
     category: product.category?.name || "その他",
