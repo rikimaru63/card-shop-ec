@@ -112,7 +112,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     addToCart({
       id: product.id,
       name: product.name,
-      image: product.images[0] || '/placeholder.jpg',
+      image: product.images[0] || '/placeholder-card.svg',
       price: product.price,
       category: product.category,
       rarity: product.rarity,
@@ -176,7 +176,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           <div className="space-y-4">
             <div className="relative bg-white rounded-lg border overflow-hidden aspect-[3/4]">
               <Image
-                src={product.images[selectedImage] || '/placeholder.jpg'}
+                src={product.images[selectedImage] || '/placeholder-card.svg'}
                 alt={product.name}
                 fill
                 className="object-contain"

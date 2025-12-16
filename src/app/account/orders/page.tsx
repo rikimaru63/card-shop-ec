@@ -245,7 +245,7 @@ export default function OrdersPage() {
                             className="relative w-12 h-12 rounded bg-gray-100 overflow-hidden"
                           >
                             <Image
-                              src={item.snapshot.image || "/placeholder.png"}
+                              src={item.snapshot.image || "/placeholder-card.svg"}
                               alt={item.snapshot.name}
                               fill
                               className="object-cover"
@@ -274,7 +274,7 @@ export default function OrdersPage() {
                           <div key={item.id} className="flex items-center gap-4">
                             <div className="relative w-16 h-16 rounded bg-gray-100 overflow-hidden flex-shrink-0">
                               <Image
-                                src={item.snapshot.image || "/placeholder.png"}
+                                src={item.snapshot.image || "/placeholder-card.svg"}
                                 alt={item.snapshot.name}
                                 fill
                                 className="object-cover"

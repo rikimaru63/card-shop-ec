@@ -157,6 +157,7 @@ export default function EditProductPage() {
           title: "保存完了",
           description: "商品情報を更新しました"
         })
+        router.refresh()
         router.push("/admin/products")
       } else {
         toast({

@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -37,6 +37,11 @@ interface ProductListProps {
 export function ProductList({ initialProducts }: ProductListProps) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
+
+  // Sync products state when initialProducts prop changes (after router.refresh())
+  useEffect(() => {
+    setProducts(initialProducts);
+  }, [initialProducts]);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [productToDeleteId, setProductToDeleteId] = useState<string | null>(null);

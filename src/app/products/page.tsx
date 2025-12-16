@@ -133,7 +133,7 @@ export default function ProductsPage() {
   const transformProduct = (product: Product) => ({
     id: product.id,
     name: product.nameJa || product.name,
-    image: product.image || "/placeholder.png",
+    image: product.image || "/placeholder-card.svg",
     price: product.price,
     comparePrice: product.comparePrice,
     category: product.category?.name || "その他",

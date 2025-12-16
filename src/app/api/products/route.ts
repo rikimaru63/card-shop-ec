@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
       lastPriceChange: product.lastPriceChange?.toISOString() || null,
       stock: product.stock,
       lowStock: product.stock <= product.lowStock,
-      image: product.images[0]?.url || '/placeholder-card.jpg',
+      image: product.images[0]?.url || '/placeholder-card.svg',
       category: product.category,
       language: product.language,
       foil: product.foil,

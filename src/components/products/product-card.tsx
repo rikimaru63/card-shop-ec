@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Heart, ShoppingCart, Star, Check } from "lucide-react"
+import { Heart, ShoppingCart, Star, Check, ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatPrice } from "@/lib/utils"
@@ -25,6 +25,14 @@ interface ProductCardProps {
   isFeatured?: boolean
 }
 
+// Check if image URL is valid (not placeholder or empty)
+function isValidImageUrl(url: string | undefined | null): boolean {
+  if (!url) return false
+  if (url.includes('placeholder')) return false
+  if (url.startsWith('http') || url.startsWith('/')) return true
+  return false
+}
+
 export function ProductCard({
   id,
   name,
@@ -40,13 +48,17 @@ export function ProductCard({
   isFeatured = false
 }: ProductCardProps) {
   const [showAddedToCart, setShowAddedToCart] = useState(false)
+  const [imageError, setImageError] = useState(false)
   const addToCart = useCartStore((state) => state.addItem)
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
   const isWishlisted = isInWishlist(id)
-  
+
   const discount = comparePrice ? Math.round(((comparePrice - price) / comparePrice) * 100) : 0
   const isOutOfStock = stock === 0
   const isLowStock = stock > 0 && stock <= 5
+
+  // Check if we should show the actual image or placeholder
+  const hasValidImage = isValidImageUrl(image) && !imageError
   
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -116,19 +128,28 @@ export function ProductCard({
 
       <Link href={`/products/${id}`}>
         {/* 画像 */}
-        <div className="relative aspect-[3/4] overflow-hidden rounded-t-xl bg-gradient-to-b from-secondary to-background">
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <Image
-            src={image}
-            alt={name}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-            priority={isFeatured}
-          />
-          
+        <div className="relative aspect-[3/4] overflow-hidden rounded-t-xl bg-gradient-to-b from-gray-100 to-gray-200">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
+
+          {hasValidImage ? (
+            <Image
+              src={image}
+              alt={name}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              priority={isFeatured}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100">
+              <ImageIcon className="h-16 w-16 text-gray-300 mb-2" />
+              <span className="text-xs text-gray-400">No Image</span>
+            </div>
+          )}
+
           {isOutOfStock && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
               <span className="px-4 py-2 bg-white text-foreground font-semibold rounded-md">
                 Out of Stock
               </span>
