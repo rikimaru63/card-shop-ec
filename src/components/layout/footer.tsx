@@ -65,7 +65,6 @@ export function Footer() {
               </div>
               <div>
                 <h3 className="font-semibold">Free Worldwide Shipping</h3>
-                <p className="text-sm text-muted-foreground">Free on orders over ¥10,000</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
