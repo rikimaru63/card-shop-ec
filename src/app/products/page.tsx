@@ -162,10 +162,13 @@ export default function ProductsPage() {
             <span>/</span>
             <span>商品一覧</span>
           </div>
-          <h1 className="text-3xl font-bold">商品一覧</h1>
+          <h1 className="text-3xl font-bold">All Products</h1>
           <p className="text-muted-foreground mt-2">
-            {filteredAndSortedProducts.length}件の商品
+            {filteredAndSortedProducts.length} products
           </p>
+          <div style={{ backgroundColor: 'red', color: 'white', padding: '10px', marginTop: '10px', fontWeight: 'bold' }}>
+            TEST: Deploy working - v2
+          </div>
         </div>
       </div>
 
