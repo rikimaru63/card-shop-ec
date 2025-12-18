@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
@@ -44,14 +45,14 @@ export async function PUT(
 ) {
   try {
     // Check authentication
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     if (!session || !session.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-    
+
     // Check if product exists
     const existingProduct = await prisma.product.findUnique({
       where: { id: params.id }
@@ -164,7 +165,7 @@ export async function DELETE(
 ) {
   try {
     // Check authentication
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     if (!session || !session.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
