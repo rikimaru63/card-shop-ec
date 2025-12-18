@@ -44,6 +44,7 @@ export default function ImageUpload({ productId, images, onImagesChange }: Image
         const response = await fetch(`/api/admin/products/${productId}/images`, {
           method: 'POST',
           body: formData,
+          credentials: 'include', // Ensure cookies are sent in Edge
           // Don't set Content-Type header - let browser set it with boundary
         })
 
@@ -78,7 +79,7 @@ export default function ImageUpload({ productId, images, onImagesChange }: Image
     try {
       const response = await fetch(
         `/api/admin/products/${productId}/images?imageId=${imageId}`,
-        { method: 'DELETE' }
+        { method: 'DELETE', credentials: 'include' }
       )
 
       if (response.ok) {
@@ -119,6 +120,7 @@ export default function ImageUpload({ productId, images, onImagesChange }: Image
       await fetch(`/api/admin/products/${productId}/images`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Ensure cookies are sent in Edge
         body: JSON.stringify({
           images: images.map((img, index) => ({ id: img.id, order: index }))
         })
