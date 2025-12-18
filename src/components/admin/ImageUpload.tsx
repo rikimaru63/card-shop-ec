@@ -28,19 +28,33 @@ export default function ImageUpload({ productId, images, onImagesChange }: Image
     setUploading(true)
     const newImages: ProductImage[] = []
 
-    for (const file of Array.from(files)) {
+    // Convert FileList to array for better Edge compatibility
+    const fileArray: File[] = []
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (file) fileArray.push(file)
+    }
+
+    for (const file of fileArray) {
       const formData = new FormData()
-      formData.append('file', file)
+      // Explicitly set filename for Edge compatibility
+      formData.append('file', file, file.name)
 
       try {
         const response = await fetch(`/api/admin/products/${productId}/images`, {
           method: 'POST',
-          body: formData
+          body: formData,
+          // Don't set Content-Type header - let browser set it with boundary
         })
 
         if (response.ok) {
           const data = await response.json()
-          newImages.push(data.image)
+          if (data.image) {
+            newImages.push(data.image)
+          }
+        } else {
+          const errorData = await response.json().catch(() => ({}))
+          console.error('Upload failed:', response.status, errorData)
         }
       } catch (error) {
         console.error('Upload error:', error)
@@ -53,7 +67,9 @@ export default function ImageUpload({ productId, images, onImagesChange }: Image
 
     setUploading(false)
     // Reset input
-    e.target.value = ''
+    if (e.target) {
+      e.target.value = ''
+    }
   }
 
   const handleDelete = async (imageId: string) => {
@@ -166,7 +182,7 @@ export default function ImageUpload({ productId, images, onImagesChange }: Image
         <label className="aspect-square bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-300 hover:bg-gray-100 transition-colors">
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp"
             multiple
             onChange={handleUpload}
             className="hidden"
