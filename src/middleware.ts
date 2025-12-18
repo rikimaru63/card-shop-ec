@@ -1,22 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
+// Cookie name for admin session
+const ADMIN_SESSION_COOKIE = 'admin-session';
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Admin routes - Basic Auth
-  if (pathname.startsWith('/admin')) {
-    const basicAuth = req.headers.get('authorization');
-
+  // Admin routes (pages and API) - Basic Auth with session cookie
+  if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
     const user = process.env.ADMIN_USER || 'admin';
     const password = process.env.ADMIN_PASSWORD || 'password';
 
-    if (basicAuth) {
-      const authValue = basicAuth.split(' ')[1];
-      const [providedUser, providedPassword] = atob(authValue).split(':');
+    // Check for existing admin session cookie first
+    const adminSession = req.cookies.get(ADMIN_SESSION_COOKIE);
+    if (adminSession?.value === 'authenticated') {
+      return NextResponse.next();
+    }
 
-      if (providedUser === user && providedPassword === password) {
-        return NextResponse.next();
+    // Check Basic Auth
+    const basicAuth = req.headers.get('authorization');
+    if (basicAuth) {
+      try {
+        const authValue = basicAuth.split(' ')[1];
+        const [providedUser, providedPassword] = atob(authValue).split(':');
+
+        if (providedUser === user && providedPassword === password) {
+          // Set admin session cookie for future requests
+          const response = NextResponse.next();
+          response.cookies.set(ADMIN_SESSION_COOKIE, 'authenticated', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 60 * 60 * 24, // 24 hours
+          });
+          return response;
+        }
+      } catch {
+        // Invalid base64 encoding
       }
     }
 
@@ -46,5 +68,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/account/:path*', '/checkout/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/account/:path*', '/checkout/:path*'],
 };
