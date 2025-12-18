@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { isAdminAuthorized } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,8 +44,8 @@ export async function PUT(
 ) {
   try {
     // Check authentication
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user) {
+    const isAuthorized = await isAdminAuthorized(request)
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -165,14 +164,14 @@ export async function DELETE(
 ) {
   try {
     // Check authentication
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user) {
+    const isAuthorized = await isAdminAuthorized(request)
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-    
+
     // Check if product exists
     const product = await prisma.product.findUnique({
       where: { id: params.id },

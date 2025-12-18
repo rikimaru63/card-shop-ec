@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isAdminAuthorized } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,8 +27,8 @@ export async function GET(_request: NextRequest) {
 // POST - Create new announcement
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user) {
+    const isAuthorized = await isAdminAuthorized(request)
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

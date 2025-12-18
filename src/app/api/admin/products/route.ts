@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateSKU, generateUniqueSlug } from '@/lib/utils/sku'
 import { Prisma } from '@prisma/client'
+import { isAdminAuthorized } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user) {
+    const isAuthorized = await isAdminAuthorized(request)
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-    
+
     const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -74,18 +73,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication and admin role
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user) {
+    // Check authentication
+    const isAuthorized = await isAdminAuthorized(request)
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-    
-    // Note: In production, check user.role === 'ADMIN'
-    // For now, any authenticated user can create products
-    
+
     const body = await request.json()
     
     // Validate required fields
