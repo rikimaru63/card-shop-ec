@@ -91,11 +91,13 @@ async function cleanupExpiredReservations() {
   }
 
   // Get unique order numbers from expired reservations
-  const orderNumbers = [...new Set(
-    expiredReservations
-      .map(r => r.orderNumber)
-      .filter((n): n is string => n !== null)
-  )]
+  const orderNumbersSet = new Set<string>()
+  for (const r of expiredReservations) {
+    if (r.orderNumber) {
+      orderNumbersSet.add(r.orderNumber)
+    }
+  }
+  const orderNumbers = Array.from(orderNumbersSet)
 
   let cancelledOrders = 0
   let releasedReservations = 0
