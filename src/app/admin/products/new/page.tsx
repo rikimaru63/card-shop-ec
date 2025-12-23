@@ -14,6 +14,7 @@ export default function NewProductPage() {
   const [formData, setFormData] = useState({
     name: "",
     cardType: "pokemon", // pokemon or onepiece
+    productType: "SINGLE", // SINGLE or BOX
     cardSet: "",
     cardNumber: "",
     rarity: "",
@@ -26,12 +27,18 @@ export default function NewProductPage() {
     graded: false,
     gradingCompany: "",
     grade: "",
+    hasShrink: false,
     description: "",
   })
 
   const cardTypes = [
     { value: "pokemon", label: "ポケモンカード" },
     { value: "onepiece", label: "ワンピースカード" },
+  ]
+
+  const productTypes = [
+    { value: "SINGLE", label: "シングルカード" },
+    { value: "BOX", label: "BOX・パック" },
   ]
 
   const pokemonSets = [
@@ -151,11 +158,26 @@ export default function NewProductPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">カード名 *</Label>
+                  <Label htmlFor="productType">商品タイプ *</Label>
+                  <select
+                    id="productType"
+                    required
+                    className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                    value={formData.productType}
+                    onChange={(e) => setFormData({...formData, productType: e.target.value})}
+                  >
+                    {productTypes.map(type => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">商品名 *</Label>
                   <Input
                     id="name"
                     required
-                    placeholder={formData.cardType === "pokemon" ? "例: ピカチュウex" : "例: モンキー・D・ルフィ"}
+                    placeholder={formData.productType === "BOX" ? "例: シャイニートレジャーex BOX" : (formData.cardType === "pokemon" ? "例: ピカチュウex" : "例: モンキー・D・ルフィ")}
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                   />
@@ -273,7 +295,7 @@ export default function NewProductPage() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold border-b pb-2">仕様</h2>
               
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
                 <Label className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -291,6 +313,17 @@ export default function NewProductPage() {
                   />
                   初版
                 </Label>
+
+                {formData.productType === "BOX" && (
+                  <Label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.hasShrink}
+                      onChange={(e) => setFormData({...formData, hasShrink: e.target.checked})}
+                    />
+                    シュリンク付き
+                  </Label>
+                )}
               </div>
 
               <div className="space-y-2">

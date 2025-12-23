@@ -20,6 +20,7 @@ interface ProductImage {
 interface Product {
   id: string
   name: string
+  productType: string
   cardSet: string | null
   cardNumber: string | null
   rarity: string | null
@@ -32,6 +33,7 @@ interface Product {
   graded: boolean
   gradingCompany: string | null
   grade: string | null
+  hasShrink: boolean
   description: string | null
   images: ProductImage[]
 }
@@ -48,6 +50,7 @@ export default function EditProductPage() {
   const [formData, setFormData] = useState({
     name: "",
     cardType: "pokemon", // pokemon or onepiece
+    productType: "SINGLE", // SINGLE or BOX
     cardSet: "",
     cardNumber: "",
     rarity: "",
@@ -60,12 +63,18 @@ export default function EditProductPage() {
     graded: false,
     gradingCompany: "",
     grade: "",
+    hasShrink: false,
     description: "",
   })
 
   const cardTypes = [
     { value: "pokemon", label: "ポケモンカード" },
     { value: "onepiece", label: "ワンピースカード" },
+  ]
+
+  const productTypes = [
+    { value: "SINGLE", label: "シングルカード" },
+    { value: "BOX", label: "BOX・パック" },
   ]
 
   const pokemonSets = [
@@ -128,6 +137,7 @@ export default function EditProductPage() {
         setFormData({
           name: data.name || "",
           cardType: cardType,
+          productType: data.productType || "SINGLE",
           cardSet: data.cardSet || "",
           cardNumber: data.cardNumber || "",
           rarity: data.rarity || "",
@@ -140,6 +150,7 @@ export default function EditProductPage() {
           graded: data.graded || false,
           gradingCompany: data.gradingCompany || "",
           grade: data.grade || "",
+          hasShrink: data.hasShrink || false,
           description: data.description || "",
         })
       } else {
@@ -258,11 +269,25 @@ export default function EditProductPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">カード名 *</Label>
+                  <Label htmlFor="productType">商品タイプ *</Label>
+                  <select
+                    id="productType"
+                    className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                    value={formData.productType}
+                    onChange={(e) => setFormData({...formData, productType: e.target.value})}
+                  >
+                    {productTypes.map(type => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">商品名 *</Label>
                   <Input
                     id="name"
                     required
-                    placeholder={formData.cardType === "pokemon" ? "例: ピカチュウex" : "例: モンキー・D・ルフィ"}
+                    placeholder={formData.productType === "BOX" ? "例: シャイニートレジャーex BOX" : (formData.cardType === "pokemon" ? "例: ピカチュウex" : "例: モンキー・D・ルフィ")}
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                   />
@@ -377,7 +402,7 @@ export default function EditProductPage() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold border-b pb-2">仕様</h2>
 
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
                 <Label className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -395,6 +420,17 @@ export default function EditProductPage() {
                   />
                   初版
                 </Label>
+
+                {formData.productType === "BOX" && (
+                  <Label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.hasShrink}
+                      onChange={(e) => setFormData({...formData, hasShrink: e.target.checked})}
+                    />
+                    シュリンク付き
+                  </Label>
+                )}
               </div>
 
               <div className="space-y-2">

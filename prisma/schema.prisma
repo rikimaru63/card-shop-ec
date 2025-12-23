@@ -46,6 +46,7 @@ model Product {
   description String? @db.Text
 
   // Card specific fields
+  productType    ProductType @default(SINGLE) // BOX or SINGLE
   cardSet        String?
   cardNumber     String?
   rarity         Rarity?
@@ -56,6 +57,7 @@ model Product {
   graded         Boolean    @default(false)
   gradingCompany String? // PSA, BGS, CGC
   grade          String? // 10, 9.5, etc
+  hasShrink      Boolean    @default(false) // シュリンク有無
 
   // Pricing
   price           Decimal   @db.Money
@@ -348,6 +350,11 @@ enum Condition {
   GRADE_C
   PSA
   SEALED
+}
+
+enum ProductType {
+  SINGLE  // シングルカード
+  BOX     // BOX・パック
 }
 
 enum OrderStatus {

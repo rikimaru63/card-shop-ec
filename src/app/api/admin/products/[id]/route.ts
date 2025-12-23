@@ -89,9 +89,9 @@ export async function PUT(
     const nullableFields = ['rarity', 'condition', 'cardSet', 'cardNumber', 'gradingCompany', 'grade', 'description'];
 
     const bodyKeys: (keyof typeof body)[] = [
-      'name', 'nameJa', 'description', 'cardSet', 'cardNumber',
+      'name', 'nameJa', 'description', 'productType', 'cardSet', 'cardNumber',
       'rarity', 'condition', 'language', 'foil', 'firstEdition',
-      'graded', 'gradingCompany', 'grade', 'featured', 'published',
+      'graded', 'gradingCompany', 'grade', 'hasShrink', 'featured', 'published',
       'lowStock', 'price', 'comparePrice', 'stock'
     ];
 
