@@ -83,12 +83,11 @@ export default function EditProductPage() {
   ]
 
   const conditions = [
-    { value: "MINT", label: "S (完美品)" },
-    { value: "NEAR_MINT", label: "A (極美品)" },
-    { value: "LIGHTLY_PLAYED", label: "B (美品)" },
-    { value: "MODERATELY_PLAYED", label: "C (良好)" },
-    { value: "HEAVILY_PLAYED", label: "D (並品)" },
-    { value: "DAMAGED", label: "E (劣化品)" }
+    { value: "GRADE_A", label: "A：美品", description: "ほぼ新品同様。目立った傷や汚れなし" },
+    { value: "GRADE_B", label: "B：良品", description: "多少の使用感あり。軽微な傷がある場合あり" },
+    { value: "GRADE_C", label: "C：ダメージ", description: "目立つ傷や汚れあり。プレイ用として使用可能" },
+    { value: "PSA", label: "PSA", description: "PSA鑑定済みカード" },
+    { value: "SEALED", label: "未開封", description: "未開封の新品" }
   ]
 
   const gradingCompanies = [

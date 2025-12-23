@@ -5,12 +5,11 @@ export const dynamic = 'force-dynamic'
 
 // Reverse condition mapping
 const conditionToString: { [key: string]: string } = {
-  'MINT': 'New',
-  'NEAR_MINT': 'Used A',
-  'LIGHTLY_PLAYED': 'Used B',
-  'MODERATELY_PLAYED': 'Used C',
-  'HEAVILY_PLAYED': 'Used D',
-  'DAMAGED': 'Damaged',
+  'GRADE_A': 'A',
+  'GRADE_B': 'B',
+  'GRADE_C': 'C',
+  'PSA': 'PSA',
+  'SEALED': '未開封',
 }
 
 export async function GET() {
@@ -28,7 +27,7 @@ export async function GET() {
       const name = escapeCSV(product.name)
       const stock = product.stock
       const price = Number(product.price)
-      const condition = conditionToString[product.condition || 'MINT'] || 'New'
+      const condition = conditionToString[product.condition || 'GRADE_A'] || 'A'
       const category = escapeCSV(product.category?.name || '')
 
       return `${name},${stock},${price},${condition},${category}`

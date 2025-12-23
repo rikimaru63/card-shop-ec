@@ -7,14 +7,18 @@ export const dynamic = 'force-dynamic'
 
 // Condition mapping
 const conditionMap: { [key: string]: Condition } = {
-  'New': 'MINT',
-  'new': 'MINT',
-  '新品': 'MINT',
-  'Used A': 'NEAR_MINT',
-  'Used B': 'LIGHTLY_PLAYED',
-  'Used C': 'MODERATELY_PLAYED',
-  'Used D': 'HEAVILY_PLAYED',
-  'Damaged': 'DAMAGED',
+  'A': 'GRADE_A',
+  'A：美品': 'GRADE_A',
+  '美品': 'GRADE_A',
+  'B': 'GRADE_B',
+  'B：良品': 'GRADE_B',
+  '良品': 'GRADE_B',
+  'C': 'GRADE_C',
+  'C：ダメージ': 'GRADE_C',
+  'ダメージ': 'GRADE_C',
+  'PSA': 'PSA',
+  '未開封': 'SEALED',
+  'SEALED': 'SEALED',
 }
 
 export async function POST(request: NextRequest) {
@@ -107,7 +111,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Map condition
-        const condition: Condition = conditionMap[conditionStr] || 'MINT'
+        const condition: Condition = conditionMap[conditionStr] || 'GRADE_A'
 
         // Get or create category if specified
         let categoryId = defaultCategory.id

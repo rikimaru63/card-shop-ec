@@ -48,8 +48,11 @@ export default function NewProductPage() {
   ]
 
   const conditions = [
-    "S (完美品)", "A (極美品)", "B (美品)", 
-    "C (良好)", "D (並品)", "E (劣化品)"
+    { value: "GRADE_A", label: "A：美品 - ほぼ新品同様。目立った傷や汚れなし" },
+    { value: "GRADE_B", label: "B：良品 - 多少の使用感あり。軽微な傷がある場合あり" },
+    { value: "GRADE_C", label: "C：ダメージ - 目立つ傷や汚れあり。プレイ用として使用可能" },
+    { value: "PSA", label: "PSA - PSA鑑定済みカード" },
+    { value: "SEALED", label: "未開封 - 未開封の新品" }
   ]
 
   const gradingCompanies = [
@@ -182,7 +185,7 @@ export default function NewProductPage() {
                   >
                     <option value="">選択してください</option>
                     {conditions.map(condition => (
-                      <option key={condition} value={condition}>{condition}</option>
+                      <option key={condition.value} value={condition.value}>{condition.label}</option>
                     ))}
                   </select>
                 </div>

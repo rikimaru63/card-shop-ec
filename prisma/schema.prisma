@@ -343,12 +343,11 @@ enum Rarity {
 }
 
 enum Condition {
-  MINT
-  NEAR_MINT
-  LIGHTLY_PLAYED
-  MODERATELY_PLAYED
-  HEAVILY_PLAYED
-  DAMAGED
+  GRADE_A
+  GRADE_B
+  GRADE_C
+  PSA
+  SEALED
 }
 
 enum OrderStatus {
