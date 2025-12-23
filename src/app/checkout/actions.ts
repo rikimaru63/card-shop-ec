@@ -37,7 +37,32 @@ function generateOrderNumber(): string {
   return `CS-${timestamp}-${random}`
 }
 
-// Check stock availability for all items
+// Get available stock (actual stock minus active reservations)
+async function getAvailableStock(productId: string): Promise<number> {
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { stock: true, trackStock: true }
+  })
+
+  if (!product || !product.trackStock) {
+    return Infinity // No stock tracking
+  }
+
+  // Get total reserved quantity (not expired, not confirmed)
+  const reservations = await prisma.stockReservation.aggregate({
+    where: {
+      productId,
+      confirmed: false,
+      expiresAt: { gt: new Date() }
+    },
+    _sum: { quantity: true }
+  })
+
+  const reservedQuantity = reservations._sum.quantity || 0
+  return product.stock - reservedQuantity
+}
+
+// Check stock availability for all items (considering reservations)
 async function checkStockAvailability(items: CartItem[]): Promise<{
   available: boolean
   unavailableItems: { name: string; requested: number; available: number }[]
@@ -59,13 +84,16 @@ async function checkStockAvailability(items: CartItem[]): Promise<{
       continue
     }
 
-    // If stock tracking is enabled and stock is insufficient
-    if (product.trackStock && product.stock < item.quantity) {
-      unavailableItems.push({
-        name: product.name,
-        requested: item.quantity,
-        available: product.stock
-      })
+    // If stock tracking is enabled
+    if (product.trackStock) {
+      const availableStock = await getAvailableStock(item.productId)
+      if (availableStock < item.quantity) {
+        unavailableItems.push({
+          name: product.name,
+          requested: item.quantity,
+          available: Math.max(0, availableStock)
+        })
+      }
     }
   }
 
@@ -117,9 +145,12 @@ export async function createOrder(input: CreateOrderInput): Promise<{
     // Generate unique order number
     const orderNumber = generateOrderNumber()
 
-    // Use transaction to create order AND reduce stock atomically
+    // 在庫予約の期限（30分後）
+    const reservationExpiresAt = new Date(Date.now() + 30 * 60 * 1000)
+
+    // Use transaction to create order AND stock reservations atomically
     const order = await prisma.$transaction(async (tx) => {
-      // 1. Reduce stock for each item
+      // 1. Create stock reservations for each item (NOT reducing actual stock yet)
       for (const item of items) {
         const product = await tx.product.findUnique({
           where: { id: item.productId },
@@ -127,21 +158,37 @@ export async function createOrder(input: CreateOrderInput): Promise<{
         })
 
         if (product?.trackStock) {
-          // Double-check stock in transaction
-          if (product.stock < item.quantity) {
+          // Get current reservations for this product
+          const existingReservations = await tx.stockReservation.aggregate({
+            where: {
+              productId: item.productId,
+              confirmed: false,
+              expiresAt: { gt: new Date() }
+            },
+            _sum: { quantity: true }
+          })
+          const reservedQty = existingReservations._sum.quantity || 0
+          const availableStock = product.stock - reservedQty
+
+          // Double-check available stock in transaction
+          if (availableStock < item.quantity) {
             throw new Error(`在庫不足: ${item.name}`)
           }
 
-          await tx.product.update({
-            where: { id: item.productId },
+          // Create reservation (stock is held but not decremented)
+          await tx.stockReservation.create({
             data: {
-              stock: { decrement: item.quantity }
+              productId: item.productId,
+              quantity: item.quantity,
+              orderNumber,
+              expiresAt: reservationExpiresAt,
+              confirmed: false
             }
           })
         }
       }
 
-      // 2. Create the order
+      // 2. Create the order with reservation expiry
       const newOrder = await tx.order.create({
         data: {
           orderNumber,
@@ -155,6 +202,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{
           status: "PENDING",
           paymentStatus: "PENDING",
           paymentMethod: "wise",
+          reservationExpiresAt, // 在庫予約期限
           shippingAddress: shippingAddress as object,
           billingAddress: shippingAddress as object,
           items: {
@@ -178,7 +226,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{
 
       // 3. Save address if requested
       if (saveAddress) {
-        await tx.address.create({
+        const newAddress = await tx.address.create({
           data: {
             userId: user.id,
             type: "SHIPPING",
@@ -200,7 +248,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{
           where: {
             userId: user.id,
             type: "SHIPPING",
-            NOT: { id: newOrder.id }
+            NOT: { id: newAddress.id }
           },
           data: { isDefault: false }
         })
@@ -282,7 +330,7 @@ export async function getOrderByNumber(orderNumber: string) {
   }
 }
 
-// Cancel order and restore stock
+// Cancel order and release stock reservations
 export async function cancelOrder(orderNumber: string): Promise<{
   success: boolean
   message?: string
@@ -305,31 +353,35 @@ export async function cancelOrder(orderNumber: string): Promise<{
       return { success: false, message: "発送済みの注文はキャンセルできません" }
     }
 
-    // Use transaction to update order status AND restore stock
+    // Use transaction to update order status AND handle stock
     await prisma.$transaction(async (tx) => {
-      // 1. Restore stock for each item
-      for (const item of order.items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: { trackStock: true }
-        })
+      // Check if reservations were confirmed (stock was actually decremented)
+      const confirmedReservations = await tx.stockReservation.findMany({
+        where: { orderNumber, confirmed: true }
+      })
 
-        if (product?.trackStock) {
+      if (confirmedReservations.length > 0) {
+        // Stock was decremented, need to restore it
+        for (const reservation of confirmedReservations) {
           await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: { increment: item.quantity }
-            }
+            where: { id: reservation.productId },
+            data: { stock: { increment: reservation.quantity } }
           })
         }
       }
 
-      // 2. Update order status
+      // Delete all reservations for this order
+      await tx.stockReservation.deleteMany({
+        where: { orderNumber }
+      })
+
+      // Update order status
       await tx.order.update({
         where: { orderNumber },
         data: {
           status: "CANCELLED",
-          paymentStatus: "CANCELLED"
+          paymentStatus: "CANCELLED",
+          reservationExpiresAt: null
         }
       })
     })
@@ -343,6 +395,91 @@ export async function cancelOrder(orderNumber: string): Promise<{
   } catch (error) {
     console.error("Failed to cancel order:", error)
     return { success: false, message: "キャンセルに失敗しました" }
+  }
+}
+
+// Confirm payment - decrement stock and update status
+export async function confirmPayment(orderNumber: string): Promise<{
+  success: boolean
+  message?: string
+}> {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { orderNumber },
+      include: { items: true }
+    })
+
+    if (!order) {
+      return { success: false, message: "注文が見つかりません" }
+    }
+
+    if (order.status === "CANCELLED") {
+      return { success: false, message: "この注文はキャンセルされています" }
+    }
+
+    if (order.paymentStatus === "PROCESSING" || order.paymentStatus === "COMPLETED") {
+      return { success: false, message: "この注文は既に決済処理済みです" }
+    }
+
+    // Check if reservation has expired
+    if (order.reservationExpiresAt && new Date() > order.reservationExpiresAt) {
+      return { success: false, message: "在庫予約の有効期限が切れています。注文をやり直してください。" }
+    }
+
+    // Use transaction to confirm reservations and decrement stock
+    await prisma.$transaction(async (tx) => {
+      // 1. Get all reservations for this order
+      const reservations = await tx.stockReservation.findMany({
+        where: { orderNumber, confirmed: false }
+      })
+
+      // 2. Decrement actual stock and mark reservations as confirmed
+      for (const reservation of reservations) {
+        const product = await tx.product.findUnique({
+          where: { id: reservation.productId },
+          select: { stock: true, trackStock: true }
+        })
+
+        if (product?.trackStock) {
+          // Verify stock is still available
+          if (product.stock < reservation.quantity) {
+            throw new Error("在庫が不足しています")
+          }
+
+          // Actually decrement the stock now
+          await tx.product.update({
+            where: { id: reservation.productId },
+            data: { stock: { decrement: reservation.quantity } }
+          })
+        }
+
+        // Mark reservation as confirmed
+        await tx.stockReservation.update({
+          where: { id: reservation.id },
+          data: { confirmed: true }
+        })
+      }
+
+      // 3. Update order payment status to PROCESSING (waiting for admin to verify Wise payment)
+      await tx.order.update({
+        where: { orderNumber },
+        data: {
+          paymentStatus: "PROCESSING",
+          reservationExpiresAt: null // Clear expiry since payment is confirmed
+        }
+      })
+    })
+
+    revalidatePath("/account/orders")
+    revalidatePath("/admin/orders")
+    revalidatePath("/products")
+    revalidatePath("/admin/products")
+
+    return { success: true }
+  } catch (error) {
+    console.error("Failed to confirm payment:", error)
+    const errorMessage = error instanceof Error ? error.message : "決済確認に失敗しました"
+    return { success: false, message: errorMessage }
   }
 }
 

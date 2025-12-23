@@ -86,6 +86,7 @@ model Product {
   cartItems     CartItem[]
   wishlistItems Wishlist[]
   reviews       Review[]
+  reservations  StockReservation[]
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -147,6 +148,23 @@ model ProductTag {
   @@id([productId, tagId])
 }
 
+// ==================== Stock Reservation ====================
+
+model StockReservation {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity    Int
+  orderNumber String?  // 関連する注文番号
+  expiresAt   DateTime // 予約期限（30分後）
+  confirmed   Boolean  @default(false) // 決済完了で true
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
+  @@index([expiresAt])
+  @@index([orderNumber])
+}
+
 // ==================== Orders ====================
 
 model Order {
@@ -171,6 +189,9 @@ model Order {
   status        OrderStatus   @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
   paymentMethod String?
+
+  // Reservation (for 30-minute stock hold)
+  reservationExpiresAt DateTime? // 在庫予約の期限
 
   // Addresses
   shippingAddress Json

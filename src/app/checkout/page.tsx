@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { QRCodeSVG } from "qrcode.react"
 import {
   ArrowLeft,
   Package,
@@ -17,9 +16,9 @@ import {
   MessageCircle,
   Shield,
   Truck,
-  Copy,
   Plus,
-  Check
+  Check,
+  Clock
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,9 +27,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useCartStore } from "@/store/cart-store"
 import { createOrder, getUserAddresses } from "./actions"
 import { toast } from "@/hooks/use-toast"
-
-// Wise Pay Link base URL
-const WISE_PAY_BASE_URL = "https://wise.com/pay/business/kms22"
 
 interface OrderItem {
   id: string
@@ -71,16 +67,12 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { items, getTotalPrice, getTotalItems, clearCart } = useCartStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [orderComplete, setOrderComplete] = useState(false)
-  const [orderNumber, setOrderNumber] = useState<string | null>(null)
-  const [orderTotal, setOrderTotal] = useState<number>(0)
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [mounted, setMounted] = useState(false)
 
   // Address state
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
-  const [showNewAddressForm, setShowNewAddressForm] = useState(false)
+  const [addressMode, setAddressMode] = useState<"registered" | "new">("registered") // 登録済み or 別住所
   const [saveAddress, setSaveAddress] = useState(true)
   const [loadingAddresses, setLoadingAddresses] = useState(true)
 
@@ -112,8 +104,12 @@ export default function CheckoutPage() {
           const defaultAddr = addresses.find((a: SavedAddress) => a.isDefault)
           if (defaultAddr) {
             setSelectedAddressId(defaultAddr.id)
-          } else if (addresses.length === 0) {
-            setShowNewAddressForm(true)
+            setAddressMode("registered")
+          } else if (addresses.length > 0) {
+            setSelectedAddressId(addresses[0].id)
+            setAddressMode("registered")
+          } else {
+            setAddressMode("new")
           }
         } catch (error) {
           console.error("Failed to load addresses:", error)
@@ -122,7 +118,7 @@ export default function CheckoutPage() {
         }
       } else {
         setLoadingAddresses(false)
-        setShowNewAddressForm(true)
+        setAddressMode("new")
       }
     }
     if (mounted && status === "authenticated") {
@@ -138,7 +134,7 @@ export default function CheckoutPage() {
   }, [status, router])
 
   const getSelectedAddress = (): ShippingAddress | null => {
-    if (showNewAddressForm) {
+    if (addressMode === "new") {
       // Validate new address
       if (!newAddress.firstName || !newAddress.lastName || !newAddress.street1 ||
           !newAddress.city || !newAddress.state || !newAddress.postalCode) {
@@ -191,27 +187,20 @@ export default function CheckoutPage() {
         items: cartItems,
         email: session.user.email,
         shippingAddress: address,
-        saveAddress: showNewAddressForm && saveAddress
+        saveAddress: addressMode === "new" && saveAddress
       })
 
       if (result.success && result.orderNumber) {
-        const currentTotal = getTotalPrice()
-        const shipping = currentTotal >= 10000 ? 0 : 1500
-        setOrderTotal(currentTotal + shipping)
-        setOrderItems([...items])
-        setOrderNumber(result.orderNumber)
-        setOrderComplete(true)
         clearCart()
-        toast({
-          title: "Thank you for your order!",
-          description: "Please pay using the QR code below.",
-        })
+        // Redirect to payment page with 30-minute countdown
+        router.push(`/checkout/payment/${result.orderNumber}`)
       } else {
         toast({
           title: "Error",
           description: result.message || "Order failed",
           variant: "destructive"
         })
+        setIsSubmitting(false)
       }
     } catch (error) {
       console.error("Order error:", error)
@@ -220,7 +209,6 @@ export default function CheckoutPage() {
         description: "An error occurred. Please try again.",
         variant: "destructive"
       })
-    } finally {
       setIsSubmitting(false)
     }
   }
@@ -241,205 +229,6 @@ export default function CheckoutPage() {
   // Not authenticated
   if (!session) {
     return null
-  }
-
-  const getWisePaymentUrl = () => {
-    return WISE_PAY_BASE_URL
-  }
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    toast({
-      title: "Copied",
-      description: "Copied to clipboard",
-    })
-  }
-
-  // Order Complete State
-  if (orderComplete) {
-    const wiseUrl = getWisePaymentUrl()
-
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-3xl mx-auto">
-            {/* Success Header */}
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="h-12 w-12 text-green-600" />
-              </div>
-              <h1 className="text-3xl font-bold mb-2">Order Confirmed!</h1>
-              <p className="text-muted-foreground">
-                Thank you for your order. Please pay using the QR code below.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Left: Order Details */}
-              <div className="bg-white rounded-lg border shadow-sm p-6">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Order Details
-                </h2>
-
-                {orderNumber && (
-                  <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                    <p className="text-xs text-muted-foreground">Order Number</p>
-                    <div className="flex items-center gap-2">
-                      <p className="font-mono font-bold">{orderNumber}</p>
-                      <button
-                        onClick={() => copyToClipboard(orderNumber)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Order Items */}
-                <div className="space-y-3 mb-4">
-                  {orderItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3">
-                      <div className="relative w-12 h-12 rounded overflow-hidden bg-gray-100 flex-shrink-0">
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">× {item.quantity}</p>
-                      </div>
-                      <p className="text-sm font-semibold">
-                        ¥{(item.price * item.quantity).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Total */}
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold">Total Amount</span>
-                    <span className="text-2xl font-bold text-green-600">
-                      ¥{orderTotal.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: QR Code Payment */}
-              <div className="bg-white rounded-lg border shadow-sm p-6">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-green-600" />
-                  Pay with Wise
-                </h2>
-
-                {/* Amount to pay */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center">
-                  <p className="text-sm text-green-700 mb-1">Amount to Pay</p>
-                  <div className="flex items-center justify-center gap-2">
-                    <p className="text-3xl font-bold text-green-600">¥{orderTotal.toLocaleString()}</p>
-                    <button
-                      onClick={() => copyToClipboard(orderTotal.toString())}
-                      className="text-green-500 hover:text-green-700"
-                      title="Copy amount"
-                    >
-                      <Copy className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* QR Code */}
-                <div className="flex flex-col items-center mb-4">
-                  <div className="p-4 bg-white border-2 border-green-100 rounded-xl mb-3">
-                    <QRCodeSVG
-                      value={wiseUrl}
-                      size={160}
-                      level="H"
-                      includeMargin={true}
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground text-center">
-                    Scan with your smartphone
-                  </p>
-                </div>
-
-                {/* Payment Button */}
-                <a
-                  href={wiseUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full"
-                >
-                  <Button className="w-full bg-green-600 hover:bg-green-700" size="lg">
-                    Open Wise
-                    <ExternalLink className="h-4 w-4 ml-2" />
-                  </Button>
-                </a>
-
-                {/* Instructions */}
-                <div className="mt-4 space-y-3">
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm font-semibold text-amber-900 mb-2">Payment Details:</p>
-                    <div className="space-y-2 text-sm text-amber-800">
-                      <div className="flex items-center justify-between bg-white rounded px-3 py-2">
-                        <span>Amount:</span>
-                        <span className="font-mono font-bold">¥{orderTotal.toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center justify-between bg-white rounded px-3 py-2">
-                        <span>Reference:</span>
-                        <div className="flex items-center gap-1">
-                          <span className="font-mono font-bold text-xs">{orderNumber}</span>
-                          <button
-                            onClick={() => copyToClipboard(orderNumber || '')}
-                            className="text-amber-600 hover:text-amber-800"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Next Steps */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
-              <h3 className="font-semibold text-blue-900 mb-3">What happens next?</h3>
-              <ol className="text-sm text-blue-800 space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="font-bold">1.</span>
-                  <span>Pay via Wise using the QR code or button above</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold">2.</span>
-                  <span>After payment confirmation, we will prepare your order for shipping</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold">3.</span>
-                  <span>Once shipped, you will receive a tracking number via email</span>
-                </li>
-              </ol>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 justify-center mt-8">
-              <Link href="/account/orders">
-                <Button variant="outline">View Order History</Button>
-              </Link>
-              <Link href="/">
-                <Button>Continue Shopping</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   // Empty cart
@@ -469,7 +258,7 @@ export default function CheckoutPage() {
   const total = subtotal + shipping
 
   const isAddressValid = () => {
-    if (showNewAddressForm) {
+    if (addressMode === "new") {
       return newAddress.firstName && newAddress.lastName && newAddress.street1 &&
              newAddress.city && newAddress.state && newAddress.postalCode
     }
@@ -552,73 +341,94 @@ export default function CheckoutPage() {
                   </div>
                 ) : (
                   <>
-                    {/* Saved Addresses */}
-                    {savedAddresses.length > 0 && !showNewAddressForm && (
-                      <div className="space-y-3 mb-4">
-                        {savedAddresses.map((address) => (
-                          <div
-                            key={address.id}
-                            onClick={() => setSelectedAddressId(address.id)}
-                            className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                              selectedAddressId === address.id
-                                ? "border-primary bg-primary/5"
-                                : "border-gray-200 hover:border-gray-300"
-                            }`}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <p className="font-medium">
-                                  {address.firstName} {address.lastName}
-                                  {address.isDefault && (
-                                    <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                                      Default
-                                    </span>
-                                  )}
-                                </p>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {address.postalCode}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {address.street1}
-                                  {address.street2 && `, ${address.street2}`}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {address.city}, {address.state}
-                                </p>
-                                {address.phone && (
-                                  <p className="text-sm text-muted-foreground">
-                                    Tel: {address.phone}
-                                  </p>
-                                )}
-                              </div>
-                              {selectedAddressId === address.id && (
-                                <Check className="h-5 w-5 text-primary" />
+                    {/* Address Mode Selection */}
+                    {savedAddresses.length > 0 && (
+                      <div className="space-y-3 mb-6">
+                        {/* Option 1: Registered Address */}
+                        <div
+                          onClick={() => setAddressMode("registered")}
+                          className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                            addressMode === "registered"
+                              ? "border-primary bg-primary/5"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              addressMode === "registered" ? "border-primary" : "border-gray-300"
+                            }`}>
+                              {addressMode === "registered" && (
+                                <div className="w-3 h-3 rounded-full bg-primary" />
                               )}
                             </div>
+                            <span className="font-medium">Send to registered address</span>
                           </div>
-                        ))}
+                          {addressMode === "registered" && (
+                            <div className="mt-4 ml-8 space-y-2">
+                              {savedAddresses.map((address) => (
+                                <div
+                                  key={address.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setSelectedAddressId(address.id)
+                                  }}
+                                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                                    selectedAddressId === address.id
+                                      ? "border-primary bg-white"
+                                      : "border-gray-200 hover:border-gray-300 bg-gray-50"
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div>
+                                      <p className="font-medium text-sm">
+                                        {address.firstName} {address.lastName}
+                                        {address.isDefault && (
+                                          <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                            Default
+                                          </span>
+                                        )}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        〒{address.postalCode} {address.state} {address.city} {address.street1}
+                                        {address.street2 && ` ${address.street2}`}
+                                      </p>
+                                    </div>
+                                    {selectedAddressId === address.id && (
+                                      <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
 
-                        <button
-                          onClick={() => setShowNewAddressForm(true)}
-                          className="w-full p-4 border border-dashed border-gray-300 rounded-lg text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
+                        {/* Option 2: Different Address */}
+                        <div
+                          onClick={() => setAddressMode("new")}
+                          className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                            addressMode === "new"
+                              ? "border-primary bg-primary/5"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
                         >
-                          <Plus className="h-4 w-4" />
-                          Add New Address
-                        </button>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              addressMode === "new" ? "border-primary" : "border-gray-300"
+                            }`}>
+                              {addressMode === "new" && (
+                                <div className="w-3 h-3 rounded-full bg-primary" />
+                              )}
+                            </div>
+                            <span className="font-medium">Send to a different address</span>
+                          </div>
+                        </div>
                       </div>
                     )}
 
                     {/* New Address Form */}
-                    {showNewAddressForm && (
+                    {(addressMode === "new" || savedAddresses.length === 0) && (
                       <div className="space-y-4">
-                        {savedAddresses.length > 0 && (
-                          <button
-                            onClick={() => setShowNewAddressForm(false)}
-                            className="text-sm text-primary hover:underline mb-2"
-                          >
-                            ← Select from saved addresses
-                          </button>
-                        )}
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
