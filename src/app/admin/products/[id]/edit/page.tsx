@@ -47,6 +47,7 @@ export default function EditProductPage() {
   const [images, setImages] = useState<ProductImage[]>([])
   const [formData, setFormData] = useState({
     name: "",
+    cardType: "pokemon", // pokemon or onepiece
     cardSet: "",
     cardNumber: "",
     rarity: "",
@@ -62,15 +63,32 @@ export default function EditProductPage() {
     description: "",
   })
 
+  const cardTypes = [
+    { value: "pokemon", label: "ポケモンカード" },
+    { value: "onepiece", label: "ワンピースカード" },
+  ]
+
   const pokemonSets = [
     "スカーレットex", "バイオレットex", "トリプレットビート",
     "スノーハザード", "クレイバースト", "ナイトワンダラー",
     "151", "レイジングサーフ", "古代の咆哮", "未来の一閃",
     "シャイニートレジャーex", "ワイルドフォース", "サイバージャッジ",
-    "クリムゾンヘイズ", "ダークファンタズマ", "スペースジャグラー",
-    "タイムゲイザー", "ロストアビス", "白熱のアルカナ",
-    "パラダイムトリガー", "VSTARユニバース", "その他"
+    "クリムゾンヘイズ", "変幻の仮面", "ステラミラクル",
+    "超電ブレイカー", "テラスタルフェス", "バトルパートナーズ",
+    "その他"
   ]
+
+  const onepieceSets = [
+    "ROMANCE DAWN【OP-01】", "頂上決戦【OP-02】", "強大な敵【OP-03】",
+    "謀略の王国【OP-04】", "新時代の主役【OP-05】", "双璧の覇者【OP-06】",
+    "500年後の未来【OP-07】", "二つの伝説【OP-08】", "四皇覚醒【OP-09】",
+    "ロイヤルブラッドライン【OP-10】",
+    "スタートデッキ", "プロモーションカード", "その他"
+  ]
+
+  const getCurrentSets = () => {
+    return formData.cardType === "pokemon" ? pokemonSets : onepieceSets
+  }
 
   const rarities = [
     { value: "COMMON", label: "C (コモン)" },
@@ -105,8 +123,11 @@ export default function EditProductPage() {
         const data = await response.json()
         setProduct(data)
         setImages(data.images || [])
+        // Determine card type from category
+        const cardType = data.category?.slug === "onepiece-cards" ? "onepiece" : "pokemon"
         setFormData({
           name: data.name || "",
+          cardType: cardType,
           cardSet: data.cardSet || "",
           cardNumber: data.cardNumber || "",
           rarity: data.rarity || "",
@@ -223,11 +244,25 @@ export default function EditProductPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label htmlFor="cardType">カードタイプ *</Label>
+                  <select
+                    id="cardType"
+                    className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                    value={formData.cardType}
+                    onChange={(e) => setFormData({...formData, cardType: e.target.value, cardSet: ""})}
+                  >
+                    {cardTypes.map(type => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="name">カード名 *</Label>
                   <Input
                     id="name"
                     required
-                    placeholder="例: ピカチュウex"
+                    placeholder={formData.cardType === "pokemon" ? "例: ピカチュウex" : "例: モンキー・D・ルフィ"}
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                   />
@@ -242,7 +277,7 @@ export default function EditProductPage() {
                     onChange={(e) => setFormData({...formData, cardSet: e.target.value})}
                   >
                     <option value="">選択してください</option>
-                    {pokemonSets.map(set => (
+                    {getCurrentSets().map(set => (
                       <option key={set} value={set}>{set}</option>
                     ))}
                   </select>

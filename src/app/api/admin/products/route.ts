@@ -107,17 +107,30 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Get or create Pokemon Cards category
+    // Get or create category based on categoryId (slug)
+    const categorySlug = body.categoryId || 'pokemon-cards'
     let category = await prisma.category.findFirst({
-      where: { slug: 'pokemon-cards' }
+      where: { slug: categorySlug }
     })
-    
+
     if (!category) {
+      // Create category based on slug
+      const categoryData: { [key: string]: { name: string; description: string } } = {
+        'pokemon-cards': {
+          name: 'ポケモンカード',
+          description: 'ポケモンカードゲームのシングルカード、BOX、パックなど'
+        },
+        'onepiece-cards': {
+          name: 'ワンピースカード',
+          description: 'ワンピースカードゲームのシングルカード、BOX、パックなど'
+        }
+      }
+      const catInfo = categoryData[categorySlug] || categoryData['pokemon-cards']
       category = await prisma.category.create({
         data: {
-          name: 'Pokemon Cards',
-          slug: 'pokemon-cards',
-          description: 'Pokemon Trading Card Game cards'
+          name: catInfo.name,
+          slug: categorySlug,
+          description: catInfo.description
         }
       })
     }
@@ -147,16 +160,15 @@ export async function POST(request: NextRequest) {
     }
     
     const conditionMap: { [key: string]: string } = {
-      'S (完美品)': 'MINT',
-      'A (極美品)': 'NEAR_MINT',
-      'B (美品)': 'LIGHTLY_PLAYED',
-      'C (良好)': 'MODERATELY_PLAYED',
-      'D (並品)': 'HEAVILY_PLAYED',
-      'E (劣化品)': 'DAMAGED',
-      'Mint': 'MINT',
-      'Near Mint': 'NEAR_MINT',
-      'MINT': 'MINT',
-      'NEAR_MINT': 'NEAR_MINT'
+      'A：美品': 'GRADE_A',
+      'B：良品': 'GRADE_B',
+      'C：ダメージ': 'GRADE_C',
+      'GRADE_A': 'GRADE_A',
+      'GRADE_B': 'GRADE_B',
+      'GRADE_C': 'GRADE_C',
+      'PSA': 'PSA',
+      '未開封': 'SEALED',
+      'SEALED': 'SEALED'
     }
     
     const rarity = body.rarity ? rarityMap[body.rarity] || body.rarity : null
