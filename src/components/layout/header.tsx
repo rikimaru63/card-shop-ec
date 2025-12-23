@@ -75,9 +75,9 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
             <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">C</span>
+              <span className="text-primary-foreground font-bold text-lg">S</span>
             </div>
-            <span className="font-bold text-xl hidden sm:block">CardShop</span>
+            <span className="font-bold text-xl hidden sm:block">SAMURAI Card HUB</span>
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-1">

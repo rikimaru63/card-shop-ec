@@ -9,9 +9,9 @@ import { AuthProvider } from '@/components/providers/session-provider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'CardShop - Premium Trading Cards',
-  description: 'Your premier destination for trading cards in the USA',
-  keywords: 'trading cards, pokemon cards, yugioh, mtg, tcg, card shop',
+  title: 'SAMURAI Card HUB - Premium Trading Cards',
+  description: 'Your premier destination for trading cards',
+  keywords: 'trading cards, pokemon cards, tcg, card shop, samurai',
 }
 
 export default function RootLayout({
