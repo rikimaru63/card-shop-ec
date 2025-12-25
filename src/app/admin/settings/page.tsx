@@ -20,6 +20,7 @@ interface MigrationResult {
 interface PreviewData {
   summary: {
     total: number
+    nullRarity: number
     alreadyCorrect: number
     willUpdate: number
     unknown: number
@@ -28,6 +29,8 @@ interface PreviewData {
     id: string
     name: string
     currentRarity: string
+    cardSet: string
+    condition: string
     newRarity: string
     status: string
   }>
@@ -239,10 +242,14 @@ export default function AdminSettingsPage() {
               {/* Summary */}
               <div className="bg-gray-50 p-4 border-b">
                 <h3 className="font-medium mb-3">プレビュー結果</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div className="text-center p-2 bg-white rounded border">
                     <p className="text-2xl font-bold">{previewData.summary.total}</p>
                     <p className="text-xs text-muted-foreground">総商品数</p>
+                  </div>
+                  <div className="text-center p-2 bg-white rounded border">
+                    <p className="text-2xl font-bold text-gray-400">{previewData.summary.nullRarity}</p>
+                    <p className="text-xs text-muted-foreground">未設定</p>
                   </div>
                   <div className="text-center p-2 bg-white rounded border">
                     <p className="text-2xl font-bold text-green-600">{previewData.summary.willUpdate}</p>
@@ -266,15 +273,17 @@ export default function AdminSettingsPage() {
                     <thead className="bg-gray-50 sticky top-0">
                       <tr>
                         <th className="text-left p-3 font-medium">商品名</th>
-                        <th className="text-left p-3 font-medium">現在の値</th>
+                        <th className="text-left p-3 font-medium">パック名</th>
+                        <th className="text-left p-3 font-medium">レアリティ</th>
                         <th className="text-left p-3 font-medium">変換後</th>
-                        <th className="text-left p-3 font-medium">ステータス</th>
+                        <th className="text-left p-3 font-medium">状態</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
                       {previewData.products.map((product) => (
                         <tr key={product.id} className="hover:bg-gray-50">
                           <td className="p-3 truncate max-w-xs">{product.name}</td>
+                          <td className="p-3 text-xs truncate max-w-32">{product.cardSet}</td>
                           <td className="p-3 font-mono text-xs">{product.currentRarity}</td>
                           <td className="p-3 font-mono text-xs">{product.newRarity}</td>
                           <td className="p-3">
@@ -283,16 +292,25 @@ export default function AdminSettingsPage() {
                                 ? "bg-blue-100 text-blue-800"
                                 : product.status === "will_update"
                                 ? "bg-green-100 text-green-800"
+                                : product.status === "null"
+                                ? "bg-gray-100 text-gray-600"
                                 : "bg-orange-100 text-orange-800"
                             }`}>
                               {product.status === "already_correct" ? "正常" :
-                               product.status === "will_update" ? "更新" : "不明"}
+                               product.status === "will_update" ? "更新" :
+                               product.status === "null" ? "未設定" : "不明"}
                             </span>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {previewData.products.length === 0 && (
+                <div className="p-8 text-center text-muted-foreground">
+                  商品が登録されていません
                 </div>
               )}
             </div>

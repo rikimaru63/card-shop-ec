@@ -120,21 +120,35 @@ export async function POST() {
 // GET endpoint to preview what will be changed
 export async function GET() {
   try {
+    // Get ALL products to diagnose the issue
     const products = await prisma.product.findMany({
-      where: {
-        rarity: { not: null }
-      },
       select: {
         id: true,
         name: true,
-        rarity: true
-      }
+        rarity: true,
+        cardSet: true,
+        condition: true
+      },
+      take: 100 // Limit to first 100 for preview
     })
 
     const validEnumValues = ['COMMON', 'UNCOMMON', 'RARE', 'SUPER_RARE', 'ULTRA_RARE', 'SECRET_RARE', 'PROMO']
 
     const preview = products.map(product => {
-      const currentRarity = product.rarity as string
+      const currentRarity = product.rarity as string | null
+
+      if (!currentRarity) {
+        return {
+          id: product.id,
+          name: product.name,
+          currentRarity: '(null - 未設定)',
+          cardSet: product.cardSet || '(未設定)',
+          condition: product.condition || '(未設定)',
+          newRarity: '-',
+          status: 'null'
+        }
+      }
+
       const isValid = validEnumValues.includes(currentRarity)
       const mappedRarity = isValid ? currentRarity : RARITY_MAPPING[currentRarity]
 
@@ -142,6 +156,8 @@ export async function GET() {
         id: product.id,
         name: product.name,
         currentRarity,
+        cardSet: product.cardSet || '(未設定)',
+        condition: product.condition || '(未設定)',
         newRarity: mappedRarity || 'UNKNOWN',
         status: isValid ? 'already_correct' : (mappedRarity ? 'will_update' : 'unknown')
       }
@@ -149,6 +165,7 @@ export async function GET() {
 
     const summary = {
       total: products.length,
+      nullRarity: preview.filter(p => p.status === 'null').length,
       alreadyCorrect: preview.filter(p => p.status === 'already_correct').length,
       willUpdate: preview.filter(p => p.status === 'will_update').length,
       unknown: preview.filter(p => p.status === 'unknown').length
