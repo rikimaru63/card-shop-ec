@@ -13,70 +13,44 @@ const CARD_GAMES = [
   { id: "onepiece", label: "One Piece" }
 ]
 
-// Card sets organized by game
+// Card sets organized by game (Japanese names to match database)
 const CARD_SETS = {
   pokemon: [
-    // Scarlet & Violet Series
-    "Scarlet ex",
-    "Violet ex",
-    "Pokemon 151",
-    "Obsidian Flames",
-    "Paldea Evolved",
-    "Triplet Beat",
-    "Clay Burst",
-    "Snow Hazard",
-    // Sword & Shield Series
-    "Crown Zenith",
-    "Silver Tempest",
-    "Lost Origin",
-    "Lost Abyss",
-    "Pokemon GO",
-    "Astral Radiance",
-    "Brilliant Stars",
-    "Fusion Strike",
-    "Evolving Skies",
-    "Chilling Reign",
-    // Sun & Moon Series
-    "Cosmic Eclipse",
-    "Hidden Fates",
-    "Unified Minds",
-    "Unbroken Bonds",
-    "Team Up",
-    // Classic / Promo
-    "VSTAR Universe",
-    "Paradigm Trigger",
-    "Incandescent Arcana",
-    "PROMO"
+    "スカーレットex",
+    "バイオレットex",
+    "トリプレットビート",
+    "スノーハザード",
+    "クレイバースト",
+    "ナイトワンダラー",
+    "151",
+    "レイジングサーフ",
+    "古代の咆哮",
+    "未来の一閃",
+    "シャイニートレジャーex",
+    "ワイルドフォース",
+    "サイバージャッジ",
+    "クリムゾンヘイズ",
+    "変幻の仮面",
+    "ステラミラクル",
+    "超電ブレイカー",
+    "テラスタルフェス",
+    "バトルパートナーズ",
+    "その他"
   ],
   onepiece: [
-    // Booster Packs
-    "OP-01 Romance Dawn",
-    "OP-02 Paramount War",
-    "OP-03 Pillars of Strength",
-    "OP-04 Kingdoms of Intrigue",
-    "OP-05 Awakening of the New Era",
-    "OP-06 Wings of the Captain",
-    "OP-07 500 Years in the Future",
-    "OP-08 Two Legends",
-    "OP-09 The Four Emperors",
-    // Starter Decks
-    "ST-01 Straw Hat Crew",
-    "ST-02 Worst Generation",
-    "ST-03 The Seven Warlords",
-    "ST-04 Animal Kingdom Pirates",
-    "ST-05 Film Edition",
-    "ST-06 Absolute Justice",
-    "ST-07 Big Mom Pirates",
-    "ST-08 Monkey D. Luffy",
-    "ST-09 Yamato",
-    "ST-10 Ultimate Deck",
-    "ST-11 Uta",
-    "ST-12 Zoro & Sanji",
-    "ST-13 The Three Captains",
-    // Premium / Special
-    "EB-01 Memorial Collection",
-    "PRB-01 Premium Booster",
-    "PROMO"
+    "ROMANCE DAWN【OP-01】",
+    "頂上決戦【OP-02】",
+    "強大な敵【OP-03】",
+    "謀略の王国【OP-04】",
+    "新時代の主役【OP-05】",
+    "双璧の覇者【OP-06】",
+    "500年後の未来【OP-07】",
+    "二つの伝説【OP-08】",
+    "四皇覚醒【OP-09】",
+    "ロイヤルブラッドライン【OP-10】",
+    "スタートデッキ",
+    "プロモーションカード",
+    "その他"
   ]
 }
 
