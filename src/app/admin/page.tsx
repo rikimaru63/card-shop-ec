@@ -7,7 +7,8 @@ import {
   TrendingUp,
   AlertCircle,
   ArrowUpRight,
-  BarChart3
+  BarChart3,
+  Settings
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -221,7 +222,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Link href="/admin/products/new">
             <Button className="w-full" variant="outline">
               <Package className="h-4 w-4 mr-2" />
@@ -244,6 +245,12 @@ export default function AdminDashboard() {
             <Button className="w-full" variant="outline">
               <BarChart3 className="h-4 w-4 mr-2" />
               分析
+            </Button>
+          </Link>
+          <Link href="/admin/settings">
+            <Button className="w-full" variant="outline">
+              <Settings className="h-4 w-4 mr-2" />
+              設定
             </Button>
           </Link>
         </div>
