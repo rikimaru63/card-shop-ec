@@ -1,0 +1,6 @@
+name,cardType,productType,cardSet,cardNumber,rarity,condition,price,stock,description
+"Charizard VMAX SSR",pokemon,SINGLE,スカーレットex,025/165,SECRET_RARE,GRADE_A,89800,1,"スカーレットex収録のリザードンVMAX SSR。状態良好。"
+"Pikachu SAR",pokemon,SINGLE,バイオレットex,001/078,SECRET_RARE,GRADE_A,45000,2,"バイオレットex収録のピカチュウSAR。美品。"
+"Pokemon 151 Booster Box",pokemon,BOX,151,,,,12800,5,"ポケモン151 未開封BOX"
+"Monkey D. Luffy Leader",onepiece,SINGLE,ROMANCE DAWN【OP-01】,OP01-001,SUPER_RARE,GRADE_A,3500,3,"ルフィのリーダーカード"
+"One Piece OP-01 Box",onepiece,BOX,ROMANCE DAWN【OP-01】,,,SEALED,8900,2,"OP-01 未開封BOX"

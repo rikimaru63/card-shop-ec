@@ -1,24 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateSKU, generateUniqueSlug } from '@/lib/utils/sku'
-import { Condition } from '@prisma/client'
+import { Condition, Rarity, ProductType } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
 // Condition mapping
 const conditionMap: { [key: string]: Condition } = {
   'A': 'GRADE_A',
+  'GRADE_A': 'GRADE_A',
   'A：美品': 'GRADE_A',
   '美品': 'GRADE_A',
   'B': 'GRADE_B',
+  'GRADE_B': 'GRADE_B',
   'B：良品': 'GRADE_B',
   '良品': 'GRADE_B',
   'C': 'GRADE_C',
+  'GRADE_C': 'GRADE_C',
   'C：ダメージ': 'GRADE_C',
   'ダメージ': 'GRADE_C',
   'PSA': 'PSA',
   '未開封': 'SEALED',
   'SEALED': 'SEALED',
+}
+
+// Rarity mapping
+const rarityMap: { [key: string]: Rarity } = {
+  'C': 'COMMON',
+  'COMMON': 'COMMON',
+  'コモン': 'COMMON',
+  'U': 'UNCOMMON',
+  'UNCOMMON': 'UNCOMMON',
+  'アンコモン': 'UNCOMMON',
+  'R': 'RARE',
+  'RARE': 'RARE',
+  'レア': 'RARE',
+  'RR': 'RARE',
+  'RRR': 'RARE',
+  'SR': 'SUPER_RARE',
+  'SUPER_RARE': 'SUPER_RARE',
+  'スーパーレア': 'SUPER_RARE',
+  'UR': 'ULTRA_RARE',
+  'ULTRA_RARE': 'ULTRA_RARE',
+  'ウルトラレア': 'ULTRA_RARE',
+  'SAR': 'SECRET_RARE',
+  'SEC': 'SECRET_RARE',
+  'SECRET_RARE': 'SECRET_RARE',
+  'シークレット': 'SECRET_RARE',
+  'AR': 'SECRET_RARE',
+  'CHR': 'SECRET_RARE',
+  'CSR': 'SECRET_RARE',
+  'PROMO': 'PROMO',
+  'プロモ': 'PROMO',
+}
+
+// ProductType mapping
+const productTypeMap: { [key: string]: ProductType } = {
+  'SINGLE': 'SINGLE',
+  'シングル': 'SINGLE',
+  'カード': 'SINGLE',
+  'BOX': 'BOX',
+  'ボックス': 'BOX',
+  'パック': 'BOX',
 }
 
 export async function POST(request: NextRequest) {
@@ -44,33 +87,52 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse header
-    const header = lines[0].split(',').map(h => h.trim().toLowerCase())
+    const header = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''))
 
-    // Map column indices
-    const nameIndex = header.findIndex(h => h === 'namae' || h === 'name' || h === '商品名')
-    const stockIndex = header.findIndex(h => h === 'kosuu' || h === 'stock' || h === '在庫数')
-    const priceIndex = header.findIndex(h => h === 'kakaku' || h === 'price' || h === '価格')
-    const conditionIndex = header.findIndex(h => h === 'codition' || h === 'condition' || h === '状態')
-    const categoryIndex = header.findIndex(h => h === 'categori' || h === 'category' || h === 'カテゴリ')
+    // Map column indices (support multiple naming conventions)
+    const getIndex = (names: string[]) => header.findIndex(h => names.includes(h))
+
+    const nameIndex = getIndex(['name', 'namae', '商品名', '名前'])
+    const cardTypeIndex = getIndex(['cardtype', 'card_type', 'カードタイプ', 'ゲーム'])
+    const productTypeIndex = getIndex(['producttype', 'product_type', '商品タイプ', 'タイプ'])
+    const cardSetIndex = getIndex(['cardset', 'card_set', 'パック名', 'パック', 'セット'])
+    const cardNumberIndex = getIndex(['cardnumber', 'card_number', 'カード番号', '番号'])
+    const rarityIndex = getIndex(['rarity', 'レアリティ', 'レア度'])
+    const conditionIndex = getIndex(['condition', 'codition', '状態', 'コンディション'])
+    const priceIndex = getIndex(['price', 'kakaku', '価格'])
+    const stockIndex = getIndex(['stock', 'kosuu', '在庫', '在庫数'])
+    const descriptionIndex = getIndex(['description', '説明', '備考'])
 
     if (nameIndex === -1 || priceIndex === -1) {
       return NextResponse.json(
-        { success: 0, failed: 0, errors: ['必須カラム（namae/name, kakaku/price）が見つかりません'] },
+        { success: 0, failed: 0, errors: ['必須カラム（name, price）が見つかりません'] },
         { status: 400 }
       )
     }
 
-    // Get or create default category
-    let defaultCategory = await prisma.category.findFirst({
-      where: { slug: 'trading-cards' }
+    // Get or create categories
+    let pokemonCategory = await prisma.category.findFirst({
+      where: { slug: 'pokemon-cards' }
+    })
+    let onepieceCategory = await prisma.category.findFirst({
+      where: { slug: 'onepiece-cards' }
     })
 
-    if (!defaultCategory) {
-      defaultCategory = await prisma.category.create({
+    if (!pokemonCategory) {
+      pokemonCategory = await prisma.category.create({
         data: {
-          name: 'Trading Cards',
-          slug: 'trading-cards',
-          description: 'トレーディングカード'
+          name: 'ポケモンカード',
+          slug: 'pokemon-cards',
+          description: 'ポケモンカードゲーム'
+        }
+      })
+    }
+    if (!onepieceCategory) {
+      onepieceCategory = await prisma.category.create({
+        data: {
+          name: 'ワンピースカード',
+          slug: 'onepiece-cards',
+          description: 'ワンピースカードゲーム'
         }
       })
     }
@@ -93,10 +155,15 @@ export async function POST(request: NextRequest) {
         const values = parseCSVLine(line)
 
         const name = values[nameIndex]?.trim()
+        const cardType = values[cardTypeIndex]?.trim().toLowerCase() || 'pokemon'
+        const productTypeStr = values[productTypeIndex]?.trim() || 'SINGLE'
+        const cardSet = values[cardSetIndex]?.trim() || null
+        const cardNumber = values[cardNumberIndex]?.trim() || null
+        const rarityStr = values[rarityIndex]?.trim() || null
+        const conditionStr = values[conditionIndex]?.trim() || 'GRADE_A'
+        const price = parseFloat(values[priceIndex]?.replace(/[¥,]/g, '')) || 0
         const stock = parseInt(values[stockIndex]) || 0
-        const price = parseFloat(values[priceIndex]) || 0
-        const conditionStr = values[conditionIndex]?.trim() || 'New'
-        const categoryName = values[categoryIndex]?.trim() || ''
+        const description = values[descriptionIndex]?.trim() || null
 
         if (!name) {
           results.failed++
@@ -110,27 +177,13 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Map condition
+        // Map values
+        const productType: ProductType = productTypeMap[productTypeStr] || 'SINGLE'
         const condition: Condition = conditionMap[conditionStr] || 'GRADE_A'
+        const rarity: Rarity | null = rarityStr ? (rarityMap[rarityStr] || null) : null
 
-        // Get or create category if specified
-        let categoryId = defaultCategory.id
-        if (categoryName) {
-          const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-          let category = await prisma.category.findFirst({
-            where: { slug: categorySlug }
-          })
-          if (!category) {
-            category = await prisma.category.create({
-              data: {
-                name: categoryName,
-                slug: categorySlug,
-                description: categoryName
-              }
-            })
-          }
-          categoryId = category.id
-        }
+        // Determine category based on cardType
+        const categoryId = cardType === 'onepiece' ? onepieceCategory.id : pokemonCategory.id
 
         // Check if product already exists by name
         const existingProduct = await prisma.product.findFirst({
@@ -142,9 +195,14 @@ export async function POST(request: NextRequest) {
           await prisma.product.update({
             where: { id: existingProduct.id },
             data: {
-              stock,
-              price,
+              productType,
+              cardSet,
+              cardNumber,
+              rarity,
               condition,
+              price,
+              stock,
+              description,
               categoryId,
               updatedAt: new Date()
             }
@@ -153,7 +211,8 @@ export async function POST(request: NextRequest) {
           results.updated.push(name)
         } else {
           // Create new product
-          const sku = generateSKU('CARD', String(Date.now()).slice(-6))
+          const skuPrefix = cardType === 'onepiece' ? 'OPC' : 'PKM'
+          const sku = generateSKU(skuPrefix, String(Date.now()).slice(-6))
           const slug = await generateUniqueSlug(name, prisma)
 
           await prisma.product.create({
@@ -161,9 +220,14 @@ export async function POST(request: NextRequest) {
               sku,
               slug,
               name,
-              stock,
-              price,
+              productType,
+              cardSet,
+              cardNumber,
+              rarity,
               condition,
+              price,
+              stock,
+              description,
               categoryId,
               published: true,
               language: 'JP'
@@ -182,7 +246,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: results.success,
       failed: results.failed,
-      errors: results.errors.slice(0, 20), // Limit error messages
+      errors: results.errors.slice(0, 20),
       created: results.created.length,
       updated: results.updated.length,
       message: `${results.created.length}件を新規登録、${results.updated.length}件を更新しました`
