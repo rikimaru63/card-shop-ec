@@ -16,9 +16,7 @@ import {
   MessageCircle,
   Shield,
   Truck,
-  Plus,
-  Check,
-  Clock
+  Check
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,14 +25,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useCartStore } from "@/store/cart-store"
 import { createOrder, getUserAddresses } from "./actions"
 import { toast } from "@/hooks/use-toast"
-
-interface OrderItem {
-  id: string
-  name: string
-  price: number
-  quantity: number
-  image: string
-}
 
 interface SavedAddress {
   id: string

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { ShoppingCart, Heart, Loader2, TrendingUp, TrendingDown, Filter } from "lucide-react"
+import { ShoppingCart, Heart, Loader2, TrendingUp, TrendingDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useCartStore } from "@/store/cart-store"
@@ -123,9 +123,6 @@ export function ProductGrid() {
 
     fetchProducts()
   }, [currentPage, sortBy, searchParams])
-
-  // Check if filters are active
-  const hasActiveFilters = searchParams.toString().length > 0
 
   const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.preventDefault()

@@ -113,7 +113,8 @@ export async function GET(request: NextRequest) {
       ]
       // Merge with existing OR condition if game filter is set
       if (where.OR) {
-        where.AND = [...(where.AND || []), { OR: searchConditions }]
+        const existingAnd = Array.isArray(where.AND) ? where.AND : (where.AND ? [where.AND] : [])
+        where.AND = [...existingAnd, { OR: searchConditions }]
       } else {
         where.OR = searchConditions
       }
