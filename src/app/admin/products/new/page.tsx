@@ -64,12 +64,13 @@ export default function NewProductPage() {
   }
 
   const rarities = [
-    "C (コモン)", "U (アンコモン)", "R (レア)", 
-    "RR (ダブルレア)", "RRR (トリプルレア)", 
-    "SR (スーパーレア)", "UR (ウルトラレア)",
-    "SAR (スペシャルアートレア)", "AR (アートレア)",
-    "K (かがやく)", "CHR (キャラクターレア)",
-    "CSR (キャラクタースーパーレア)", "プロモ"
+    { value: "COMMON", label: "C (コモン)" },
+    { value: "UNCOMMON", label: "U (アンコモン)" },
+    { value: "RARE", label: "R (レア)" },
+    { value: "SUPER_RARE", label: "SR (スーパーレア)" },
+    { value: "ULTRA_RARE", label: "UR (ウルトラレア)" },
+    { value: "SECRET_RARE", label: "SAR (スペシャルアートレア)" },
+    { value: "PROMO", label: "プロモ" }
   ]
 
   const conditions = [
@@ -220,7 +221,7 @@ export default function NewProductPage() {
                   >
                     <option value="">選択してください</option>
                     {rarities.map(rarity => (
-                      <option key={rarity} value={rarity}>{rarity}</option>
+                      <option key={rarity.value} value={rarity.value}>{rarity.label}</option>
                     ))}
                   </select>
                 </div>
