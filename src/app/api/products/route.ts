@@ -5,9 +5,6 @@ import { Prisma, Rarity, Condition, ProductType } from '@prisma/client'
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
 
-// One Piece card set prefixes for game filtering
-const ONE_PIECE_PREFIXES = ['OP-', 'ST-', 'EB-', 'PRB-']
-
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
@@ -79,18 +76,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Game filter (pokemon or onepiece based on cardSet patterns)
+    // Game filter (pokemon or onepiece based on category)
     if (game) {
       if (game === 'onepiece') {
-        // One Piece cards have prefixes like OP-, ST-, EB-, PRB-
-        where.OR = ONE_PIECE_PREFIXES.map(prefix => ({
-          cardSet: { startsWith: prefix }
-        }))
+        where.category = { slug: 'onepiece-cards' }
       } else if (game === 'pokemon') {
-        // Pokemon cards don't have these prefixes
-        where.AND = ONE_PIECE_PREFIXES.map(prefix => ({
-          NOT: { cardSet: { startsWith: prefix } }
-        }))
+        where.category = { slug: 'pokemon-cards' }
       }
     }
 
@@ -106,18 +97,11 @@ export async function GET(request: NextRequest) {
 
     // Search filter (name or description)
     if (search) {
-      const searchConditions = [
+      where.OR = [
         { name: { contains: search, mode: 'insensitive' as const } },
         { nameJa: { contains: search, mode: 'insensitive' as const } },
         { description: { contains: search, mode: 'insensitive' as const } }
       ]
-      // Merge with existing OR condition if game filter is set
-      if (where.OR) {
-        const existingAnd = Array.isArray(where.AND) ? where.AND : (where.AND ? [where.AND] : [])
-        where.AND = [...existingAnd, { OR: searchConditions }]
-      } else {
-        where.OR = searchConditions
-      }
     }
 
     // Price range filter
