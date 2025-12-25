@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { ShoppingCart, Heart, Loader2, TrendingUp, TrendingDown } from "lucide-react"
+import { ShoppingCart, Heart, Loader2, TrendingUp, TrendingDown, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useCartStore } from "@/store/cart-store"
@@ -33,6 +34,7 @@ interface PaginationData {
 }
 
 export function ProductGrid() {
+  const searchParams = useSearchParams()
   const [products, setProducts] = useState<Product[]>([])
   const [pagination, setPagination] = useState<PaginationData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -44,6 +46,49 @@ export function ProductGrid() {
   const addToCart = useCartStore((state) => state.addItem)
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
 
+  // Get filter params from URL
+  const getFilterParams = () => {
+    const params: Record<string, string> = {}
+
+    // Card set filter (can be comma-separated)
+    const cardSet = searchParams.get("cardSet")
+    if (cardSet) params.cardSet = cardSet
+
+    // Rarity filter (can be comma-separated)
+    const rarity = searchParams.get("rarity")
+    if (rarity) params.rarity = rarity
+
+    // Condition filter (can be comma-separated)
+    const condition = searchParams.get("condition")
+    if (condition) params.condition = condition
+
+    // Product type filter
+    const productType = searchParams.get("productType")
+    if (productType) params.productType = productType
+
+    // Price range
+    const minPrice = searchParams.get("minPrice")
+    if (minPrice) params.minPrice = minPrice
+
+    const maxPrice = searchParams.get("maxPrice")
+    if (maxPrice) params.maxPrice = maxPrice
+
+    // In stock only
+    const inStock = searchParams.get("inStock")
+    if (inStock === "true") params.inStock = "true"
+
+    // Game filter (for category filtering)
+    const game = searchParams.get("game")
+    if (game) params.game = game
+
+    return params
+  }
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchParams])
+
   // Fetch products from API
   useEffect(() => {
     async function fetchProducts() {
@@ -51,10 +96,12 @@ export function ProductGrid() {
       setError(null)
 
       try {
+        const filterParams = getFilterParams()
         const params = new URLSearchParams({
           page: currentPage.toString(),
           limit: '12',
-          sortBy: sortBy
+          sortBy: sortBy,
+          ...filterParams
         })
 
         const response = await fetch(`/api/products?${params}`)
@@ -75,7 +122,10 @@ export function ProductGrid() {
     }
 
     fetchProducts()
-  }, [currentPage, sortBy])
+  }, [currentPage, sortBy, searchParams])
+
+  // Check if filters are active
+  const hasActiveFilters = searchParams.toString().length > 0
 
   const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.preventDefault()

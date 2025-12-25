@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Prisma, Rarity, Condition } from '@prisma/client'
+import { Prisma, Rarity, Condition, ProductType } from '@prisma/client'
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
+
+// One Piece card set prefixes for game filtering
+const ONE_PIECE_PREFIXES = ['OP-', 'ST-', 'EB-', 'PRB-']
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,15 +16,18 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '12')
     const category = searchParams.get('category')
-    const rarity = searchParams.get('rarity')
-    const condition = searchParams.get('condition')
+    const rarity = searchParams.get('rarity') // Can be comma-separated
+    const condition = searchParams.get('condition') // Can be comma-separated
     const search = searchParams.get('search')
     const minPrice = searchParams.get('minPrice')
     const maxPrice = searchParams.get('maxPrice')
-    const cardSet = searchParams.get('cardSet')
+    const cardSet = searchParams.get('cardSet') // Can be comma-separated
     const sortBy = searchParams.get('sortBy') || 'newest'
     const isNewArrival = searchParams.get('isNewArrival')
     const isRecommended = searchParams.get('isRecommended')
+    const productType = searchParams.get('productType') // SINGLE or BOX
+    const inStock = searchParams.get('inStock') // true for in-stock only
+    const game = searchParams.get('game') // pokemon or onepiece
 
     // Build where clause
     const where: Prisma.ProductWhereInput = {
@@ -43,28 +49,74 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Rarity filter
+    // Rarity filter (supports multiple values)
     if (rarity) {
-      where.rarity = rarity as Rarity
+      const rarities = rarity.split(',').filter(Boolean) as Rarity[]
+      if (rarities.length === 1) {
+        where.rarity = rarities[0]
+      } else if (rarities.length > 1) {
+        where.rarity = { in: rarities }
+      }
     }
 
-    // Condition filter
+    // Condition filter (supports multiple values)
     if (condition) {
-      where.condition = condition as Condition
+      const conditions = condition.split(',').filter(Boolean) as Condition[]
+      if (conditions.length === 1) {
+        where.condition = conditions[0]
+      } else if (conditions.length > 1) {
+        where.condition = { in: conditions }
+      }
     }
 
-    // Card set filter
+    // Card set filter (supports multiple values)
     if (cardSet) {
-      where.cardSet = cardSet
+      const cardSets = cardSet.split(',').filter(Boolean)
+      if (cardSets.length === 1) {
+        where.cardSet = cardSets[0]
+      } else if (cardSets.length > 1) {
+        where.cardSet = { in: cardSets }
+      }
+    }
+
+    // Game filter (pokemon or onepiece based on cardSet patterns)
+    if (game) {
+      if (game === 'onepiece') {
+        // One Piece cards have prefixes like OP-, ST-, EB-, PRB-
+        where.OR = ONE_PIECE_PREFIXES.map(prefix => ({
+          cardSet: { startsWith: prefix }
+        }))
+      } else if (game === 'pokemon') {
+        // Pokemon cards don't have these prefixes
+        where.AND = ONE_PIECE_PREFIXES.map(prefix => ({
+          NOT: { cardSet: { startsWith: prefix } }
+        }))
+      }
+    }
+
+    // Product type filter (SINGLE or BOX)
+    if (productType) {
+      where.productType = productType as ProductType
+    }
+
+    // In stock filter
+    if (inStock === 'true') {
+      where.stock = { gt: 0 }
     }
 
     // Search filter (name or description)
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { nameJa: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
+      const searchConditions = [
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { nameJa: { contains: search, mode: 'insensitive' as const } },
+        { description: { contains: search, mode: 'insensitive' as const } }
       ]
+      // Merge with existing OR condition if game filter is set
+      if (where.OR) {
+        where.AND = [...(where.AND || []), { OR: searchConditions }]
+      } else {
+        where.OR = searchConditions
+      }
     }
 
     // Price range filter
@@ -131,6 +183,7 @@ export async function GET(request: NextRequest) {
       cardNumber: product.cardNumber,
       rarity: product.rarity,
       condition: product.condition,
+      productType: product.productType,
       price: product.price.toNumber(),
       comparePrice: product.comparePrice?.toNumber(),
       previousPrice: product.previousPrice?.toNumber() || null,
