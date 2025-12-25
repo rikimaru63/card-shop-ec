@@ -13,44 +13,44 @@ const CARD_GAMES = [
   { id: "onepiece", label: "One Piece" }
 ]
 
-// Card sets organized by game (Japanese names to match database)
+// Card sets with English labels and Japanese DB values
 const CARD_SETS = {
   pokemon: [
-    "スカーレットex",
-    "バイオレットex",
-    "トリプレットビート",
-    "スノーハザード",
-    "クレイバースト",
-    "ナイトワンダラー",
-    "151",
-    "レイジングサーフ",
-    "古代の咆哮",
-    "未来の一閃",
-    "シャイニートレジャーex",
-    "ワイルドフォース",
-    "サイバージャッジ",
-    "クリムゾンヘイズ",
-    "変幻の仮面",
-    "ステラミラクル",
-    "超電ブレイカー",
-    "テラスタルフェス",
-    "バトルパートナーズ",
-    "その他"
+    { label: "Scarlet ex", value: "スカーレットex" },
+    { label: "Violet ex", value: "バイオレットex" },
+    { label: "Triplet Beat", value: "トリプレットビート" },
+    { label: "Snow Hazard", value: "スノーハザード" },
+    { label: "Clay Burst", value: "クレイバースト" },
+    { label: "Night Wanderer", value: "ナイトワンダラー" },
+    { label: "Pokemon 151", value: "151" },
+    { label: "Raging Surf", value: "レイジングサーフ" },
+    { label: "Ancient Roar", value: "古代の咆哮" },
+    { label: "Future Flash", value: "未来の一閃" },
+    { label: "Shiny Treasure ex", value: "シャイニートレジャーex" },
+    { label: "Wild Force", value: "ワイルドフォース" },
+    { label: "Cyber Judge", value: "サイバージャッジ" },
+    { label: "Crimson Haze", value: "クリムゾンヘイズ" },
+    { label: "Mask of Change", value: "変幻の仮面" },
+    { label: "Stellar Miracle", value: "ステラミラクル" },
+    { label: "Super Electric Breaker", value: "超電ブレイカー" },
+    { label: "Terastal Fest", value: "テラスタルフェス" },
+    { label: "Battle Partners", value: "バトルパートナーズ" },
+    { label: "Other", value: "その他" }
   ],
   onepiece: [
-    "ROMANCE DAWN【OP-01】",
-    "頂上決戦【OP-02】",
-    "強大な敵【OP-03】",
-    "謀略の王国【OP-04】",
-    "新時代の主役【OP-05】",
-    "双璧の覇者【OP-06】",
-    "500年後の未来【OP-07】",
-    "二つの伝説【OP-08】",
-    "四皇覚醒【OP-09】",
-    "ロイヤルブラッドライン【OP-10】",
-    "スタートデッキ",
-    "プロモーションカード",
-    "その他"
+    { label: "Romance Dawn (OP-01)", value: "ROMANCE DAWN【OP-01】" },
+    { label: "Paramount War (OP-02)", value: "頂上決戦【OP-02】" },
+    { label: "Pillars of Strength (OP-03)", value: "強大な敵【OP-03】" },
+    { label: "Kingdoms of Intrigue (OP-04)", value: "謀略の王国【OP-04】" },
+    { label: "Awakening of New Era (OP-05)", value: "新時代の主役【OP-05】" },
+    { label: "Wings of Captain (OP-06)", value: "双璧の覇者【OP-06】" },
+    { label: "500 Years Future (OP-07)", value: "500年後の未来【OP-07】" },
+    { label: "Two Legends (OP-08)", value: "二つの伝説【OP-08】" },
+    { label: "Four Emperors (OP-09)", value: "四皇覚醒【OP-09】" },
+    { label: "Royal Bloodline (OP-10)", value: "ロイヤルブラッドライン【OP-10】" },
+    { label: "Starter Deck", value: "スタートデッキ" },
+    { label: "Promo Cards", value: "プロモーションカード" },
+    { label: "Other", value: "その他" }
   ]
 }
 
@@ -153,9 +153,9 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
   }
 
   // Toggle functions
-  const toggleSet = (set: string) => {
+  const toggleSet = (value: string) => {
     setSelectedSets(prev =>
-      prev.includes(set) ? prev.filter(s => s !== set) : [...prev, set]
+      prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]
     )
   }
 
@@ -171,7 +171,7 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
     )
   }
 
-  // Get available sets based on selected game
+  // Get available sets based on selected game (with label/value pairs)
   const availableSets = selectedGame
     ? CARD_SETS[selectedGame as keyof typeof CARD_SETS]
     : [...CARD_SETS.pokemon, ...CARD_SETS.onepiece]
@@ -274,15 +274,15 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
           <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
             {availableSets.map((set) => (
               <label
-                key={set}
+                key={set.value}
                 className="flex items-center gap-2 text-sm cursor-pointer hover:text-primary transition-colors"
               >
                 <Checkbox
-                  id={set}
-                  checked={selectedSets.includes(set)}
-                  onCheckedChange={() => toggleSet(set)}
+                  id={set.value}
+                  checked={selectedSets.includes(set.value)}
+                  onCheckedChange={() => toggleSet(set.value)}
                 />
-                <span className="truncate">{set}</span>
+                <span className="truncate">{set.label}</span>
               </label>
             ))}
           </div>
