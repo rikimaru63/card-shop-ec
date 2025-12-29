@@ -3,61 +3,100 @@ import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
-// Reverse condition mapping
-const conditionToString: { [key: string]: string } = {
-  'GRADE_A': 'A',
-  'GRADE_B': 'B',
-  'GRADE_C': 'C',
-  'PSA': 'PSA',
-  'SEALED': '未開封',
-}
-
 export async function GET() {
   try {
+    // Fetch all products with category and images
     const products = await prisma.product.findMany({
       include: {
-        category: true
+        category: {
+          select: {
+            slug: true,
+            name: true
+          }
+        },
+        images: {
+          take: 1,
+          orderBy: { order: 'asc' }
+        }
       },
       orderBy: { createdAt: 'desc' }
     })
 
-    // Create CSV content
-    const header = 'namae,kosuu,kakaku,codition,categori'
-    const rows = products.map(product => {
-      const name = escapeCSV(product.name)
-      const stock = product.stock
-      const price = Number(product.price)
-      const condition = conditionToString[product.condition || 'GRADE_A'] || 'A'
-      const category = escapeCSV(product.category?.name || '')
+    // CSV header matching the new import template
+    const headers = [
+      'name',
+      'cardType',
+      'productType',
+      'cardSet',
+      'cardNumber',
+      'rarity',
+      'condition',
+      'price',
+      'stock',
+      'description',
+      'sku',
+      'imageUrl'
+    ]
 
-      return `${name},${stock},${price},${condition},${category}`
+    // Convert products to CSV rows
+    const rows = products.map(product => {
+      // Determine cardType from category slug
+      const cardType = product.category?.slug === 'onepiece-cards' ? 'onepiece' : 'pokemon'
+
+      return [
+        escapeCSV(product.name),
+        cardType,
+        product.productType || 'SINGLE',
+        escapeCSV(product.cardSet || ''),
+        escapeCSV(product.cardNumber || ''),
+        product.rarity || '',
+        product.condition || 'GRADE_A',
+        product.price.toString(),
+        product.stock.toString(),
+        escapeCSV(product.description || ''),
+        escapeCSV(product.sku),
+        escapeCSV(product.images[0]?.url || '')
+      ].join(',')
     })
 
-    const csv = [header, ...rows].join('\n')
+    // Combine header and rows
+    const csv = [headers.join(','), ...rows].join('\n')
 
-    // Return as downloadable file
-    return new NextResponse(csv, {
+    // Add BOM for Excel compatibility with Japanese characters
+    const bom = '\uFEFF'
+    const csvWithBom = bom + csv
+
+    // Return as downloadable CSV file
+    const filename = `products_export_${formatDate(new Date())}.csv`
+
+    return new NextResponse(csvWithBom, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="products_export_${new Date().toISOString().split('T')[0]}.csv"`,
-      },
+        'Content-Disposition': `attachment; filename="${filename}"`
+      }
     })
 
   } catch (error) {
     console.error('Export error:', error)
     return NextResponse.json(
-      { error: 'エクスポート中にエラーが発生しました' },
+      { error: 'エクスポートに失敗しました' },
       { status: 500 }
     )
   }
 }
 
-// Escape CSV special characters
+// Escape CSV values (handle commas, quotes, newlines)
 function escapeCSV(value: string): string {
   if (!value) return ''
-  // If value contains comma, quote, or newline, wrap in quotes
+
+  // If value contains comma, quote, or newline, wrap in quotes and escape existing quotes
   if (value.includes(',') || value.includes('"') || value.includes('\n')) {
     return `"${value.replace(/"/g, '""')}"`
   }
   return value
+}
+
+// Format date for filename (YYYYMMDD)
+function formatDate(date: Date): string {
+  return date.toISOString().slice(0, 10).replace(/-/g, '')
 }
