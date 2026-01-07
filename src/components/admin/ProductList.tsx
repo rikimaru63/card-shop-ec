@@ -1,6 +1,6 @@
 "use client";
 
-import { Product, ProductImage } from '@prisma/client';
+import { Product, ProductImage, Category } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -28,7 +28,28 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ImageIcon } from 'lucide-react';
 
-type ProductWithImages = Product & { images: ProductImage[] };
+type ProductWithImages = Product & { images: ProductImage[]; category: Category | null };
+
+// 表示用のラベルマッピング
+const productTypeLabels: { [key: string]: string } = {
+  'SINGLE': 'シングル',
+  'BOX': 'BOX',
+  'OTHER': 'その他',
+};
+
+const conditionLabels: { [key: string]: string } = {
+  'GRADE_A': 'A',
+  'GRADE_B': 'B',
+  'GRADE_C': 'C',
+  'PSA': 'PSA',
+  'SEALED': '未開封',
+};
+
+const categoryLabels: { [key: string]: string } = {
+  'pokemon-cards': 'ポケモン',
+  'onepiece-cards': 'ワンピース',
+  'other-cards': 'その他',
+};
 
 interface ProductListProps {
     initialProducts: ProductWithImages[];
@@ -79,11 +100,14 @@ export function ProductList({ initialProducts }: ProductListProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px]">画像</TableHead>
+              <TableHead className="w-[80px]">画像</TableHead>
               <TableHead>商品名</TableHead>
-              <TableHead>価格</TableHead>
-              <TableHead>在庫</TableHead>
-              <TableHead className="text-right">操作</TableHead>
+              <TableHead className="w-[80px]">カテゴリ</TableHead>
+              <TableHead className="w-[80px]">タイプ</TableHead>
+              <TableHead className="w-[70px]">状態</TableHead>
+              <TableHead className="w-[80px]">価格</TableHead>
+              <TableHead className="w-[50px]">在庫</TableHead>
+              <TableHead className="text-right w-[140px]">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -94,13 +118,24 @@ export function ProductList({ initialProducts }: ProductListProps) {
                     <Image
                       src={product.images[0].url}
                       alt={product.images[0].alt || product.name}
-                      width={80}
-                      height={80}
+                      width={60}
+                      height={60}
                       className="object-cover rounded-md"
                     />
                   )}
                 </TableCell>
-                <TableCell className="font-medium">{product.name}</TableCell>
+                <TableCell className="font-medium max-w-[300px] truncate" title={product.name}>
+                  {product.name}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {product.category ? categoryLabels[product.category.slug] || product.category.name : '-'}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {productTypeLabels[product.productType || ''] || product.productType || '-'}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {conditionLabels[product.condition || ''] || product.condition || '-'}
+                </TableCell>
                 <TableCell>¥{Number(product.price).toLocaleString()}</TableCell>
                 <TableCell>{product.stock}</TableCell>
                 <TableCell className="text-right">

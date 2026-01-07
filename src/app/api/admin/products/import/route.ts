@@ -7,29 +7,57 @@ export const dynamic = 'force-dynamic'
 
 // Condition mapping (case-insensitive support)
 const conditionMap: { [key: string]: Condition } = {
+  // Grade A
   'A': 'GRADE_A',
   'a': 'GRADE_A',
   'GRADE_A': 'GRADE_A',
   'grade_a': 'GRADE_A',
   'A：美品': 'GRADE_A',
   '美品': 'GRADE_A',
+  'Used A': 'GRADE_A',
+  'Used - A': 'GRADE_A',
+  'used a': 'GRADE_A',
+  'used - a': 'GRADE_A',
+  'No Shrink': 'GRADE_A',
+  'no shrink': 'GRADE_A',
+  // Grade B
   'B': 'GRADE_B',
   'b': 'GRADE_B',
   'GRADE_B': 'GRADE_B',
   'grade_b': 'GRADE_B',
   'B：良品': 'GRADE_B',
   '良品': 'GRADE_B',
+  'Used B': 'GRADE_B',
+  'Used - B': 'GRADE_B',
+  'used b': 'GRADE_B',
+  'used - b': 'GRADE_B',
+  // Grade C
   'C': 'GRADE_C',
   'c': 'GRADE_C',
   'GRADE_C': 'GRADE_C',
   'grade_c': 'GRADE_C',
   'C：ダメージ': 'GRADE_C',
   'ダメージ': 'GRADE_C',
+  'Used C': 'GRADE_C',
+  'Used - C': 'GRADE_C',
+  'used c': 'GRADE_C',
+  'used - c': 'GRADE_C',
+  'Used D': 'GRADE_C',
+  'Used - D': 'GRADE_C',
+  'used d': 'GRADE_C',
+  'used - d': 'GRADE_C',
+  // PSA graded
   'PSA': 'PSA',
   'psa': 'PSA',
+  'Unused': 'PSA',
+  'unused': 'PSA',
+  // Sealed/New
   '未開封': 'SEALED',
   'SEALED': 'SEALED',
   'sealed': 'SEALED',
+  'New': 'SEALED',
+  'new': 'SEALED',
+  '新品': 'SEALED',
 }
 
 // Rarity mapping
@@ -113,7 +141,7 @@ export async function POST(request: NextRequest) {
     const getIndex = (names: string[]) => header.findIndex(h => names.includes(h))
 
     const nameIndex = getIndex(['name', 'namae', '商品名', '名前'])
-    const cardTypeIndex = getIndex(['cardtype', 'card_type', 'カードタイプ', 'ゲーム'])
+    const cardTypeIndex = getIndex(['cardtype', 'card_type', 'カードタイプ', 'ゲーム', 'categori', 'category'])
     const productTypeIndex = getIndex(['producttype', 'product_type', '商品タイプ', 'タイプ'])
     const cardSetIndex = getIndex(['cardset', 'card_set', 'パック名', 'パック', 'セット'])
     const cardNumberIndex = getIndex(['cardnumber', 'card_number', 'カード番号', '番号'])
