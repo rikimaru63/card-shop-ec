@@ -83,11 +83,25 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/90 border-b">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">S</span>
+          <Link href="/" className="flex items-center space-x-3 group">
+            <div className="relative h-10 w-10">
+              {/* Gradient background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-xl shadow-lg group-hover:shadow-indigo-500/40 transition-all duration-300 group-hover:scale-105" />
+              {/* Inner design */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-white font-black text-xl tracking-tighter" style={{ fontFamily: 'system-ui' }}>S</span>
+              </div>
+              {/* Shine effect */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 rounded-xl" />
             </div>
-            <span className="font-bold text-xl hidden sm:block">SAMURAI Card HUB</span>
+            <div className="hidden sm:flex flex-col">
+              <span className="font-black text-xl tracking-tight bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+                SAMURAI
+              </span>
+              <span className="text-[10px] font-semibold tracking-[0.2em] text-gray-500 -mt-1">
+                CARD HUB
+              </span>
+            </div>
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-1">
