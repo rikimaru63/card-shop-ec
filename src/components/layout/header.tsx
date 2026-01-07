@@ -24,22 +24,22 @@ import { useWishlistStore } from "@/store/wishlist-store"
 const categories = [
   {
     name: "Pokemon Cards",
-    href: "/products?category=pokemon",
+    href: "/?game=pokemon",
     subcategories: [
-      { name: "Single Cards", href: "/products?category=pokemon&type=singles" },
-      { name: "Booster Box & Packs", href: "/products?category=pokemon&type=booster" },
-      { name: "PSA Graded", href: "/products?category=pokemon&graded=true" },
-      { name: "Sealed Products", href: "/products?category=pokemon&sealed=true" },
+      { name: "Single Cards", href: "/?game=pokemon&productType=SINGLE" },
+      { name: "Booster Box & Packs", href: "/?game=pokemon&productType=BOX" },
+      { name: "PSA Graded", href: "/?game=pokemon&condition=PSA" },
+      { name: "All Pokemon", href: "/?game=pokemon" },
     ]
   },
   {
     name: "One Piece Cards",
-    href: "/products?category=onepiece",
+    href: "/?game=onepiece",
     subcategories: [
-      { name: "Single Cards", href: "/products?category=onepiece&type=singles" },
-      { name: "Booster Box & Packs", href: "/products?category=onepiece&type=booster" },
-      { name: "PSA Graded", href: "/products?category=onepiece&graded=true" },
-      { name: "Sealed Products", href: "/products?category=onepiece&sealed=true" },
+      { name: "Single Cards", href: "/?game=onepiece&productType=SINGLE" },
+      { name: "Booster Box & Packs", href: "/?game=onepiece&productType=BOX" },
+      { name: "PSA Graded", href: "/?game=onepiece&condition=PSA" },
+      { name: "All One Piece", href: "/?game=onepiece" },
     ]
   }
 ]
