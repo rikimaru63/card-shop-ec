@@ -5,23 +5,31 @@ import { Condition, Rarity, ProductType } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
-// Condition mapping
+// Condition mapping (case-insensitive support)
 const conditionMap: { [key: string]: Condition } = {
   'A': 'GRADE_A',
+  'a': 'GRADE_A',
   'GRADE_A': 'GRADE_A',
+  'grade_a': 'GRADE_A',
   'A：美品': 'GRADE_A',
   '美品': 'GRADE_A',
   'B': 'GRADE_B',
+  'b': 'GRADE_B',
   'GRADE_B': 'GRADE_B',
+  'grade_b': 'GRADE_B',
   'B：良品': 'GRADE_B',
   '良品': 'GRADE_B',
   'C': 'GRADE_C',
+  'c': 'GRADE_C',
   'GRADE_C': 'GRADE_C',
+  'grade_c': 'GRADE_C',
   'C：ダメージ': 'GRADE_C',
   'ダメージ': 'GRADE_C',
   'PSA': 'PSA',
+  'psa': 'PSA',
   '未開封': 'SEALED',
   'SEALED': 'SEALED',
+  'sealed': 'SEALED',
 }
 
 // Rarity mapping
@@ -117,6 +125,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Debug: Log column indices
+    console.log('CSV Import - Column indices:', {
+      header: header,
+      nameIndex,
+      cardTypeIndex,
+      productTypeIndex,
+      cardSetIndex,
+      cardNumberIndex,
+      rarityIndex,
+      conditionIndex,
+      priceIndex,
+      stockIndex
+    })
+
     // Get or create categories
     let pokemonCategory = await prisma.category.findFirst({
       where: { slug: 'pokemon-cards' }
@@ -186,8 +208,13 @@ export async function POST(request: NextRequest) {
 
         // Map values
         const productType: ProductType = productTypeMap[productTypeStr] || 'SINGLE'
-        const condition: Condition = conditionMap[conditionStr] || 'GRADE_A'
-        const rarity: Rarity | null = rarityStr ? (rarityMap[rarityStr] || null) : null
+        const conditionUpper = conditionStr.toUpperCase()
+        const condition: Condition = conditionMap[conditionStr] || conditionMap[conditionUpper] || 'GRADE_A'
+        const rarityUpper = rarityStr?.toUpperCase() || null
+        const rarity: Rarity | null = rarityStr ? (rarityMap[rarityStr] || rarityMap[rarityUpper!] || null) : null
+
+        // Debug log
+        console.log(`Row ${i + 1}: conditionStr="${conditionStr}", mapped to="${condition}", rarityStr="${rarityStr}", mapped to="${rarity}"`);
 
         // Determine category based on cardType
         const categoryId = cardType === 'onepiece' ? onepieceCategory.id : pokemonCategory.id
