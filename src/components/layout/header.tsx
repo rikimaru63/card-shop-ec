@@ -86,19 +86,28 @@ export function Header() {
           <Link href="/" className="flex items-center space-x-3 group">
             <div className="relative h-10 w-10">
               {/* Gradient background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-xl shadow-lg group-hover:shadow-indigo-500/40 transition-all duration-300 group-hover:scale-105" />
-              {/* Inner design */}
+              <div className="absolute inset-0 bg-gradient-to-br from-rose-500 via-red-600 to-rose-700 rounded-xl shadow-lg group-hover:shadow-red-500/40 transition-all duration-300 group-hover:scale-105" />
+              {/* Katana/Sword Icon */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-white font-black text-xl tracking-tighter" style={{ fontFamily: 'system-ui' }}>S</span>
+                <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {/* Katana blade */}
+                  <path d="M4 20L18 6" />
+                  <path d="M18 6L20 4" />
+                  {/* Guard (tsuba) */}
+                  <circle cx="16" cy="8" r="1.5" fill="currentColor" />
+                  {/* Handle wrap hints */}
+                  <path d="M6 18L8 16" />
+                  <path d="M8 20L10 18" />
+                </svg>
               </div>
               {/* Shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 rounded-xl" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/25 to-white/0 rounded-xl" />
             </div>
             <div className="hidden sm:flex flex-col">
-              <span className="font-black text-xl tracking-tight bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+              <span className="font-black text-xl tracking-tight bg-gradient-to-r from-gray-900 via-red-800 to-gray-900 bg-clip-text text-transparent">
                 SAMURAI
               </span>
-              <span className="text-[10px] font-semibold tracking-[0.2em] text-gray-500 -mt-1">
+              <span className="text-[10px] font-semibold tracking-[0.3em] text-gray-500 -mt-1">
                 CARD HUB
               </span>
             </div>
