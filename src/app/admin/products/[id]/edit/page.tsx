@@ -148,6 +148,12 @@ export default function EditProductPage() {
       const response = await fetch(`/api/admin/products/${productId}`)
       if (response.ok) {
         const data = await response.json()
+        console.log('Fetched product data:', {
+          name: data.name,
+          condition: data.condition,
+          rarity: data.rarity,
+          cardSet: data.cardSet
+        })
         setProduct(data)
         setImages(data.images || [])
         // Determine card type from category
