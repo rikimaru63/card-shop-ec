@@ -66,22 +66,29 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Card set filter (supports multiple values)
+    // Card set filter (supports multiple values with partial matching)
+    // This allows "スターバース" to match "スターバース/ダークファンタズマ"
     if (cardSet) {
       const cardSets = cardSet.split(',').filter(Boolean)
       if (cardSets.length === 1) {
-        where.cardSet = cardSets[0]
+        where.cardSet = { contains: cardSets[0] }
       } else if (cardSets.length > 1) {
-        where.cardSet = { in: cardSets }
+        // Use AND to combine with other filters
+        if (!where.AND) where.AND = []
+        ;(where.AND as Prisma.ProductWhereInput[]).push({
+          OR: cardSets.map(cs => ({ cardSet: { contains: cs } }))
+        })
       }
     }
 
-    // Game filter (pokemon or onepiece based on category)
+    // Game filter (pokemon, onepiece, or other based on category)
     if (game) {
       if (game === 'onepiece') {
         where.category = { slug: 'onepiece-cards' }
       } else if (game === 'pokemon') {
         where.category = { slug: 'pokemon-cards' }
+      } else if (game === 'other') {
+        where.category = { slug: 'other-cards' }
       }
     }
 

@@ -65,11 +65,16 @@ const rarityMap: { [key: string]: Rarity } = {
 // ProductType mapping
 const productTypeMap: { [key: string]: ProductType } = {
   'SINGLE': 'SINGLE',
+  'single': 'SINGLE',
   'シングル': 'SINGLE',
   'カード': 'SINGLE',
   'BOX': 'BOX',
+  'box': 'BOX',
   'ボックス': 'BOX',
   'パック': 'BOX',
+  'OTHER': 'OTHER',
+  'other': 'OTHER',
+  'その他': 'OTHER',
 }
 
 export async function POST(request: NextRequest) {
@@ -146,6 +151,9 @@ export async function POST(request: NextRequest) {
     let onepieceCategory = await prisma.category.findFirst({
       where: { slug: 'onepiece-cards' }
     })
+    let otherCategory = await prisma.category.findFirst({
+      where: { slug: 'other-cards' }
+    })
 
     if (!pokemonCategory) {
       pokemonCategory = await prisma.category.create({
@@ -162,6 +170,15 @@ export async function POST(request: NextRequest) {
           name: 'ワンピースカード',
           slug: 'onepiece-cards',
           description: 'ワンピースカードゲーム'
+        }
+      })
+    }
+    if (!otherCategory) {
+      otherCategory = await prisma.category.create({
+        data: {
+          name: 'その他',
+          slug: 'other-cards',
+          description: 'その他のカードゲーム'
         }
       })
     }
@@ -217,7 +234,12 @@ export async function POST(request: NextRequest) {
         console.log(`Row ${i + 1}: conditionStr="${conditionStr}", mapped to="${condition}", rarityStr="${rarityStr}", mapped to="${rarity}"`);
 
         // Determine category based on cardType
-        const categoryId = cardType === 'onepiece' ? onepieceCategory.id : pokemonCategory.id
+        let categoryId = pokemonCategory.id
+        if (cardType === 'onepiece') {
+          categoryId = onepieceCategory.id
+        } else if (cardType === 'other') {
+          categoryId = otherCategory.id
+        }
 
         // Check if product already exists by name
         const existingProduct = await prisma.product.findFirst({
@@ -245,7 +267,9 @@ export async function POST(request: NextRequest) {
           results.updated.push(name)
         } else {
           // Create new product
-          const skuPrefix = cardType === 'onepiece' ? 'OPC' : 'PKM'
+          let skuPrefix = 'PKM'
+          if (cardType === 'onepiece') skuPrefix = 'OPC'
+          else if (cardType === 'other') skuPrefix = 'OTH'
           const sku = generateSKU(skuPrefix, String(Date.now()).slice(-6))
           const slug = await generateUniqueSlug(name, prisma)
 

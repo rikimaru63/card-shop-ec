@@ -34,11 +34,13 @@ export default function NewProductPage() {
   const cardTypes = [
     { value: "pokemon", label: "ポケモンカード" },
     { value: "onepiece", label: "ワンピースカード" },
+    { value: "other", label: "その他" },
   ]
 
   const productTypes = [
     { value: "SINGLE", label: "シングルカード" },
     { value: "BOX", label: "BOX・パック" },
+    { value: "OTHER", label: "その他" },
   ]
 
   const pokemonSets = [

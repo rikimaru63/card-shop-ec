@@ -41,6 +41,15 @@ const categories = [
       { name: "PSA Graded", href: "/?game=onepiece&condition=PSA" },
       { name: "All One Piece", href: "/?game=onepiece" },
     ]
+  },
+  {
+    name: "Other",
+    href: "/?game=other",
+    subcategories: [
+      { name: "Single Cards", href: "/?game=other&productType=SINGLE" },
+      { name: "Box & Packs", href: "/?game=other&productType=BOX" },
+      { name: "All Other", href: "/?game=other" },
+    ]
   }
 ]
 

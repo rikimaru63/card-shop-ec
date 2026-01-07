@@ -376,6 +376,7 @@ enum Condition {
 enum ProductType {
   SINGLE  // シングルカード
   BOX     // BOX・パック
+  OTHER   // その他
 }
 
 enum OrderStatus {

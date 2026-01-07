@@ -10,7 +10,15 @@ import { cn } from "@/lib/utils"
 // Card game types
 const CARD_GAMES = [
   { id: "pokemon", label: "Pokemon" },
-  { id: "onepiece", label: "One Piece" }
+  { id: "onepiece", label: "One Piece" },
+  { id: "other", label: "Other" }
+]
+
+// Product types
+const PRODUCT_TYPES = [
+  { id: "SINGLE", label: "Single Cards" },
+  { id: "BOX", label: "Booster Box & Packs" },
+  { id: "OTHER", label: "Other" }
 ]
 
 // Card sets with English labels and Japanese DB values
@@ -110,12 +118,6 @@ const CONDITIONS = [
   { id: "GRADE_C", label: "Grade C (Played)" },
   { id: "PSA", label: "PSA Graded" },
   { id: "SEALED", label: "Sealed / New" }
-]
-
-// Product type options
-const PRODUCT_TYPES = [
-  { id: "SINGLE", label: "Single Cards" },
-  { id: "BOX", label: "BOX / Sealed" }
 ]
 
 interface FilterSidebarProps {
