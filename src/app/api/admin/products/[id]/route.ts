@@ -110,6 +110,24 @@ export async function PUT(
       }
     });
 
+    // Handle cardType -> categoryId conversion
+    if (body.cardType) {
+      const categorySlugMap: { [key: string]: string } = {
+        'pokemon': 'pokemon-cards',
+        'onepiece': 'onepiece-cards',
+        'other': 'other-cards'
+      };
+      const categorySlug = categorySlugMap[body.cardType];
+      if (categorySlug) {
+        const category = await prisma.category.findUnique({
+          where: { slug: categorySlug }
+        });
+        if (category) {
+          updateData.category = { connect: { id: category.id } };
+        }
+      }
+    }
+
     console.log('Update data:', JSON.stringify(updateData))
 
     // Update product

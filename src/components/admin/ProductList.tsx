@@ -25,7 +25,6 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { deleteProduct } from '@/app/admin/products/actions';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { ImageIcon } from 'lucide-react';
 
 type ProductWithImages = Product & { images: ProductImage[]; category: Category | null };
@@ -63,6 +62,25 @@ export function ProductList({ initialProducts }: ProductListProps) {
   useEffect(() => {
     setProducts(initialProducts);
   }, [initialProducts]);
+
+  // Restore scroll position on mount
+  useEffect(() => {
+    const savedScrollPosition = sessionStorage.getItem('productListScrollPosition');
+    if (savedScrollPosition) {
+      const scrollY = parseInt(savedScrollPosition, 10);
+      // Use setTimeout to ensure DOM is ready
+      setTimeout(() => {
+        window.scrollTo(0, scrollY);
+      }, 100);
+      sessionStorage.removeItem('productListScrollPosition');
+    }
+  }, []);
+
+  // Save scroll position before navigating to edit page
+  const handleEditClick = (productId: string) => {
+    sessionStorage.setItem('productListScrollPosition', window.scrollY.toString());
+    router.push(`/admin/products/${productId}/edit`);
+  };
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [productToDeleteId, setProductToDeleteId] = useState<string | null>(null);
@@ -139,16 +157,15 @@ export function ProductList({ initialProducts }: ProductListProps) {
                 <TableCell>¥{Number(product.price).toLocaleString()}</TableCell>
                 <TableCell>{product.stock}</TableCell>
                 <TableCell className="text-right">
-                  <Link href={`/admin/products/${product.id}/edit`}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mr-2"
-                    >
-                      <ImageIcon className="h-4 w-4 mr-1" />
-                      編集
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mr-2"
+                    onClick={() => handleEditClick(product.id)}
+                  >
+                    <ImageIcon className="h-4 w-4 mr-1" />
+                    編集
+                  </Button>
                   <Button
                     variant="destructive"
                     size="sm"
