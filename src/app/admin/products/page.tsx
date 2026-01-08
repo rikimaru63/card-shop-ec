@@ -21,16 +21,14 @@ interface Category {
 interface Product {
   id: string
   name: string
-  sku: string
   price: number
   stock: number
-  productType: string | null
-  condition: string | null
-  cardNumber: string | null
-  cardSet: string | null
+  productType?: string | null
+  condition?: string | null
+  cardNumber?: string | null
+  cardSet?: string | null
   images: ProductImage[]
   category: Category | null
-  createdAt: string
 }
 
 export default function AdminProductsPage() {
