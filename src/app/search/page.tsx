@@ -129,10 +129,10 @@ export default function SearchPage() {
 
   // 検索候補
   const searchSuggestions = [
-    "ピカチュウ",
-    "リザードン",
-    "ルフィ",
-    "ナミ",
+    "Pikachu",
+    "Charizard",
+    "Luffy",
+    "Nami",
     "SAR",
     "PSA",
     "BOX"
@@ -228,9 +228,9 @@ export default function SearchPage() {
             {/* カテゴリーリンク */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-xl mx-auto">
               {[
-                { name: "ポケモンカード", slug: "pokemon-cards" },
-                { name: "ワンピースカード", slug: "onepiece-cards" },
-                { name: "その他", slug: "other-cards" }
+                { name: "Pokemon Cards", slug: "pokemon-cards" },
+                { name: "One Piece Cards", slug: "onepiece-cards" },
+                { name: "Other", slug: "other-cards" }
               ].map((cat) => (
                 <Link
                   key={cat.slug}
