@@ -53,9 +53,10 @@ const categoryLabels: { [key: string]: string } = {
 
 interface ProductListProps {
     initialProducts: ProductWithImages[];
+    onRefresh?: () => void;
 }
 
-export function ProductList({ initialProducts }: ProductListProps) {
+export function ProductList({ initialProducts, onRefresh }: ProductListProps) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,7 +116,9 @@ export function ProductList({ initialProducts }: ProductListProps) {
           description: "商品を削除しました。",
         });
         setProducts(products.filter(product => product.id !== productToDeleteId));
-        router.refresh();
+        if (onRefresh) {
+          onRefresh();
+        }
       } else {
         toast({
           title: "エラー",
