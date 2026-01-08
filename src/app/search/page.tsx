@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Search, Filter, X, ArrowLeft } from "lucide-react"
@@ -10,102 +10,25 @@ import { ProductCard } from "@/components/products/product-card"
 import { ProductFilters } from "@/components/products/product-filters"
 import { ProductSort } from "@/components/products/product-sort"
 
-// Mock search function - 実際はAPIを使用
-const searchProducts = (query: string) => {
-  const allProducts = [
-    {
-      id: "1",
-      name: "Charizard VMAX - Darkness Ablaze",
-      image: "https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?w=400&h=600&fit=crop",
-      price: 189.99,
-      comparePrice: 219.99,
-      category: "Pokemon",
-      rarity: "Ultra Rare",
-      condition: "Near Mint",
-      stock: 5,
-      rating: 4.8,
-      isNew: false,
-      isFeatured: true
-    },
-    {
-      id: "2",
-      name: "Pikachu VMAX - Vivid Voltage",
-      image: "https://images.unsplash.com/photo-1609813040801-8b09a342bd73?w=400&h=600&fit=crop",
-      price: 79.99,
-      comparePrice: 99.99,
-      category: "Pokemon",
-      rarity: "Secret Rare",
-      condition: "Near Mint",
-      stock: 8,
-      rating: 4.9,
-      isNew: true,
-      isFeatured: false
-    },
-    {
-      id: "3",
-      name: "Blue-Eyes White Dragon - LOB-001",
-      image: "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=400&h=600&fit=crop",
-      price: 499.99,
-      comparePrice: 599.99,
-      category: "Yu-Gi-Oh!",
-      rarity: "Secret Rare",
-      condition: "Mint",
-      stock: 1,
-      rating: 5.0,
-      isNew: false,
-      isFeatured: true
-    },
-    {
-      id: "4",
-      name: "Dark Magician - SDY-006",
-      image: "https://images.unsplash.com/photo-1578662996442-48f60103fc4e?w=400&h=600&fit=crop",
-      price: 34.99,
-      category: "Yu-Gi-Oh!",
-      rarity: "Ultra Rare",
-      condition: "Near Mint",
-      stock: 15,
-      rating: 4.5,
-      isNew: false,
-      isFeatured: false
-    },
-    {
-      id: "5",
-      name: "Black Lotus - Alpha Edition",
-      image: "https://images.unsplash.com/photo-1626121602187-1313288432fe?w=400&h=600&fit=crop",
-      price: 49999.99,
-      category: "Magic: The Gathering",
-      rarity: "Mythic Rare",
-      condition: "Lightly Played",
-      stock: 1,
-      rating: 5.0,
-      isNew: false,
-      isFeatured: true
-    }
-  ]
-
-  if (!query) return allProducts
-  
-  const lowerQuery = query.toLowerCase()
-  return allProducts.filter(product => 
-    product.name.toLowerCase().includes(lowerQuery) ||
-    product.category.toLowerCase().includes(lowerQuery) ||
-    (product.rarity && product.rarity.toLowerCase().includes(lowerQuery))
-  )
-}
-
 interface Product {
   id: string;
   name: string;
+  nameJa?: string;
   image: string;
   price: number;
   comparePrice?: number;
-  category: string;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
   rarity?: string;
   condition?: string;
+  cardSet?: string;
+  cardNumber?: string;
   stock: number;
-  rating?: number;
-  isNew: boolean;
-  isFeatured: boolean;
+  isNewArrival: boolean;
+  isRecommended: boolean;
 }
 
 export default function SearchPage() {
@@ -127,28 +50,57 @@ export default function SearchPage() {
     inStock: false
   })
 
-  // 検索実行
+  // API検索関数
+  const fetchProducts = useCallback(async (query: string, sort: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const params = new URLSearchParams({
+        search: query,
+        limit: '100',
+        sortBy: sort === 'relevance' ? 'newest' : sort
+      })
+
+      // フィルター適用
+      if (filters.inStock) {
+        params.append('inStock', 'true')
+      }
+      if (filters.priceRange[0] > 0) {
+        params.append('minPrice', filters.priceRange[0].toString())
+      }
+      if (filters.priceRange[1] < 100000) {
+        params.append('maxPrice', filters.priceRange[1].toString())
+      }
+
+      const response = await fetch(`/api/products?${params.toString()}`)
+      if (!response.ok) throw new Error('Search failed')
+
+      const data = await response.json()
+      setSearchResults(data.products || [])
+    } catch (error) {
+      console.error('Search error:', error)
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }, [filters])
+
+  // 検索実行（デバウンス付き）
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (searchQuery) {
-        setIsSearching(true)
-        const results = searchProducts(searchQuery)
-        setSearchResults(results)
-        setIsSearching(false)
-      } else {
-        setSearchResults([])
-      }
+      fetchProducts(searchQuery, sortBy)
     }, 300)
 
     return () => clearTimeout(delayDebounceFn)
-  }, [searchQuery])
+  }, [searchQuery, sortBy, fetchProducts])
 
-  // フィルタリング
+  // クライアント側フィルタリング（カテゴリ、レアリティ、状態）
   const filteredResults = searchResults.filter(product => {
-    if (filters.categories.length > 0 && !filters.categories.includes(product.category)) {
-      return false
-    }
-    if (product.price < filters.priceRange[0] || product.price > filters.priceRange[1]) {
+    if (filters.categories.length > 0 && !filters.categories.includes(product.category?.slug || '')) {
       return false
     }
     if (filters.rarities.length > 0 && (!product.rarity || !filters.rarities.includes(product.rarity))) {
@@ -157,23 +109,18 @@ export default function SearchPage() {
     if (filters.conditions.length > 0 && (!product.condition || !filters.conditions.includes(product.condition))) {
       return false
     }
-    if (filters.inStock && product.stock === 0) {
-      return false
-    }
     return true
   })
 
-  // ソート
+  // クライアント側ソート
   const sortedResults = [...filteredResults].sort((a, b) => {
     switch (sortBy) {
       case "price-asc":
         return a.price - b.price
       case "price-desc":
         return b.price - a.price
-      case "name":
+      case "name-asc":
         return a.name.localeCompare(b.name)
-      case "rating":
-        return (b.rating || 0) - (a.rating || 0)
       case "relevance":
       default:
         return 0
@@ -182,14 +129,13 @@ export default function SearchPage() {
 
   // 検索候補
   const searchSuggestions = [
-    "Charizard",
-    "Pikachu",
-    "Blue-Eyes White Dragon",
-    "Black Lotus",
-    "Pokemon Booster Box",
-    "PSA 10",
-    "First Edition",
-    "Japanese Cards"
+    "ピカチュウ",
+    "リザードン",
+    "ルフィ",
+    "ナミ",
+    "SAR",
+    "PSA",
+    "BOX"
   ]
 
   return (
@@ -280,14 +226,18 @@ export default function SearchPage() {
             </p>
             
             {/* カテゴリーリンク */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
-              {["Pokemon", "Yu-Gi-Oh!", "Magic: The Gathering", "One Piece"].map((category) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-xl mx-auto">
+              {[
+                { name: "ポケモンカード", slug: "pokemon-cards" },
+                { name: "ワンピースカード", slug: "onepiece-cards" },
+                { name: "その他", slug: "other-cards" }
+              ].map((cat) => (
                 <Link
-                  key={category}
-                  href={`/products?category=${category}`}
+                  key={cat.slug}
+                  href={`/products?category=${cat.slug}`}
                   className="p-4 bg-white rounded-lg border hover:shadow-lg transition-shadow"
                 >
-                  <h3 className="font-semibold">{category}</h3>
+                  <h3 className="font-semibold">{cat.name}</h3>
                 </Link>
               ))}
             </div>
@@ -342,7 +292,20 @@ export default function SearchPage() {
               {sortedResults.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                   {sortedResults.map((product) => (
-                    <ProductCard key={product.id} {...product} />
+                    <ProductCard
+                      key={product.id}
+                      id={product.id}
+                      name={product.name}
+                      image={product.image}
+                      price={product.price}
+                      comparePrice={product.comparePrice}
+                      category={product.category?.name || ''}
+                      rarity={product.rarity}
+                      condition={product.condition}
+                      stock={product.stock}
+                      isNew={product.isNewArrival}
+                      isFeatured={product.isRecommended}
+                    />
                   ))}
                 </div>
               ) : (
