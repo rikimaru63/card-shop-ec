@@ -1,5 +1,6 @@
 "use client";
 
+import { Product, ProductImage, Category } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -27,31 +28,7 @@ import { deleteProduct } from '@/app/admin/products/actions';
 import { useRouter } from 'next/navigation';
 import { ImageIcon, Search, X } from 'lucide-react';
 
-interface ProductImage {
-  id: string;
-  url: string;
-  alt: string | null;
-  order: number;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface ProductWithImages {
-  id: string;
-  name: string;
-  price: number | { toNumber: () => number };
-  stock: number;
-  productType?: string | null;
-  condition?: string | null;
-  cardNumber?: string | null;
-  cardSet?: string | null;
-  images: ProductImage[];
-  category: Category | null;
-}
+type ProductWithImages = Product & { images: ProductImage[]; category: Category | null };
 
 // 表示用のラベルマッピング
 const productTypeLabels: { [key: string]: string } = {

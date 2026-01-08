@@ -1,78 +1,22 @@
-"use client"
-
-import { useState, useEffect, useCallback } from 'react'
+import { prisma } from '@/lib/prisma'
 import { ProductList } from '@/components/admin/ProductList'
 import Link from 'next/link'
-import { Download, FileSpreadsheet, Plus, Loader2 } from 'lucide-react'
+import { Download, FileSpreadsheet, Plus } from 'lucide-react'
 
-interface ProductImage {
-  id: string
-  url: string
-  alt: string | null
-  order: number
-}
+// Disable all caching for this page
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-interface Category {
-  id: string
-  name: string
-  slug: string
-}
-
-interface Product {
-  id: string
-  name: string
-  price: number
-  stock: number
-  productType?: string | null
-  condition?: string | null
-  cardNumber?: string | null
-  cardSet?: string | null
-  images: ProductImage[]
-  category: Category | null
-}
-
-export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const fetchProducts = useCallback(async () => {
-    try {
-      const response = await fetch('/api/admin/products?limit=1000', {
-        cache: 'no-store'
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setProducts(data.products || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch products:', error)
-    } finally {
-      setLoading(false)
+export default async function AdminProductsPage() {
+  const products = await prisma.product.findMany({
+    include: {
+      images: true,
+      category: true,
+    },
+    orderBy: {
+      createdAt: 'desc'
     }
-  }, [])
-
-  useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
-
-  // Listen for focus to refresh data when returning to page
-  useEffect(() => {
-    const handleFocus = () => {
-      fetchProducts()
-    }
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [fetchProducts])
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-10">
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        </div>
-      </div>
-    )
-  }
+  })
 
   return (
     <div className="container mx-auto py-10">
@@ -103,7 +47,7 @@ export default function AdminProductsPage() {
           </Link>
         </div>
       </div>
-      <ProductList initialProducts={products} onRefresh={fetchProducts} />
+      <ProductList initialProducts={products} />
     </div>
   )
 }
