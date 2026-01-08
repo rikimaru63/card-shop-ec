@@ -41,7 +41,12 @@ export async function GET() {
     // Convert products to CSV rows
     const rows = products.map(product => {
       // Determine cardType from category slug
-      const cardType = product.category?.slug === 'onepiece-cards' ? 'onepiece' : 'pokemon'
+      let cardType = 'other'
+      if (product.category?.slug === 'pokemon-cards') {
+        cardType = 'pokemon'
+      } else if (product.category?.slug === 'onepiece-cards') {
+        cardType = 'onepiece'
+      }
 
       return [
         escapeCSV(product.name),
