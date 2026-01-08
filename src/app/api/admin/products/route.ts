@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { generateSKU, generateUniqueSlug } from '@/lib/utils/sku'
 import { Prisma } from '@prisma/client'
@@ -206,9 +207,13 @@ export async function POST(request: NextRequest) {
         category: true
       }
     })
-    
+
+    // Revalidate cache for product pages
+    revalidatePath('/admin/products')
+    revalidatePath('/products')
+
     return NextResponse.json(product, { status: 201 })
-    
+
   } catch (error: unknown) {
     console.error('Error creating product:', error)
     

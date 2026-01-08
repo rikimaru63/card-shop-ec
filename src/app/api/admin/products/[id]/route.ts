@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { isAdminAuthorized } from '@/lib/admin-auth'
@@ -139,7 +140,12 @@ export async function PUT(
         images: true
       }
     })
-    
+
+    // Revalidate cache for product pages
+    revalidatePath('/admin/products')
+    revalidatePath('/products')
+    revalidatePath(`/products/${product.slug}`)
+
     return NextResponse.json(product)
     
   } catch (error: unknown) {
@@ -220,7 +226,11 @@ export async function DELETE(
     await prisma.product.delete({
       where: { id: params.id }
     })
-    
+
+    // Revalidate cache for product pages
+    revalidatePath('/admin/products')
+    revalidatePath('/products')
+
     return NextResponse.json(
       { message: 'Product deleted successfully' },
       { status: 200 }
