@@ -2,6 +2,7 @@
 
 import { Product, ProductImage, Category } from '@prisma/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -11,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -25,7 +26,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { deleteProduct } from '@/app/admin/products/actions';
 import { useRouter } from 'next/navigation';
-import { ImageIcon } from 'lucide-react';
+import { ImageIcon, Search, X } from 'lucide-react';
 
 type ProductWithImages = Product & { images: ProductImage[]; category: Category | null };
 
@@ -57,11 +58,26 @@ interface ProductListProps {
 export function ProductList({ initialProducts }: ProductListProps) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Sync products state when initialProducts prop changes (after router.refresh())
   useEffect(() => {
     setProducts(initialProducts);
   }, [initialProducts]);
+
+  // Filter products based on search query (name, cardNumber, cardSet)
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return products;
+    }
+    const query = searchQuery.toLowerCase().trim();
+    return products.filter((product) => {
+      const name = product.name?.toLowerCase() || '';
+      const cardNumber = product.cardNumber?.toLowerCase() || '';
+      const cardSet = product.cardSet?.toLowerCase() || '';
+      return name.includes(query) || cardNumber.includes(query) || cardSet.includes(query);
+    });
+  }, [products, searchQuery]);
 
   // Restore scroll position on mount
   useEffect(() => {
@@ -114,12 +130,40 @@ export function ProductList({ initialProducts }: ProductListProps) {
 
   return (
     <>
+      {/* 検索バー */}
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="商品名、カードNo.、カードセットで検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 pr-10"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <p className="text-sm text-gray-500 mt-2">
+            {filteredProducts.length}件の商品が見つかりました
+          </p>
+        )}
+      </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[80px]">画像</TableHead>
               <TableHead>商品名</TableHead>
+              <TableHead className="w-[100px]">カードNo.</TableHead>
               <TableHead className="w-[80px]">カテゴリ</TableHead>
               <TableHead className="w-[80px]">タイプ</TableHead>
               <TableHead className="w-[70px]">状態</TableHead>
@@ -129,7 +173,7 @@ export function ProductList({ initialProducts }: ProductListProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <TableRow key={product.id}>
                 <TableCell>
                   {product.images.length > 0 && (
@@ -144,6 +188,9 @@ export function ProductList({ initialProducts }: ProductListProps) {
                 </TableCell>
                 <TableCell className="font-medium max-w-[300px] truncate" title={product.name}>
                   {product.name}
+                </TableCell>
+                <TableCell className="text-sm text-gray-600">
+                  {product.cardNumber || '-'}
                 </TableCell>
                 <TableCell className="text-sm">
                   {product.category ? categoryLabels[product.category.slug] || product.category.name : '-'}
