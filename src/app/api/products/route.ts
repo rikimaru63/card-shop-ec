@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Prisma, Rarity, Condition, ProductType } from '@prisma/client'
+import { Prisma, Condition, ProductType } from '@prisma/client'
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     // Rarity filter (supports multiple values)
     if (rarity) {
-      const rarities = rarity.split(',').filter(Boolean) as Rarity[]
+      const rarities = rarity.split(',').filter(Boolean)
       if (rarities.length === 1) {
         where.rarity = rarities[0]
       } else if (rarities.length > 1) {
