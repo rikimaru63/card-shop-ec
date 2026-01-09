@@ -41,43 +41,51 @@ const productTypes = [
   { id: "OTHER", label: "Other" },
 ]
 
-// Pokemon rarities (organized by tier)
+// Pokemon rarities (simple flat list)
 const pokemonRarities = [
-  // Ultra Rare tier
-  { id: "MUR", label: "MUR", tier: "ultra" },
-  { id: "SAR", label: "SAR", tier: "ultra" },
-  { id: "UR", label: "UR", tier: "ultra" },
-  { id: "HR", label: "HR", tier: "ultra" },
-  { id: "SSR", label: "SSR", tier: "ultra" },
-  // Super Rare tier
-  { id: "SR", label: "SR", tier: "super" },
-  { id: "CSR", label: "CSR", tier: "super" },
-  { id: "CHR", label: "CHR", tier: "super" },
-  // Rare tier
-  { id: "AR", label: "AR", tier: "rare" },
-  { id: "RRR", label: "RRR", tier: "rare" },
-  { id: "RR", label: "RR", tier: "rare" },
-  { id: "R", label: "R", tier: "rare" },
-  // Special
-  { id: "ACE", label: "ACE", tier: "special" },
-  { id: "MA", label: "MA", tier: "special" },
-  { id: "BWR", label: "BWR", tier: "special" },
-  { id: "S", label: "S", tier: "special" },
-  { id: "K", label: "K", tier: "special" },
-  { id: "A", label: "A", tier: "special" },
-  { id: "PR", label: "PR", tier: "promo" },
+  { id: "SAR", label: "SAR" },
+  { id: "UR", label: "UR" },
+  { id: "SR", label: "SR" },
+  { id: "HR", label: "HR" },
+  { id: "AR", label: "AR" },
+  { id: "RRR", label: "RRR" },
+  { id: "RR", label: "RR" },
+  { id: "R", label: "R" },
+  { id: "SSR", label: "SSR" },
+  { id: "CSR", label: "CSR" },
+  { id: "CHR", label: "CHR" },
+  { id: "MUR", label: "MUR" },
+  { id: "ACE", label: "ACE" },
+  { id: "MA", label: "MA" },
+  { id: "BWR", label: "BWR" },
+  { id: "S", label: "S" },
+  { id: "K", label: "K" },
+  { id: "A", label: "A" },
+  { id: "PR", label: "PROMO" },
 ]
 
 // One Piece rarities
 const onepieceRarities = [
-  { id: "SEC", label: "SEC", tier: "ultra" },
-  { id: "SR", label: "SR", tier: "super" },
-  { id: "R", label: "R", tier: "rare" },
-  { id: "L", label: "L", tier: "leader" },
+  { id: "SEC", label: "SEC" },
+  { id: "SR", label: "SR" },
+  { id: "R", label: "R" },
+  { id: "L", label: "L" },
 ]
 
-// All rarities (for no category selected)
-const allRarities = [...pokemonRarities, ...onepieceRarities.filter(r => r.id !== "SR" && r.id !== "R")]
+// All rarities (for no category selected) - combine both, showing SEC for One Piece
+const allRarities = [
+  { id: "SAR", label: "SAR" },
+  { id: "SEC", label: "SEC" },
+  { id: "UR", label: "UR" },
+  { id: "SR", label: "SR" },
+  { id: "HR", label: "HR" },
+  { id: "AR", label: "AR" },
+  { id: "RRR", label: "RRR" },
+  { id: "RR", label: "RR" },
+  { id: "R", label: "R" },
+  { id: "L", label: "L" },
+  { id: "PR", label: "PROMO" },
+]
 
 // Conditions matching database values
 const conditions = [
@@ -418,7 +426,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Rarity Filter */}
+        {/* Rarity Filter - Chip/Badge Style */}
         <Collapsible
           open={openSections.rarity}
           onOpenChange={(open) => setOpenSections(prev => ({ ...prev, rarity: open }))}
@@ -428,25 +436,21 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
             <ChevronDown className={`h-4 w-4 transition-transform ${openSections.rarity ? "rotate-180" : ""}`} />
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-2">
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="flex flex-wrap gap-2">
               {rarities.map(rarity => {
-                const isChecked = filters.rarities.includes(rarity.id)
+                const isSelected = filters.rarities.includes(rarity.id)
                 return (
-                  <div key={rarity.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`rarity-${rarity.id}`}
-                      checked={isChecked}
-                      onCheckedChange={(checked) =>
-                        handleRarityChange(rarity.id, checked as boolean)
-                      }
-                    />
-                    <Label
-                      htmlFor={`rarity-${rarity.id}`}
-                      className="text-sm font-normal cursor-pointer"
-                    >
-                      {rarity.label}
-                    </Label>
-                  </div>
+                  <button
+                    key={rarity.id}
+                    onClick={() => handleRarityChange(rarity.id, !isSelected)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background hover:bg-secondary border-input"
+                    }`}
+                  >
+                    {rarity.label}
+                  </button>
                 )
               })}
             </div>
