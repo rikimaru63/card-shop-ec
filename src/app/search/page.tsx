@@ -41,10 +41,10 @@ export default function SearchPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [sortBy, setSortBy] = useState("relevance")
   
-  // フィルター状態
+  // Filter state
   const [filters, setFilters] = useState({
     categories: [] as string[],
-    priceRange: [0, 100000],
+    priceRange: [0, 10000000],
     rarities: [] as string[],
     conditions: [] as string[],
     inStock: false
@@ -65,14 +65,14 @@ export default function SearchPage() {
         sortBy: sort === 'relevance' ? 'newest' : sort
       })
 
-      // フィルター適用
+      // Apply filters
       if (filters.inStock) {
         params.append('inStock', 'true')
       }
       if (filters.priceRange[0] > 0) {
         params.append('minPrice', filters.priceRange[0].toString())
       }
-      if (filters.priceRange[1] < 100000) {
+      if (filters.priceRange[1] < 10000000) {
         params.append('maxPrice', filters.priceRange[1].toString())
       }
 
@@ -319,7 +319,7 @@ export default function SearchPage() {
                       setSearchQuery("")
                       setFilters({
                         categories: [],
-                        priceRange: [0, 100000],
+                        priceRange: [0, 10000000],
                         rarities: [],
                         conditions: [],
                         inStock: false

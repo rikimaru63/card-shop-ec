@@ -42,10 +42,10 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState("featured")
   const [showMobileFilters, setShowMobileFilters] = useState(false)
 
-  // フィルター状態
+  // Filter state
   const [filters, setFilters] = useState({
     categories: [] as string[],
-    priceRange: [0, 100000],
+    priceRange: [0, 10000000],
     rarities: [] as string[],
     conditions: [] as string[],
     inStock: false
@@ -154,24 +154,24 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      {/* ページヘッダー */}
+      {/* Page Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <a href="/" className="hover:text-primary">ホーム</a>
+            <a href="/" className="hover:text-primary">Home</a>
             <span>/</span>
-            <span>商品一覧</span>
+            <span>Products</span>
           </div>
           <h1 className="text-3xl font-bold">All Products</h1>
           <p className="text-muted-foreground mt-2">
-            {filteredAndSortedProducts.length} products
+            {filteredAndSortedProducts.length} products found
           </p>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
         <div className="flex gap-8">
-          {/* サイドバーフィルター（デスクトップ） */}
+          {/* Sidebar Filters (Desktop) */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
             <ProductFilters
               filters={filters}
@@ -179,13 +179,13 @@ export default function ProductsPage() {
             />
           </aside>
 
-          {/* メインコンテンツ */}
+          {/* Main Content */}
           <div className="flex-1">
-            {/* ソートとビューオプション */}
+            {/* Sort and View Options */}
             <div className="bg-white rounded-lg border p-4 mb-6">
               <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                 <div className="flex items-center gap-2">
-                  {/* モバイルフィルターボタン */}
+                  {/* Mobile Filter Button */}
                   <Button
                     variant="outline"
                     size="sm"
@@ -193,7 +193,7 @@ export default function ProductsPage() {
                     onClick={() => setShowMobileFilters(!showMobileFilters)}
                   >
                     <Filter className="h-4 w-4 mr-2" />
-                    フィルター
+                    Filters
                   </Button>
 
                   <ProductSort
@@ -203,7 +203,7 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">表示:</span>
+                  <span className="text-sm text-muted-foreground">View:</span>
                   <Button
                     variant={viewMode === "grid" ? "default" : "ghost"}
                     size="icon"
@@ -222,7 +222,7 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            {/* モバイルフィルター */}
+            {/* Mobile Filters */}
             {showMobileFilters && (
               <div className="lg:hidden mb-6">
                 <ProductFilters
@@ -232,7 +232,7 @@ export default function ProductsPage() {
               </div>
             )}
 
-            {/* 商品グリッド/リスト */}
+            {/* Product Grid/List */}
             {paginatedProducts.length > 0 ? (
               <div className={cn(
                 viewMode === "grid"
@@ -245,24 +245,24 @@ export default function ProductsPage() {
               </div>
             ) : (
               <div className="text-center py-12 bg-white rounded-lg border">
-                <p className="text-muted-foreground">条件に一致する商品が見つかりません</p>
+                <p className="text-muted-foreground">No products match your criteria</p>
                 <Button
                   variant="outline"
                   className="mt-4"
                   onClick={() => setFilters({
                     categories: [],
-                    priceRange: [0, 100000],
+                    priceRange: [0, 10000000],
                     rarities: [],
                     conditions: [],
                     inStock: false
                   })}
                 >
-                  フィルターをクリア
+                  Clear Filters
                 </Button>
               </div>
             )}
 
-            {/* ページネーション */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="mt-8 flex justify-center">
                 <div className="flex items-center gap-2">
