@@ -355,16 +355,6 @@ enum UserRole {
   SUPER_ADMIN
 }
 
-enum Rarity {
-  COMMON
-  UNCOMMON
-  RARE
-  SUPER_RARE
-  ULTRA_RARE
-  SECRET_RARE
-  PROMO
-}
-
 enum Condition {
   GRADE_A
   GRADE_B

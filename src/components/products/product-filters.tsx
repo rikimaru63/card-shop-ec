@@ -12,6 +12,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Badge } from "@/components/ui/badge"
+import {
+  CARD_GAMES,
+  PRODUCT_TYPES,
+  CONDITIONS,
+  PRICE_RANGES,
+  MAX_PRICE_LIMIT,
+  getRaritiesByGame,
+} from "@/lib/filter-config"
 
 interface Filters {
   categories: string[]
@@ -28,84 +36,8 @@ interface ProductFiltersProps {
   category?: string // "pokemon-cards" | "onepiece-cards" | undefined
 }
 
-// Card Game options
-const cardGames = [
-  { id: "pokemon-cards", label: "Pokemon" },
-  { id: "onepiece-cards", label: "One Piece" },
-]
-
-// Product Type options
-const productTypes = [
-  { id: "SINGLE", label: "Single Cards" },
-  { id: "BOX", label: "Sealed Box & Packs" },
-  { id: "OTHER", label: "Other" },
-]
-
-// Pokemon rarities (simple flat list)
-const pokemonRarities = [
-  { id: "SAR", label: "SAR" },
-  { id: "UR", label: "UR" },
-  { id: "SR", label: "SR" },
-  { id: "HR", label: "HR" },
-  { id: "AR", label: "AR" },
-  { id: "RRR", label: "RRR" },
-  { id: "RR", label: "RR" },
-  { id: "R", label: "R" },
-  { id: "SSR", label: "SSR" },
-  { id: "CSR", label: "CSR" },
-  { id: "CHR", label: "CHR" },
-  { id: "MUR", label: "MUR" },
-  { id: "ACE", label: "ACE" },
-  { id: "MA", label: "MA" },
-  { id: "BWR", label: "BWR" },
-  { id: "S", label: "S" },
-  { id: "K", label: "K" },
-  { id: "A", label: "A" },
-  { id: "PR", label: "PROMO" },
-]
-
-// One Piece rarities
-const onepieceRarities = [
-  { id: "SEC", label: "SEC" },
-  { id: "SR", label: "SR" },
-  { id: "R", label: "R" },
-  { id: "L", label: "L" },
-]
-
-// All rarities (for no category selected) - combine both, showing SEC for One Piece
-const allRarities = [
-  { id: "SAR", label: "SAR" },
-  { id: "SEC", label: "SEC" },
-  { id: "UR", label: "UR" },
-  { id: "SR", label: "SR" },
-  { id: "HR", label: "HR" },
-  { id: "AR", label: "AR" },
-  { id: "RRR", label: "RRR" },
-  { id: "RR", label: "RR" },
-  { id: "R", label: "R" },
-  { id: "L", label: "L" },
-  { id: "PR", label: "PROMO" },
-]
-
-// Conditions matching database values
-const conditions = [
-  { id: "SEALED", label: "Sealed / New" },
-  { id: "GRADE_A", label: "Grade A (Near Mint)" },
-  { id: "GRADE_B", label: "Grade B (Good)" },
-  { id: "GRADE_C", label: "Grade C (Played)" },
-  { id: "PSA", label: "PSA Graded" },
-]
-
-// Price range presets
-const priceRanges = [
-  { id: "0-1000", label: "Under ¥1,000", min: 0, max: 1000 },
-  { id: "1000-3000", label: "¥1,000 - ¥3,000", min: 1000, max: 3000 },
-  { id: "3000-5000", label: "¥3,000 - ¥5,000", min: 3000, max: 5000 },
-  { id: "5000-10000", label: "¥5,000 - ¥10,000", min: 5000, max: 10000 },
-  { id: "10000-30000", label: "¥10,000 - ¥30,000", min: 10000, max: 30000 },
-  { id: "30000-50000", label: "¥30,000 - ¥50,000", min: 30000, max: 50000 },
-  { id: "50000+", label: "¥50,000+", min: 50000, max: 10000000 },
-]
+// Map CARD_GAMES to use categorySlug as id for this component
+const cardGames = CARD_GAMES.map(g => ({ id: g.categorySlug, label: g.label }))
 
 export function ProductFilters({ filters, onFiltersChange, category }: ProductFiltersProps) {
   const [openSections, setOpenSections] = useState({
@@ -118,13 +50,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
   })
 
   // Get rarities based on category
-  const getCurrentRarities = () => {
-    if (category === "onepiece-cards") return onepieceRarities
-    if (category === "pokemon-cards") return pokemonRarities
-    return allRarities
-  }
-
-  const rarities = getCurrentRarities()
+  const rarities = getRaritiesByGame(category)
 
   const handleCategoryChange = (categoryId: string, checked: boolean) => {
     if (checked) {
@@ -193,7 +119,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
   const handleClearAll = () => {
     onFiltersChange({
       categories: [],
-      priceRange: [0, 10000000],
+      priceRange: [0, MAX_PRICE_LIMIT],
       rarities: [],
       conditions: [],
       productTypes: [],
@@ -207,7 +133,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
     filters.conditions.length +
     (filters.productTypes?.length || 0) +
     (filters.inStock ? 1 : 0) +
-    (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 10000000 ? 1 : 0)
+    (filters.priceRange[0] !== 0 || filters.priceRange[1] !== MAX_PRICE_LIMIT ? 1 : 0)
 
   return (
     <div className="bg-white rounded-lg border p-4">
@@ -245,7 +171,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
               )
             })}
             {(filters.productTypes || []).map(typeId => {
-              const type = productTypes.find(t => t.id === typeId)
+              const type = PRODUCT_TYPES.find(t => t.id === typeId)
               return (
                 <Badge
                   key={typeId}
@@ -270,7 +196,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
               </Badge>
             ))}
             {filters.conditions.map(conditionId => {
-              const condition = conditions.find(c => c.id === conditionId)
+              const condition = CONDITIONS.find(c => c.id === conditionId)
               return (
                 <Badge
                   key={conditionId}
@@ -283,11 +209,11 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
                 </Badge>
               )
             })}
-            {(filters.priceRange[0] !== 0 || filters.priceRange[1] !== 10000000) && (
+            {(filters.priceRange[0] !== 0 || filters.priceRange[1] !== MAX_PRICE_LIMIT) && (
               <Badge
                 variant="secondary"
                 className="pl-2 pr-1 py-0.5 text-xs cursor-pointer hover:bg-secondary/80"
-                onClick={() => handlePriceRangeChange([0, 10000000])}
+                onClick={() => handlePriceRangeChange([0, MAX_PRICE_LIMIT])}
               >
                 ¥{filters.priceRange[0].toLocaleString()} - ¥{filters.priceRange[1].toLocaleString()}
                 <X className="h-3 w-3 ml-1" />
@@ -357,7 +283,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-2">
             <div className="space-y-2">
-              {productTypes.map(type => {
+              {PRODUCT_TYPES.map(type => {
                 const isChecked = (filters.productTypes || []).includes(type.id)
                 return (
                   <div key={type.id} className="flex items-center space-x-2">
@@ -410,7 +336,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
                 </div>
               </div>
               <div className="space-y-1">
-                {priceRanges.map(range => (
+                {PRICE_RANGES.map(range => (
                   <Button
                     key={range.id}
                     variant="ghost"
@@ -468,7 +394,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-2">
             <div className="space-y-2">
-              {conditions.map(condition => {
+              {CONDITIONS.map(condition => {
                 const isChecked = filters.conditions.includes(condition.id)
                 return (
                   <div key={condition.id} className="flex items-center space-x-2">

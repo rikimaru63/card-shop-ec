@@ -6,123 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
+import {
+  CARD_GAMES,
+  PRODUCT_TYPES,
+  CONDITIONS,
+  CARD_SETS,
+  getRaritiesByGame,
+} from "@/lib/filter-config"
 
-// Card game types
-const CARD_GAMES = [
-  { id: "pokemon", label: "Pokemon" },
-  { id: "onepiece", label: "One Piece" },
-  { id: "other", label: "Other" }
-]
-
-// Product types
-const PRODUCT_TYPES = [
-  { id: "SINGLE", label: "Single Cards" },
-  { id: "BOX", label: "Booster Box & Packs" },
-  { id: "OTHER", label: "Other" }
-]
-
-// Card sets with English labels and Japanese DB values
-const CARD_SETS = {
-  pokemon: [
-    // SV Series
-    { label: "Scarlet ex", value: "スカーレットex" },
-    { label: "Violet ex", value: "バイオレットex" },
-    { label: "Triplet Beat", value: "トリプレットビート" },
-    { label: "Snow Hazard", value: "スノーハザード" },
-    { label: "Clay Burst", value: "クレイバースト" },
-    { label: "Pokemon 151", value: "151" },
-    { label: "Raging Surf", value: "レイジングサーフ" },
-    { label: "Ancient Roar", value: "古代の咆哮" },
-    { label: "Future Flash", value: "未来の一閃" },
-    { label: "Shiny Treasure ex", value: "シャイニートレジャーex" },
-    { label: "Wild Force", value: "ワイルドフォース" },
-    { label: "Cyber Judge", value: "サイバージャッジ" },
-    { label: "Wild Force / Cyber Judge", value: "ワイルドフォース/サイバージャッジ" },
-    { label: "Crimson Haze", value: "クリムゾンヘイズ" },
-    { label: "Mask of Change", value: "変幻の仮面" },
-    { label: "Stellar Miracle", value: "ステラミラクル" },
-    { label: "Super Electric Breaker", value: "超電ブレイカー" },
-    { label: "Terastal Fest", value: "テラスタルフェス" },
-    { label: "Battle Partners", value: "バトルパートナーズ" },
-    { label: "Night Wanderer", value: "ナイトワンダラー" },
-    { label: "Paradise Dragona", value: "楽園ドラゴーナ" },
-    { label: "Night Wanderer / Paradise Dragona", value: "ナイトワンダラー/楽園ドラゴーナ" },
-    // Sword & Shield Series
-    { label: "VSTAR Universe", value: "VSTARユニバース" },
-    { label: "High Class Pack", value: "ハイクラスパック" },
-    { label: "Paradigm Trigger", value: "パラダイムトリガー" },
-    { label: "Silver Lance", value: "白銀のランス" },
-    { label: "Jet-Black Spirit", value: "漆黒のガイスト" },
-    { label: "Silver Lance / Jet-Black Spirit", value: "白銀のランス/漆黒のガイスト" },
-    { label: "Eevee Heroes", value: "イーブイヒーローズ" },
-    { label: "Blue Sky Stream", value: "蒼空ストリーム" },
-    { label: "Skyscraping Perfect", value: "摩天パーフェクト" },
-    { label: "Fusion Arts", value: "フュージョンアーツ" },
-    { label: "Star Birth", value: "スターバース" },
-    { label: "Dark Phantasma", value: "ダークファンタズマ" },
-    { label: "Star Birth / Dark Phantasma", value: "スターバース/ダークファンタズマ" },
-    { label: "Time Gazer", value: "タイムゲイザー" },
-    { label: "Space Juggler", value: "スペースジャグラー" },
-    { label: "Time Gazer / Space Juggler", value: "タイムゲイザー/スペースジャグラー" },
-    { label: "Lost Abyss", value: "ロストアビス" },
-    { label: "Pokemon GO", value: "ポケモンGO" },
-    // Sun & Moon Series
-    { label: "GX Ultra Shiny", value: "GXウルトラシャイニー" },
-    { label: "Tag Bolt", value: "タッグボルト" },
-    { label: "Double Blaze", value: "ダブルブレイズ" },
-    { label: "Night Unison", value: "ナイトユニゾン" },
-    { label: "Thunderclap Spark", value: "迅雷スパーク" },
-    { label: "Dream League", value: "ドリームリーグ" },
-    { label: "Alter Genesis", value: "オルタージェネシス" },
-    // Special / Starter Decks
-    { label: "Start Deck", value: "スタートデッキ" },
-    { label: "GX Start Deck", value: "GXスタートデッキ" },
-    { label: "Battle Master Deck", value: "バトルマスターデッキ" },
-    { label: "Pokemon Card Classic", value: "ポケモンカード Classic" },
-    { label: "Ancient Roar / Future Flash", value: "古代の咆哮/未来の一閃" },
-    { label: "Promo Cards", value: "プロモーションカード" },
-    { label: "Other", value: "その他" }
-  ],
-  onepiece: [
-    { label: "Romance Dawn (OP-01)", value: "ROMANCE DAWN【OP-01】" },
-    { label: "Paramount War (OP-02)", value: "頂上決戦【OP-02】" },
-    { label: "Pillars of Strength (OP-03)", value: "強大な敵【OP-03】" },
-    { label: "Kingdoms of Intrigue (OP-04)", value: "謀略の王国【OP-04】" },
-    { label: "Awakening of New Era (OP-05)", value: "新時代の主役【OP-05】" },
-    { label: "Wings of Captain (OP-06)", value: "双璧の覇者【OP-06】" },
-    { label: "500 Years Future (OP-07)", value: "500年後の未来【OP-07】" },
-    { label: "Two Legends (OP-08)", value: "二つの伝説【OP-08】" },
-    { label: "Four Emperors (OP-09)", value: "四皇覚醒【OP-09】" },
-    { label: "Royal Bloodline (OP-10)", value: "ロイヤルブラッドライン【OP-10】" },
-    { label: "Starter Deck", value: "スタートデッキ" },
-    { label: "Promo Cards", value: "プロモーションカード" },
-    { label: "Other", value: "その他" }
-  ]
-}
-
-// Rarity options - Pokemon & One Piece combined
-const RARITIES = [
-  { id: "SAR", label: "SAR" },
-  { id: "SEC", label: "SEC" },
-  { id: "UR", label: "UR" },
-  { id: "SR", label: "SR" },
-  { id: "HR", label: "HR" },
-  { id: "AR", label: "AR" },
-  { id: "RRR", label: "RRR" },
-  { id: "RR", label: "RR" },
-  { id: "R", label: "R" },
-  { id: "L", label: "L" },
-  { id: "PR", label: "PROMO" },
-]
-
-// Condition options (matching database enum)
-const CONDITIONS = [
-  { id: "GRADE_A", label: "Grade A (Near Mint)" },
-  { id: "GRADE_B", label: "Grade B (Good)" },
-  { id: "GRADE_C", label: "Grade C (Played)" },
-  { id: "PSA", label: "PSA Graded" },
-  { id: "SEALED", label: "Sealed / New" }
-]
 
 interface FilterSidebarProps {
   className?: string
@@ -219,6 +110,9 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
   const availableSets = selectedGame
     ? CARD_SETS[selectedGame as keyof typeof CARD_SETS]
     : [...CARD_SETS.pokemon, ...CARD_SETS.onepiece]
+
+  // Get rarities based on selected game
+  const availableRarities = getRaritiesByGame(selectedGame)
 
   // Check if any filters are active
   const hasActiveFilters = selectedGame || selectedSets.length > 0 ||
@@ -336,7 +230,7 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
         <div>
           <h3 className="font-medium text-sm mb-3">Rarity</h3>
           <div className="flex flex-wrap gap-2">
-            {RARITIES.map((rarity) => (
+            {availableRarities.map((rarity) => (
               <Button
                 key={rarity.id}
                 variant={selectedRarities.includes(rarity.id) ? "default" : "outline"}
