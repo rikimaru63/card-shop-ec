@@ -18,6 +18,7 @@ interface Filters {
   priceRange: number[]
   rarities: string[]
   conditions: string[]
+  productTypes: string[]
   inStock: boolean
 }
 
@@ -27,68 +28,88 @@ interface ProductFiltersProps {
   category?: string // "pokemon-cards" | "onepiece-cards" | undefined
 }
 
-// ポケモンカードのレアリティ
+// Card Game options
+const cardGames = [
+  { id: "pokemon-cards", label: "Pokemon" },
+  { id: "onepiece-cards", label: "One Piece" },
+]
+
+// Product Type options
+const productTypes = [
+  { id: "SINGLE", label: "Single Cards" },
+  { id: "BOX", label: "Sealed Box & Packs" },
+  { id: "OTHER", label: "Other" },
+]
+
+// Pokemon rarities (organized by tier)
 const pokemonRarities = [
-  { id: "MUR", label: "MUR" },
-  { id: "SAR", label: "SAR" },
-  { id: "SR", label: "SR" },
-  { id: "AR", label: "AR" },
-  { id: "RR", label: "RR" },
-  { id: "R", label: "R" },
-  { id: "MA", label: "MA" },
-  { id: "BWR", label: "BWR" },
-  { id: "UR", label: "UR" },
-  { id: "ACE", label: "ACE" },
-  { id: "RRR", label: "RRR" },
-  { id: "CSR", label: "CSR" },
-  { id: "CHR", label: "CHR" },
-  { id: "HR", label: "HR" },
-  { id: "SSR", label: "SSR" },
-  { id: "S", label: "S" },
-  { id: "K", label: "K" },
-  { id: "A", label: "A" },
-  { id: "PR", label: "PR" },
+  // Ultra Rare tier
+  { id: "MUR", label: "MUR", tier: "ultra" },
+  { id: "SAR", label: "SAR", tier: "ultra" },
+  { id: "UR", label: "UR", tier: "ultra" },
+  { id: "HR", label: "HR", tier: "ultra" },
+  { id: "SSR", label: "SSR", tier: "ultra" },
+  // Super Rare tier
+  { id: "SR", label: "SR", tier: "super" },
+  { id: "CSR", label: "CSR", tier: "super" },
+  { id: "CHR", label: "CHR", tier: "super" },
+  // Rare tier
+  { id: "AR", label: "AR", tier: "rare" },
+  { id: "RRR", label: "RRR", tier: "rare" },
+  { id: "RR", label: "RR", tier: "rare" },
+  { id: "R", label: "R", tier: "rare" },
+  // Special
+  { id: "ACE", label: "ACE", tier: "special" },
+  { id: "MA", label: "MA", tier: "special" },
+  { id: "BWR", label: "BWR", tier: "special" },
+  { id: "S", label: "S", tier: "special" },
+  { id: "K", label: "K", tier: "special" },
+  { id: "A", label: "A", tier: "special" },
+  { id: "PR", label: "PR", tier: "promo" },
 ]
 
-// ワンピースカードのレアリティ
+// One Piece rarities
 const onepieceRarities = [
-  { id: "SEC", label: "SEC" },
-  { id: "SR", label: "SR" },
-  { id: "R", label: "R" },
-  { id: "L", label: "L" },
+  { id: "SEC", label: "SEC", tier: "ultra" },
+  { id: "SR", label: "SR", tier: "super" },
+  { id: "R", label: "R", tier: "rare" },
+  { id: "L", label: "L", tier: "leader" },
 ]
 
-// 全レアリティ（カテゴリ未選択時）
+// All rarities (for no category selected)
 const allRarities = [...pokemonRarities, ...onepieceRarities.filter(r => r.id !== "SR" && r.id !== "R")]
 
-// Conditions matching database values (GRADE_A, GRADE_B, GRADE_C, PSA, SEALED)
+// Conditions matching database values
 const conditions = [
-  { id: "SEALED", label: "Sealed / New", description: "Factory sealed, brand new" },
-  { id: "GRADE_A", label: "Grade A - Excellent", description: "Near mint condition" },
-  { id: "GRADE_B", label: "Grade B - Good", description: "Light wear, good condition" },
-  { id: "GRADE_C", label: "Grade C - Played", description: "Visible wear or damage" },
-  { id: "PSA", label: "PSA Graded", description: "Professionally graded cards" },
+  { id: "SEALED", label: "Sealed / New" },
+  { id: "GRADE_A", label: "Grade A (Near Mint)" },
+  { id: "GRADE_B", label: "Grade B (Good)" },
+  { id: "GRADE_C", label: "Grade C (Played)" },
+  { id: "PSA", label: "PSA Graded" },
 ]
 
+// Price range presets
 const priceRanges = [
-  { id: "0-3000", label: "Under ¥3,000", min: 0, max: 3000 },
+  { id: "0-1000", label: "Under ¥1,000", min: 0, max: 1000 },
+  { id: "1000-3000", label: "¥1,000 - ¥3,000", min: 1000, max: 3000 },
   { id: "3000-5000", label: "¥3,000 - ¥5,000", min: 3000, max: 5000 },
   { id: "5000-10000", label: "¥5,000 - ¥10,000", min: 5000, max: 10000 },
   { id: "10000-30000", label: "¥10,000 - ¥30,000", min: 10000, max: 30000 },
   { id: "30000-50000", label: "¥30,000 - ¥50,000", min: 30000, max: 50000 },
-  { id: "50000-100000", label: "¥50,000 - ¥100,000", min: 50000, max: 100000 },
-  { id: "100000+", label: "¥100,000+", min: 100000, max: 10000000 }
+  { id: "50000+", label: "¥50,000+", min: 50000, max: 10000000 },
 ]
 
 export function ProductFilters({ filters, onFiltersChange, category }: ProductFiltersProps) {
   const [openSections, setOpenSections] = useState({
+    cardGame: true,
+    productType: true,
     price: true,
     rarity: true,
     condition: true,
     availability: true
   })
 
-  // カテゴリに応じてレアリティを取得
+  // Get rarities based on category
   const getCurrentRarities = () => {
     if (category === "onepiece-cards") return onepieceRarities
     if (category === "pokemon-cards") return pokemonRarities
@@ -96,6 +117,35 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
   }
 
   const rarities = getCurrentRarities()
+
+  const handleCategoryChange = (categoryId: string, checked: boolean) => {
+    if (checked) {
+      onFiltersChange({
+        ...filters,
+        categories: [...filters.categories, categoryId]
+      })
+    } else {
+      onFiltersChange({
+        ...filters,
+        categories: filters.categories.filter(c => c !== categoryId)
+      })
+    }
+  }
+
+  const handleProductTypeChange = (typeId: string, checked: boolean) => {
+    const newTypes = filters.productTypes || []
+    if (checked) {
+      onFiltersChange({
+        ...filters,
+        productTypes: [...newTypes, typeId]
+      })
+    } else {
+      onFiltersChange({
+        ...filters,
+        productTypes: newTypes.filter(t => t !== typeId)
+      })
+    }
+  }
 
   const handleRarityChange = (rarityId: string, checked: boolean) => {
     if (checked) {
@@ -138,27 +188,30 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
       priceRange: [0, 10000000],
       rarities: [],
       conditions: [],
+      productTypes: [],
       inStock: false
     })
   }
 
   const activeFiltersCount =
+    filters.categories.length +
     filters.rarities.length +
     filters.conditions.length +
+    (filters.productTypes?.length || 0) +
     (filters.inStock ? 1 : 0) +
     (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 10000000 ? 1 : 0)
 
   return (
-    <div className="bg-white rounded-lg border p-6">
+    <div className="bg-white rounded-lg border p-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b">
         <h3 className="font-semibold text-lg">Filters</h3>
         {activeFiltersCount > 0 && (
           <Button
             variant="ghost"
             size="sm"
             onClick={handleClearAll}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground h-8 px-2"
           >
             Clear all ({activeFiltersCount})
           </Button>
@@ -167,13 +220,41 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
 
       {/* Active Filters */}
       {activeFiltersCount > 0 && (
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-2">
+        <div className="mb-4 pb-4 border-b">
+          <div className="flex flex-wrap gap-1.5">
+            {filters.categories.map(catId => {
+              const cat = cardGames.find(c => c.id === catId)
+              return (
+                <Badge
+                  key={catId}
+                  variant="secondary"
+                  className="pl-2 pr-1 py-0.5 text-xs cursor-pointer hover:bg-secondary/80"
+                  onClick={() => handleCategoryChange(catId, false)}
+                >
+                  {cat?.label || catId}
+                  <X className="h-3 w-3 ml-1" />
+                </Badge>
+              )
+            })}
+            {(filters.productTypes || []).map(typeId => {
+              const type = productTypes.find(t => t.id === typeId)
+              return (
+                <Badge
+                  key={typeId}
+                  variant="secondary"
+                  className="pl-2 pr-1 py-0.5 text-xs cursor-pointer hover:bg-secondary/80"
+                  onClick={() => handleProductTypeChange(typeId, false)}
+                >
+                  {type?.label || typeId}
+                  <X className="h-3 w-3 ml-1" />
+                </Badge>
+              )
+            })}
             {filters.rarities.map(rarity => (
               <Badge
                 key={rarity}
                 variant="secondary"
-                className="pl-2 pr-1 py-1 cursor-pointer hover:bg-secondary/80"
+                className="pl-2 pr-1 py-0.5 text-xs cursor-pointer hover:bg-secondary/80"
                 onClick={() => handleRarityChange(rarity, false)}
               >
                 {rarity}
@@ -186,7 +267,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
                 <Badge
                   key={conditionId}
                   variant="secondary"
-                  className="pl-2 pr-1 py-1 cursor-pointer hover:bg-secondary/80"
+                  className="pl-2 pr-1 py-0.5 text-xs cursor-pointer hover:bg-secondary/80"
                   onClick={() => handleConditionChange(conditionId, false)}
                 >
                   {condition?.label || conditionId}
@@ -197,7 +278,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
             {(filters.priceRange[0] !== 0 || filters.priceRange[1] !== 10000000) && (
               <Badge
                 variant="secondary"
-                className="pl-2 pr-1 py-1 cursor-pointer hover:bg-secondary/80"
+                className="pl-2 pr-1 py-0.5 text-xs cursor-pointer hover:bg-secondary/80"
                 onClick={() => handlePriceRangeChange([0, 10000000])}
               >
                 ¥{filters.priceRange[0].toLocaleString()} - ¥{filters.priceRange[1].toLocaleString()}
@@ -207,7 +288,7 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
             {filters.inStock && (
               <Badge
                 variant="secondary"
-                className="pl-2 pr-1 py-1 cursor-pointer hover:bg-secondary/80"
+                className="pl-2 pr-1 py-0.5 text-xs cursor-pointer hover:bg-secondary/80"
                 onClick={() => onFiltersChange({ ...filters, inStock: false })}
               >
                 In Stock
@@ -219,18 +300,90 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
       )}
 
       {/* Filter Sections */}
-      <div className="space-y-6">
+      <div className="space-y-4">
+        {/* Card Game Filter - Only show if no category is pre-selected */}
+        {!category && (
+          <Collapsible
+            open={openSections.cardGame}
+            onOpenChange={(open) => setOpenSections(prev => ({ ...prev, cardGame: open }))}
+          >
+            <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+              <h4 className="font-medium text-sm">Card Game</h4>
+              <ChevronDown className={`h-4 w-4 transition-transform ${openSections.cardGame ? "rotate-180" : ""}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <div className="space-y-2">
+                {cardGames.map(game => {
+                  const isChecked = filters.categories.includes(game.id)
+                  return (
+                    <div key={game.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`game-${game.id}`}
+                        checked={isChecked}
+                        onCheckedChange={(checked) =>
+                          handleCategoryChange(game.id, checked as boolean)
+                        }
+                      />
+                      <Label
+                        htmlFor={`game-${game.id}`}
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {game.label}
+                      </Label>
+                    </div>
+                  )
+                })}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {/* Product Type Filter */}
+        <Collapsible
+          open={openSections.productType}
+          onOpenChange={(open) => setOpenSections(prev => ({ ...prev, productType: open }))}
+        >
+          <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+            <h4 className="font-medium text-sm">Product Type</h4>
+            <ChevronDown className={`h-4 w-4 transition-transform ${openSections.productType ? "rotate-180" : ""}`} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2">
+            <div className="space-y-2">
+              {productTypes.map(type => {
+                const isChecked = (filters.productTypes || []).includes(type.id)
+                return (
+                  <div key={type.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`type-${type.id}`}
+                      checked={isChecked}
+                      onCheckedChange={(checked) =>
+                        handleProductTypeChange(type.id, checked as boolean)
+                      }
+                    />
+                    <Label
+                      htmlFor={`type-${type.id}`}
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      {type.label}
+                    </Label>
+                  </div>
+                )
+              })}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
         {/* Price Range Filter */}
         <Collapsible
           open={openSections.price}
           onOpenChange={(open) => setOpenSections(prev => ({ ...prev, price: open }))}
         >
-          <CollapsibleTrigger className="flex items-center justify-between w-full">
-            <h4 className="font-semibold">Price Range</h4>
+          <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+            <h4 className="font-medium text-sm">Price Range</h4>
             <ChevronDown className={`h-4 w-4 transition-transform ${openSections.price ? "rotate-180" : ""}`} />
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4">
-            <div className="space-y-4">
+          <CollapsibleContent className="pt-2">
+            <div className="space-y-3">
               <Slider
                 value={filters.priceRange}
                 onValueChange={handlePriceRangeChange}
@@ -239,22 +392,22 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
                 step={1000}
                 className="w-full"
               />
-              <div className="flex items-center justify-between text-sm">
-                <div className="px-3 py-1 bg-secondary rounded">
+              <div className="flex items-center justify-between text-xs">
+                <div className="px-2 py-1 bg-secondary rounded">
                   ¥{filters.priceRange[0].toLocaleString()}
                 </div>
                 <span className="text-muted-foreground">to</span>
-                <div className="px-3 py-1 bg-secondary rounded">
+                <div className="px-2 py-1 bg-secondary rounded">
                   {filters.priceRange[1] >= 100000 ? '¥100,000+' : `¥${filters.priceRange[1].toLocaleString()}`}
                 </div>
               </div>
-              <div className="space-y-2 pt-2">
+              <div className="space-y-1">
                 {priceRanges.map(range => (
                   <Button
                     key={range.id}
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-sm"
+                    className="w-full justify-start text-xs h-7 px-2"
                     onClick={() => handlePriceRangeChange([range.min, range.max])}
                   >
                     {range.label}
@@ -270,15 +423,14 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
           open={openSections.rarity}
           onOpenChange={(open) => setOpenSections(prev => ({ ...prev, rarity: open }))}
         >
-          <CollapsibleTrigger className="flex items-center justify-between w-full">
-            <h4 className="font-semibold">Rarity</h4>
+          <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+            <h4 className="font-medium text-sm">Rarity</h4>
             <ChevronDown className={`h-4 w-4 transition-transform ${openSections.rarity ? "rotate-180" : ""}`} />
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4">
-            <div className="space-y-3 max-h-60 overflow-y-auto">
+          <CollapsibleContent className="pt-2">
+            <div className="space-y-2 max-h-48 overflow-y-auto">
               {rarities.map(rarity => {
                 const isChecked = filters.rarities.includes(rarity.id)
-
                 return (
                   <div key={rarity.id} className="flex items-center space-x-2">
                     <Checkbox
@@ -306,36 +458,29 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
           open={openSections.condition}
           onOpenChange={(open) => setOpenSections(prev => ({ ...prev, condition: open }))}
         >
-          <CollapsibleTrigger className="flex items-center justify-between w-full">
-            <h4 className="font-semibold">Condition</h4>
+          <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+            <h4 className="font-medium text-sm">Condition</h4>
             <ChevronDown className={`h-4 w-4 transition-transform ${openSections.condition ? "rotate-180" : ""}`} />
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4">
-            <div className="space-y-3">
+          <CollapsibleContent className="pt-2">
+            <div className="space-y-2">
               {conditions.map(condition => {
                 const isChecked = filters.conditions.includes(condition.id)
-
                 return (
-                  <div key={condition.id} className="flex items-start space-x-2">
+                  <div key={condition.id} className="flex items-center space-x-2">
                     <Checkbox
                       id={condition.id}
                       checked={isChecked}
                       onCheckedChange={(checked) =>
                         handleConditionChange(condition.id, checked as boolean)
                       }
-                      className="mt-0.5"
                     />
-                    <div className="flex flex-col">
-                      <Label
-                        htmlFor={condition.id}
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {condition.label}
-                      </Label>
-                      <span className="text-xs text-muted-foreground">
-                        {condition.description}
-                      </span>
-                    </div>
+                    <Label
+                      htmlFor={condition.id}
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      {condition.label}
+                    </Label>
                   </div>
                 )
               })}
@@ -348,16 +493,16 @@ export function ProductFilters({ filters, onFiltersChange, category }: ProductFi
           open={openSections.availability}
           onOpenChange={(open) => setOpenSections(prev => ({ ...prev, availability: open }))}
         >
-          <CollapsibleTrigger className="flex items-center justify-between w-full">
-            <h4 className="font-semibold">Availability</h4>
+          <CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+            <h4 className="font-medium text-sm">Availability</h4>
             <ChevronDown className={`h-4 w-4 transition-transform ${openSections.availability ? "rotate-180" : ""}`} />
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4">
+          <CollapsibleContent className="pt-2">
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="in-stock"
                 checked={filters.inStock}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   onFiltersChange({
                     ...filters,
                     inStock: checked as boolean

@@ -48,6 +48,7 @@ export default function ProductsPage() {
     priceRange: [0, 10000000],
     rarities: [] as string[],
     conditions: [] as string[],
+    productTypes: [] as string[],
     inStock: false
   })
 
@@ -254,6 +255,7 @@ export default function ProductsPage() {
                     priceRange: [0, 10000000],
                     rarities: [],
                     conditions: [],
+                    productTypes: [],
                     inStock: false
                   })}
                 >
