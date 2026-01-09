@@ -12,11 +12,19 @@ import {
   CONDITIONS,
   CARD_SETS,
   getRaritiesByGame,
+  fetchCardSets,
 } from "@/lib/filter-config"
 
 
 interface FilterSidebarProps {
   className?: string
+}
+
+// Type for card sets
+type CardSetsData = {
+  pokemon: { label: string; value: string }[]
+  onepiece: { label: string; value: string }[]
+  other: { label: string; value: string }[]
 }
 
 export function FilterSidebar({ className }: FilterSidebarProps) {
@@ -32,6 +40,18 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
   const [selectedConditions, setSelectedConditions] = useState<string[]>([])
   const [selectedProductType, setSelectedProductType] = useState<string | null>(null)
   const [inStockOnly, setInStockOnly] = useState(false)
+
+  // Card sets from API
+  const [cardSets, setCardSets] = useState<CardSetsData>({
+    pokemon: [...CARD_SETS.pokemon],
+    onepiece: [...CARD_SETS.onepiece],
+    other: []
+  })
+
+  // Fetch card sets from API on mount
+  useEffect(() => {
+    fetchCardSets().then(setCardSets)
+  }, [])
 
   // Initialize filters from URL on mount
   useEffect(() => {
@@ -108,8 +128,8 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
 
   // Get available sets based on selected game (with label/value pairs)
   const availableSets = selectedGame
-    ? CARD_SETS[selectedGame as keyof typeof CARD_SETS]
-    : [...CARD_SETS.pokemon, ...CARD_SETS.onepiece]
+    ? cardSets[selectedGame as keyof typeof cardSets] || []
+    : [...cardSets.pokemon, ...cardSets.onepiece, ...cardSets.other]
 
   // Get rarities based on selected game
   const availableRarities = getRaritiesByGame(selectedGame)
@@ -205,7 +225,7 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
             Card Sets
             {selectedGame && (
               <span className="text-xs text-muted-foreground ml-1">
-                ({selectedGame === "pokemon" ? "Pokemon" : "One Piece"})
+                ({selectedGame === "pokemon" ? "Pokemon" : selectedGame === "onepiece" ? "One Piece" : "Other"})
               </span>
             )}
           </h3>

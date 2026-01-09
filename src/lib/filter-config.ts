@@ -114,6 +114,18 @@ export const MAX_PRICE_LIMIT = 10000000
 // ============================================
 // Card Sets
 // ============================================
+
+// Type for card sets from API
+export interface CardSetItem {
+  id: string
+  game: string
+  label: string
+  value: string
+  code: string | null
+  releaseDate: string | null
+}
+
+// Fallback static card sets (used when API is unavailable)
 export const CARD_SETS = {
   pokemon: [
     // SV Series
@@ -271,4 +283,36 @@ export function urlParamsToFilters(searchParams: URLSearchParams): Partial<Filte
   if (inStock === "true") filters.inStock = true
 
   return filters
+}
+
+// ============================================
+// API Fetch Functions
+// ============================================
+
+// Fetch card sets from API with fallback to static data
+export async function fetchCardSets(): Promise<{
+  pokemon: { label: string; value: string }[]
+  onepiece: { label: string; value: string }[]
+  other: { label: string; value: string }[]
+}> {
+  try {
+    const response = await fetch('/api/card-sets')
+    if (!response.ok) throw new Error('Failed to fetch')
+
+    const data = await response.json()
+
+    return {
+      pokemon: data.grouped.pokemon.map((s: CardSetItem) => ({ label: s.label, value: s.value })),
+      onepiece: data.grouped.onepiece.map((s: CardSetItem) => ({ label: s.label, value: s.value })),
+      other: data.grouped.other.map((s: CardSetItem) => ({ label: s.label, value: s.value }))
+    }
+  } catch (error) {
+    console.error('Failed to fetch card sets, using fallback:', error)
+    // Return static fallback data
+    return {
+      pokemon: [...CARD_SETS.pokemon],
+      onepiece: [...CARD_SETS.onepiece],
+      other: []
+    }
+  }
 }

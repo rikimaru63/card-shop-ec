@@ -416,3 +416,29 @@ enum AnnouncementType {
   URGENT
   PROMOTION
 }
+
+// ==================== Card Sets ====================
+
+model CardSet {
+  id          String   @id @default(cuid())
+  game        CardGame // pokemon, onepiece, other
+  label       String   // English display name: "Battle Partners"
+  value       String   // Japanese name for matching: "バトルパートナーズ"
+  code        String?  // Set code: "SV9", "OP-10"
+  releaseDate DateTime? // For sorting by release
+  isActive    Boolean  @default(true)
+  order       Int      @default(0) // Manual sort order
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([game, value])
+  @@index([game])
+  @@index([isActive])
+  @@index([order])
+}
+
+enum CardGame {
+  POKEMON
+  ONEPIECE
+  OTHER
+}
