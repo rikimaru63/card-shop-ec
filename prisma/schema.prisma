@@ -49,7 +49,7 @@ model Product {
   productType    ProductType @default(SINGLE) // BOX or SINGLE
   cardSet        String?
   cardNumber     String?
-  rarity         Rarity?
+  rarity         String?   // Pokemon: MUR, SAR, SR, AR, RR, R, etc. / OnePiece: SEC, SR, R, L
   condition      Condition?
   language       String     @default("EN")
   foil           Boolean    @default(false)

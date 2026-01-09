@@ -140,26 +140,7 @@ export async function POST(request: NextRequest) {
     const sku = body.sku || generateSKU(body.cardSet, body.cardNumber)
     const slug = await generateUniqueSlug(body.name, prisma)
     
-    // Convert rarity and condition strings to enum values
-    const rarityMap: { [key: string]: string } = {
-      'C (コモン)': 'COMMON',
-      'U (アンコモン)': 'UNCOMMON',
-      'R (レア)': 'RARE',
-      'RR (ダブルレア)': 'RARE',
-      'RRR (トリプルレア)': 'SUPER_RARE',
-      'SR (スーパーレア)': 'SUPER_RARE',
-      'UR (ウルトラレア)': 'ULTRA_RARE',
-      'SAR (スペシャルアートレア)': 'SECRET_RARE',
-      'AR (アートレア)': 'SECRET_RARE',
-      'CHR (キャラクターレア)': 'SECRET_RARE',
-      'プロモ': 'PROMO',
-      'RR': 'RARE',
-      'SAR': 'SECRET_RARE',
-      'UR': 'ULTRA_RARE',
-      'SR': 'SUPER_RARE',
-      'AR': 'SECRET_RARE'
-    }
-    
+    // Convert condition strings to enum values (rarity is now a string field)
     const conditionMap: { [key: string]: string } = {
       'A：美品': 'GRADE_A',
       'B：良品': 'GRADE_B',
@@ -171,8 +152,8 @@ export async function POST(request: NextRequest) {
       '未開封': 'SEALED',
       'SEALED': 'SEALED'
     }
-    
-    const rarity = body.rarity ? rarityMap[body.rarity] || body.rarity : null
+
+    const rarity = body.rarity || null
     const condition = body.condition ? conditionMap[body.condition] || body.condition : null
     
     // Create product

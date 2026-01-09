@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateSKU, generateUniqueSlug } from '@/lib/utils/sku'
-import { Condition, Rarity, ProductType } from '@prisma/client'
+import { Condition, ProductType } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,36 +58,6 @@ const conditionMap: { [key: string]: Condition } = {
   'New': 'SEALED',
   'new': 'SEALED',
   '新品': 'SEALED',
-}
-
-// Rarity mapping
-const rarityMap: { [key: string]: Rarity } = {
-  'C': 'COMMON',
-  'COMMON': 'COMMON',
-  'コモン': 'COMMON',
-  'U': 'UNCOMMON',
-  'UNCOMMON': 'UNCOMMON',
-  'アンコモン': 'UNCOMMON',
-  'R': 'RARE',
-  'RARE': 'RARE',
-  'レア': 'RARE',
-  'RR': 'RARE',
-  'RRR': 'RARE',
-  'SR': 'SUPER_RARE',
-  'SUPER_RARE': 'SUPER_RARE',
-  'スーパーレア': 'SUPER_RARE',
-  'UR': 'ULTRA_RARE',
-  'ULTRA_RARE': 'ULTRA_RARE',
-  'ウルトラレア': 'ULTRA_RARE',
-  'SAR': 'SECRET_RARE',
-  'SEC': 'SECRET_RARE',
-  'SECRET_RARE': 'SECRET_RARE',
-  'シークレット': 'SECRET_RARE',
-  'AR': 'SECRET_RARE',
-  'CHR': 'SECRET_RARE',
-  'CSR': 'SECRET_RARE',
-  'PROMO': 'PROMO',
-  'プロモ': 'PROMO',
 }
 
 // ProductType mapping
@@ -255,11 +225,11 @@ export async function POST(request: NextRequest) {
         const productType: ProductType = productTypeMap[productTypeStr] || 'SINGLE'
         const conditionUpper = conditionStr.toUpperCase()
         const condition: Condition = conditionMap[conditionStr] || conditionMap[conditionUpper] || 'GRADE_A'
-        const rarityUpper = rarityStr?.toUpperCase() || null
-        const rarity: Rarity | null = rarityStr ? (rarityMap[rarityStr] || rarityMap[rarityUpper!] || null) : null
+        // Rarity is now stored as-is (string field)
+        const rarity: string | null = rarityStr || null
 
         // Debug log
-        console.log(`Row ${i + 1}: conditionStr="${conditionStr}", mapped to="${condition}", rarityStr="${rarityStr}", mapped to="${rarity}"`);
+        console.log(`Row ${i + 1}: conditionStr="${conditionStr}", mapped to="${condition}", rarityStr="${rarityStr}"`);
 
         // Determine category based on cardType
         let categoryId = pokemonCategory.id

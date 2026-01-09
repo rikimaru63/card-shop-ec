@@ -24,17 +24,42 @@ interface Filters {
 interface ProductFiltersProps {
   filters: Filters
   onFiltersChange: (filters: Filters) => void
+  category?: string // "pokemon-cards" | "onepiece-cards" | undefined
 }
 
-const rarities = [
-  { id: "common", label: "Common" },
-  { id: "uncommon", label: "Uncommon" },
-  { id: "rare", label: "Rare" },
-  { id: "super-rare", label: "Super Rare" },
-  { id: "ultra-rare", label: "Ultra Rare" },
-  { id: "secret-rare", label: "Secret Rare" },
-  { id: "promo", label: "Promo" }
+// ポケモンカードのレアリティ
+const pokemonRarities = [
+  { id: "MUR", label: "MUR" },
+  { id: "SAR", label: "SAR" },
+  { id: "SR", label: "SR" },
+  { id: "AR", label: "AR" },
+  { id: "RR", label: "RR" },
+  { id: "R", label: "R" },
+  { id: "MA", label: "MA" },
+  { id: "BWR", label: "BWR" },
+  { id: "UR", label: "UR" },
+  { id: "ACE", label: "ACE" },
+  { id: "RRR", label: "RRR" },
+  { id: "CSR", label: "CSR" },
+  { id: "CHR", label: "CHR" },
+  { id: "HR", label: "HR" },
+  { id: "SSR", label: "SSR" },
+  { id: "S", label: "S" },
+  { id: "K", label: "K" },
+  { id: "A", label: "A" },
+  { id: "PR", label: "PR" },
 ]
+
+// ワンピースカードのレアリティ
+const onepieceRarities = [
+  { id: "SEC", label: "SEC" },
+  { id: "SR", label: "SR" },
+  { id: "R", label: "R" },
+  { id: "L", label: "L" },
+]
+
+// 全レアリティ（カテゴリ未選択時）
+const allRarities = [...pokemonRarities, ...onepieceRarities.filter(r => r.id !== "SR" && r.id !== "R")]
 
 const conditions = [
   { id: "mint", label: "Mint (M)" },
@@ -60,7 +85,7 @@ const priceRanges = [
   { id: "100000+", label: "¥100,000以上", min: 100000, max: 10000000 }
 ]
 
-export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps) {
+export function ProductFilters({ filters, onFiltersChange, category }: ProductFiltersProps) {
   const [openSections, setOpenSections] = useState({
     price: true,
     rarity: true,
@@ -68,21 +93,25 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
     availability: false
   })
 
+  // カテゴリに応じてレアリティを取得
+  const getCurrentRarities = () => {
+    if (category === "onepiece-cards") return onepieceRarities
+    if (category === "pokemon-cards") return pokemonRarities
+    return allRarities
+  }
+
+  const rarities = getCurrentRarities()
+
   const handleRarityChange = (rarityId: string, checked: boolean) => {
-    const label = rarities.find(r => r.id === rarityId)?.label || rarityId
-    const formattedLabel = label.replace("-", " ").split(" ").map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(" ")
-    
     if (checked) {
       onFiltersChange({
         ...filters,
-        rarities: [...filters.rarities, formattedLabel]
+        rarities: [...filters.rarities, rarityId]
       })
     } else {
       onFiltersChange({
         ...filters,
-        rarities: filters.rarities.filter(r => r !== formattedLabel)
+        rarities: filters.rarities.filter(r => r !== rarityId)
       })
     }
   }
@@ -156,14 +185,7 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
                 key={rarity}
                 variant="secondary"
                 className="pl-2 pr-1 py-1 cursor-pointer hover:bg-secondary/80"
-                onClick={() => {
-                  const rarityId = rarities.find(r => 
-                    r.label.replace("-", " ").split(" ").map(word => 
-                      word.charAt(0).toUpperCase() + word.slice(1)
-                    ).join(" ") === rarity
-                  )?.id || ""
-                  handleRarityChange(rarityId, false)
-                }}
+                onClick={() => handleRarityChange(rarity, false)}
               >
                 {rarity}
                 <X className="h-3 w-3 ml-1" />
@@ -240,24 +262,21 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
             <ChevronDown className={`h-4 w-4 transition-transform ${openSections.rarity ? "rotate-180" : ""}`} />
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-4">
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-60 overflow-y-auto">
               {rarities.map(rarity => {
-                const formattedLabel = rarity.label.replace("-", " ").split(" ").map(word => 
-                  word.charAt(0).toUpperCase() + word.slice(1)
-                ).join(" ")
-                const isChecked = filters.rarities.includes(formattedLabel)
-                
+                const isChecked = filters.rarities.includes(rarity.id)
+
                 return (
                   <div key={rarity.id} className="flex items-center space-x-2">
                     <Checkbox
-                      id={rarity.id}
+                      id={`rarity-${rarity.id}`}
                       checked={isChecked}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         handleRarityChange(rarity.id, checked as boolean)
                       }
                     />
                     <Label
-                      htmlFor={rarity.id}
+                      htmlFor={`rarity-${rarity.id}`}
                       className="text-sm font-normal cursor-pointer"
                     >
                       {rarity.label}

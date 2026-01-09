@@ -119,15 +119,40 @@ export default function EditProductPage() {
     return formData.cardType === "pokemon" ? pokemonSets : onepieceSets
   }
 
-  const rarities = [
-    { value: "COMMON", label: "C (コモン)" },
-    { value: "UNCOMMON", label: "U (アンコモン)" },
-    { value: "RARE", label: "R (レア)" },
-    { value: "SUPER_RARE", label: "SR (スーパーレア)" },
-    { value: "ULTRA_RARE", label: "UR (ウルトラレア)" },
-    { value: "SECRET_RARE", label: "SAR (シークレットレア)" },
-    { value: "PROMO", label: "プロモ" }
+  // ポケモンカードのレアリティ
+  const pokemonRarities = [
+    { value: "MUR", label: "MUR" },
+    { value: "SAR", label: "SAR" },
+    { value: "SR", label: "SR" },
+    { value: "AR", label: "AR" },
+    { value: "RR", label: "RR" },
+    { value: "R", label: "R" },
+    { value: "MA", label: "MA" },
+    { value: "BWR", label: "BWR" },
+    { value: "UR", label: "UR" },
+    { value: "ACE", label: "ACE" },
+    { value: "RRR", label: "RRR" },
+    { value: "CSR", label: "CSR" },
+    { value: "CHR", label: "CHR" },
+    { value: "HR", label: "HR" },
+    { value: "SSR", label: "SSR" },
+    { value: "S", label: "S" },
+    { value: "K", label: "K" },
+    { value: "A", label: "A" },
+    { value: "PR", label: "PR" },
   ]
+
+  // ワンピースカードのレアリティ
+  const onepieceRarities = [
+    { value: "SEC", label: "SEC" },
+    { value: "SR", label: "SR" },
+    { value: "R", label: "R" },
+    { value: "L", label: "L" },
+  ]
+
+  const getCurrentRarities = () => {
+    return formData.cardType === "onepiece" ? onepieceRarities : pokemonRarities
+  }
 
   const conditions = [
     { value: "GRADE_A", label: "A：美品", description: "ほぼ新品同様。目立った傷や汚れなし" },
@@ -353,7 +378,7 @@ export default function EditProductPage() {
                     onChange={(e) => setFormData({...formData, rarity: e.target.value})}
                   >
                     <option value="">選択してください</option>
-                    {rarities.map(rarity => (
+                    {getCurrentRarities().map(rarity => (
                       <option key={rarity.value} value={rarity.value}>{rarity.label}</option>
                     ))}
                   </select>
