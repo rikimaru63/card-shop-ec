@@ -100,15 +100,19 @@ const CARD_SETS = {
   ]
 }
 
-// Rarity options (matching database enum)
+// Rarity options - Pokemon & One Piece combined
 const RARITIES = [
-  { id: "SECRET_RARE", label: "SAR / SEC" },
-  { id: "ULTRA_RARE", label: "UR" },
-  { id: "SUPER_RARE", label: "SR" },
-  { id: "RARE", label: "R" },
-  { id: "UNCOMMON", label: "UC" },
-  { id: "COMMON", label: "C" },
-  { id: "PROMO", label: "PROMO" }
+  { id: "SAR", label: "SAR" },
+  { id: "SEC", label: "SEC" },
+  { id: "UR", label: "UR" },
+  { id: "SR", label: "SR" },
+  { id: "HR", label: "HR" },
+  { id: "AR", label: "AR" },
+  { id: "RRR", label: "RRR" },
+  { id: "RR", label: "RR" },
+  { id: "R", label: "R" },
+  { id: "L", label: "L" },
+  { id: "PR", label: "PROMO" },
 ]
 
 // Condition options (matching database enum)
