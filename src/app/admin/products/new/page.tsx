@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Save } from "lucide-react"
@@ -8,9 +8,32 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+// Types for API data
+interface OptionItem {
+  id: string
+  code: string
+  label: string
+  labelJa?: string | null
+}
+
+interface RarityItem {
+  id: string
+  game: string
+  code: string
+  label: string
+}
+
+interface CardSetItem {
+  id: string
+  game: string
+  label: string
+  value: string
+}
+
 export default function NewProductPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [optionsLoading, setOptionsLoading] = useState(true)
   const [formData, setFormData] = useState({
     name: "",
     cardType: "pokemon", // pokemon or onepiece
@@ -31,100 +54,121 @@ export default function NewProductPage() {
     description: "",
   })
 
-  const cardTypes = [
-    { value: "pokemon", label: "ポケモンカード" },
-    { value: "onepiece", label: "ワンピースカード" },
-    { value: "other", label: "その他" },
-  ]
+  // Options from API
+  const [cardTypes, setCardTypes] = useState<OptionItem[]>([
+    { id: "1", code: "pokemon", label: "ポケモンカード" },
+    { id: "2", code: "onepiece", label: "ワンピースカード" },
+    { id: "3", code: "other", label: "その他" },
+  ])
+  const [productTypes, setProductTypes] = useState<OptionItem[]>([
+    { id: "1", code: "SINGLE", label: "シングルカード" },
+    { id: "2", code: "BOX", label: "BOX・パック" },
+    { id: "3", code: "OTHER", label: "その他" },
+  ])
+  const [conditions, setConditions] = useState<OptionItem[]>([
+    { id: "1", code: "GRADE_A", label: "A：美品" },
+    { id: "2", code: "GRADE_B", label: "B：良品" },
+    { id: "3", code: "GRADE_C", label: "C：ダメージ" },
+    { id: "4", code: "PSA", label: "PSA鑑定済み" },
+    { id: "5", code: "SEALED", label: "未開封" },
+  ])
+  const [raritiesByGame, setRaritiesByGame] = useState<{
+    pokemon: RarityItem[]
+    onepiece: RarityItem[]
+    other: RarityItem[]
+  }>({
+    pokemon: [],
+    onepiece: [],
+    other: []
+  })
+  const [cardSetsByGame, setCardSetsByGame] = useState<{
+    pokemon: CardSetItem[]
+    onepiece: CardSetItem[]
+    other: CardSetItem[]
+  }>({
+    pokemon: [],
+    onepiece: [],
+    other: []
+  })
 
-  const productTypes = [
-    { value: "SINGLE", label: "シングルカード" },
-    { value: "BOX", label: "BOX・パック" },
-    { value: "OTHER", label: "その他" },
-  ]
+  // Fetch options from API
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const [filterRes, cardSetsRes] = await Promise.all([
+          fetch('/api/filter-options'),
+          fetch('/api/card-sets')
+        ])
 
-  const pokemonSets = [
-    // SV シリーズ
-    "スカーレットex", "バイオレットex", "トリプレットビート",
-    "スノーハザード", "クレイバースト", "ナイトワンダラー",
-    "151", "レイジングサーフ", "古代の咆哮", "未来の一閃",
-    "シャイニートレジャーex", "ワイルドフォース", "サイバージャッジ",
-    "クリムゾンヘイズ", "変幻の仮面", "ステラミラクル",
-    "超電ブレイカー", "テラスタルフェス", "バトルパートナーズ",
-    "楽園ドラゴーナ", "ナイトワンダラー/楽園ドラゴーナ",
-    // ソード＆シールド シリーズ
-    "VSTARユニバース", "ハイクラスパック", "パラダイムトリガー",
-    "白銀のランス", "漆黒のガイスト", "白銀のランス/漆黒のガイスト",
-    "イーブイヒーローズ", "蒼空ストリーム", "摩天パーフェクト",
-    "フュージョンアーツ", "スターバース", "ダークファンタズマ",
-    "スターバース/ダークファンタズマ", "タイムゲイザー", "スペースジャグラー",
-    "タイムゲイザー/スペースジャグラー", "ロストアビス", "ポケモンGO",
-    // サン＆ムーン シリーズ
-    "GXウルトラシャイニー", "タッグボルト", "ダブルブレイズ",
-    "ナイトユニゾン", "迅雷スパーク", "ドリームリーグ",
-    "オルタージェネシス", "ソルガレオ&ルナアーラGX",
-    // その他・特別パック
-    "スタートデッキ", "GXスタートデッキ", "バトルマスターデッキ",
-    "ポケモンカード Classic", "シンジュ団", "ダイヤモンド団",
-    "シンジュ団/ダイヤモンド団", "ワイルドフォース/サイバージャッジ",
-    "古代の咆哮/未来の一閃",
-    "プロモーションカード", "その他"
-  ]
+        if (filterRes.ok) {
+          const filterData = await filterRes.json()
 
-  const onepieceSets = [
-    "ROMANCE DAWN【OP-01】", "頂上決戦【OP-02】", "強大な敵【OP-03】",
-    "謀略の王国【OP-04】", "新時代の主役【OP-05】", "双璧の覇者【OP-06】",
-    "500年後の未来【OP-07】", "二つの伝説【OP-08】", "四皇覚醒【OP-09】",
-    "ロイヤルブラッドライン【OP-10】",
-    "スタートデッキ", "プロモーションカード", "その他"
-  ]
+          // Set games
+          if (filterData.games?.length > 0) {
+            setCardTypes(filterData.games.map((g: OptionItem) => ({
+              id: g.id,
+              code: g.code,
+              label: g.labelJa || g.label
+            })))
+          }
+
+          // Set product types
+          if (filterData.productTypes?.length > 0) {
+            setProductTypes(filterData.productTypes.map((t: OptionItem) => ({
+              id: t.id,
+              code: t.code,
+              label: t.labelJa || t.label
+            })))
+          }
+
+          // Set conditions
+          if (filterData.conditions?.length > 0) {
+            setConditions(filterData.conditions.map((c: OptionItem) => ({
+              id: c.id,
+              code: c.code,
+              label: c.labelJa || c.label
+            })))
+          }
+
+          // Set rarities by game
+          if (filterData.rarities) {
+            setRaritiesByGame({
+              pokemon: filterData.rarities.POKEMON || [],
+              onepiece: filterData.rarities.ONEPIECE || [],
+              other: filterData.rarities.OTHER || []
+            })
+          }
+        }
+
+        if (cardSetsRes.ok) {
+          const cardSetsData = await cardSetsRes.json()
+          if (cardSetsData.grouped) {
+            setCardSetsByGame({
+              pokemon: cardSetsData.grouped.pokemon || [],
+              onepiece: cardSetsData.grouped.onepiece || [],
+              other: cardSetsData.grouped.other || []
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch options:', error)
+      } finally {
+        setOptionsLoading(false)
+      }
+    }
+
+    fetchOptions()
+  }, [])
 
   const getCurrentSets = () => {
-    return formData.cardType === "pokemon" ? pokemonSets : onepieceSets
+    const gameKey = formData.cardType as keyof typeof cardSetsByGame
+    return cardSetsByGame[gameKey] || []
   }
-
-  // ポケモンカードのレアリティ
-  const pokemonRarities = [
-    { value: "MUR", label: "MUR" },
-    { value: "SAR", label: "SAR" },
-    { value: "SR", label: "SR" },
-    { value: "AR", label: "AR" },
-    { value: "RR", label: "RR" },
-    { value: "R", label: "R" },
-    { value: "MA", label: "MA" },
-    { value: "BWR", label: "BWR" },
-    { value: "UR", label: "UR" },
-    { value: "ACE", label: "ACE" },
-    { value: "RRR", label: "RRR" },
-    { value: "CSR", label: "CSR" },
-    { value: "CHR", label: "CHR" },
-    { value: "HR", label: "HR" },
-    { value: "SSR", label: "SSR" },
-    { value: "S", label: "S" },
-    { value: "K", label: "K" },
-    { value: "A", label: "A" },
-    { value: "PR", label: "PR" },
-  ]
-
-  // ワンピースカードのレアリティ
-  const onepieceRarities = [
-    { value: "SEC", label: "SEC" },
-    { value: "SR", label: "SR" },
-    { value: "R", label: "R" },
-    { value: "L", label: "L" },
-  ]
 
   const getCurrentRarities = () => {
-    return formData.cardType === "onepiece" ? onepieceRarities : pokemonRarities
+    const gameKey = formData.cardType as keyof typeof raritiesByGame
+    return raritiesByGame[gameKey] || []
   }
-
-  const conditions = [
-    { value: "GRADE_A", label: "A：美品 - ほぼ新品同様。目立った傷や汚れなし" },
-    { value: "GRADE_B", label: "B：良品 - 多少の使用感あり。軽微な傷がある場合あり" },
-    { value: "GRADE_C", label: "C：ダメージ - 目立つ傷や汚れあり。プレイ用として使用可能" },
-    { value: "PSA", label: "PSA - PSA鑑定済みカード" },
-    { value: "SEALED", label: "未開封 - 未開封の新品" }
-  ]
 
   const gradingCompanies = [
     "なし", "PSA", "BGS", "CGC", "ACE"
@@ -193,12 +237,13 @@ export default function NewProductPage() {
                   <select
                     id="cardType"
                     required
+                    disabled={optionsLoading}
                     className="w-full h-10 px-3 rounded-md border border-input bg-background"
                     value={formData.cardType}
-                    onChange={(e) => setFormData({...formData, cardType: e.target.value, cardSet: ""})}
+                    onChange={(e) => setFormData({...formData, cardType: e.target.value, cardSet: "", rarity: ""})}
                   >
                     {cardTypes.map(type => (
-                      <option key={type.value} value={type.value}>{type.label}</option>
+                      <option key={type.code} value={type.code}>{type.label}</option>
                     ))}
                   </select>
                 </div>
@@ -208,12 +253,13 @@ export default function NewProductPage() {
                   <select
                     id="productType"
                     required
+                    disabled={optionsLoading}
                     className="w-full h-10 px-3 rounded-md border border-input bg-background"
                     value={formData.productType}
                     onChange={(e) => setFormData({...formData, productType: e.target.value})}
                   >
                     {productTypes.map(type => (
-                      <option key={type.value} value={type.value}>{type.label}</option>
+                      <option key={type.code} value={type.code}>{type.label}</option>
                     ))}
                   </select>
                 </div>
@@ -234,13 +280,14 @@ export default function NewProductPage() {
                   <select
                     id="cardSet"
                     required
+                    disabled={optionsLoading}
                     className="w-full h-10 px-3 rounded-md border border-input bg-background"
                     value={formData.cardSet}
                     onChange={(e) => setFormData({...formData, cardSet: e.target.value})}
                   >
                     <option value="">選択してください</option>
                     {getCurrentSets().map(set => (
-                      <option key={set} value={set}>{set}</option>
+                      <option key={set.value} value={set.value}>{set.label}</option>
                     ))}
                   </select>
                 </div>
@@ -260,13 +307,14 @@ export default function NewProductPage() {
                   <select
                     id="rarity"
                     required
+                    disabled={optionsLoading}
                     className="w-full h-10 px-3 rounded-md border border-input bg-background"
                     value={formData.rarity}
                     onChange={(e) => setFormData({...formData, rarity: e.target.value})}
                   >
                     <option value="">選択してください</option>
                     {getCurrentRarities().map(rarity => (
-                      <option key={rarity.value} value={rarity.value}>{rarity.label}</option>
+                      <option key={rarity.code} value={rarity.code}>{rarity.label}</option>
                     ))}
                   </select>
                 </div>
@@ -283,13 +331,14 @@ export default function NewProductPage() {
                   <select
                     id="condition"
                     required
+                    disabled={optionsLoading}
                     className="w-full h-10 px-3 rounded-md border border-input bg-background"
                     value={formData.condition}
                     onChange={(e) => setFormData({...formData, condition: e.target.value})}
                   >
                     <option value="">選択してください</option>
                     {conditions.map(condition => (
-                      <option key={condition.value} value={condition.value}>{condition.label}</option>
+                      <option key={condition.code} value={condition.code}>{condition.label}</option>
                     ))}
                   </select>
                 </div>
