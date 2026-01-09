@@ -442,3 +442,69 @@ enum CardGame {
   ONEPIECE
   OTHER
 }
+
+// ==================== Filter Options ====================
+
+// Rarity options (game-specific)
+model RarityOption {
+  id        String   @id @default(cuid())
+  game      CardGame // Which game this rarity belongs to
+  code      String   // SAR, UR, SR, etc.
+  label     String   // Display label
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([game, code])
+  @@index([game])
+  @@index([isActive])
+  @@index([order])
+}
+
+// Game type options (Pokemon, One Piece, Other)
+model GameOption {
+  id           String   @id @default(cuid())
+  code         String   @unique // pokemon, onepiece, other
+  label        String   // Display label: "Pokemon", "One Piece"
+  labelJa      String?  // Japanese label: "ポケモン"
+  categorySlug String?  // Maps to category: "pokemon-cards"
+  order        Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([order])
+}
+
+// Product type options (Single, Box, Other)
+model ProductTypeOption {
+  id        String   @id @default(cuid())
+  code      String   @unique // SINGLE, BOX, OTHER (matches ProductType enum)
+  label     String   // Display label: "Single Cards"
+  labelJa   String?  // Japanese label: "シングルカード"
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([order])
+}
+
+// Condition options (Sealed, Grade A, etc.)
+model ConditionOption {
+  id          String   @id @default(cuid())
+  code        String   @unique // SEALED, GRADE_A, etc. (matches Condition enum)
+  label       String   // Display label: "Grade A (Near Mint)"
+  labelJa     String?  // Japanese label: "グレードA（美品）"
+  description String?  // Detailed description
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([order])
+}

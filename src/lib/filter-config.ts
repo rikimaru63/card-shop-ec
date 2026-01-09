@@ -289,6 +289,55 @@ export function urlParamsToFilters(searchParams: URLSearchParams): Partial<Filte
 // API Fetch Functions
 // ============================================
 
+// Types for API response
+interface RarityItem { id: string; game: string; code: string; label: string }
+interface GameItem { id: string; code: string; label: string; labelJa: string | null; categorySlug: string | null }
+interface ProductTypeItem { id: string; code: string; label: string; labelJa: string | null }
+interface ConditionItem { id: string; code: string; label: string; labelJa: string | null; description: string | null }
+
+export interface FilterOptionsData {
+  rarities: {
+    POKEMON: RarityItem[]
+    ONEPIECE: RarityItem[]
+    OTHER: RarityItem[]
+  }
+  games: GameItem[]
+  productTypes: ProductTypeItem[]
+  conditions: ConditionItem[]
+  cardSets: {
+    POKEMON: CardSetItem[]
+    ONEPIECE: CardSetItem[]
+    OTHER: CardSetItem[]
+  }
+}
+
+// Fetch all filter options from API
+export async function fetchFilterOptions(): Promise<FilterOptionsData> {
+  try {
+    const response = await fetch('/api/filter-options')
+    if (!response.ok) throw new Error('Failed to fetch')
+    return await response.json()
+  } catch (error) {
+    console.error('Failed to fetch filter options, using fallback:', error)
+    // Return static fallback data
+    return {
+      rarities: {
+        POKEMON: POKEMON_RARITIES.map(r => ({ id: r.id, game: 'POKEMON', code: r.id, label: r.label })),
+        ONEPIECE: ONEPIECE_RARITIES.map(r => ({ id: r.id, game: 'ONEPIECE', code: r.id, label: r.label })),
+        OTHER: []
+      },
+      games: CARD_GAMES.map(g => ({ id: g.id, code: g.id, label: g.label, labelJa: null, categorySlug: g.categorySlug })),
+      productTypes: PRODUCT_TYPES.map(t => ({ id: t.id, code: t.id, label: t.label, labelJa: null })),
+      conditions: CONDITIONS.map(c => ({ id: c.id, code: c.id, label: c.label, labelJa: null, description: null })),
+      cardSets: {
+        POKEMON: CARD_SETS.pokemon.map((s, i) => ({ id: `p${i}`, game: 'POKEMON', label: s.label, value: s.value, code: null, releaseDate: null })),
+        ONEPIECE: CARD_SETS.onepiece.map((s, i) => ({ id: `o${i}`, game: 'ONEPIECE', label: s.label, value: s.value, code: null, releaseDate: null })),
+        OTHER: []
+      }
+    }
+  }
+}
+
 // Fetch card sets from API with fallback to static data
 export async function fetchCardSets(): Promise<{
   pokemon: { label: string; value: string }[]

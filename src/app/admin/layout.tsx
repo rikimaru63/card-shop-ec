@@ -31,6 +31,9 @@ export default function AdminLayout({
           <Link href="/admin/card-sets" className="block px-3 py-2 rounded-md hover:bg-gray-700">
             カードセット管理
           </Link>
+          <Link href="/admin/filter-settings" className="block px-3 py-2 rounded-md hover:bg-gray-700">
+            フィルター設定
+          </Link>
           <hr className="my-4 border-gray-600" />
           <Link href="/" className="block px-3 py-2 rounded-md hover:bg-gray-700 text-gray-400">
             サイトを見る →

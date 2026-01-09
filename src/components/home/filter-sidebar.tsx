@@ -7,12 +7,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 import {
+  CARD_SETS,
   CARD_GAMES,
   PRODUCT_TYPES,
   CONDITIONS,
-  CARD_SETS,
-  getRaritiesByGame,
-  fetchCardSets,
+  POKEMON_RARITIES,
+  ONEPIECE_RARITIES,
+  fetchFilterOptions,
+  type FilterOptionsData,
 } from "@/lib/filter-config"
 
 
@@ -26,6 +28,9 @@ type CardSetsData = {
   onepiece: { label: string; value: string }[]
   other: { label: string; value: string }[]
 }
+
+// Type for display options
+type DisplayOption = { id: string; code: string; label: string }
 
 export function FilterSidebar({ className }: FilterSidebarProps) {
   const router = useRouter()
@@ -41,16 +46,63 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
   const [selectedProductType, setSelectedProductType] = useState<string | null>(null)
   const [inStockOnly, setInStockOnly] = useState(false)
 
-  // Card sets from API
+  // Filter options from API
   const [cardSets, setCardSets] = useState<CardSetsData>({
     pokemon: [...CARD_SETS.pokemon],
     onepiece: [...CARD_SETS.onepiece],
     other: []
   })
+  const [games, setGames] = useState<DisplayOption[]>(
+    CARD_GAMES.map(g => ({ id: g.id, code: g.id, label: g.label }))
+  )
+  const [productTypes, setProductTypes] = useState<DisplayOption[]>(
+    PRODUCT_TYPES.map(t => ({ id: t.id, code: t.id, label: t.label }))
+  )
+  const [conditions, setConditions] = useState<DisplayOption[]>(
+    CONDITIONS.map(c => ({ id: c.id, code: c.id, label: c.label }))
+  )
+  const [raritiesByGame, setRaritiesByGame] = useState<{
+    pokemon: DisplayOption[]
+    onepiece: DisplayOption[]
+    other: DisplayOption[]
+  }>({
+    pokemon: POKEMON_RARITIES.map(r => ({ id: r.id, code: r.id, label: r.label })),
+    onepiece: ONEPIECE_RARITIES.map(r => ({ id: r.id, code: r.id, label: r.label })),
+    other: []
+  })
 
-  // Fetch card sets from API on mount
+  // Fetch all filter options from API on mount
   useEffect(() => {
-    fetchCardSets().then(setCardSets)
+    fetchFilterOptions().then((data: FilterOptionsData) => {
+      // Update games
+      if (data.games?.length > 0) {
+        setGames(data.games.map(g => ({ id: g.id, code: g.code, label: g.label })))
+      }
+      // Update product types
+      if (data.productTypes?.length > 0) {
+        setProductTypes(data.productTypes.map(t => ({ id: t.id, code: t.code, label: t.label })))
+      }
+      // Update conditions
+      if (data.conditions?.length > 0) {
+        setConditions(data.conditions.map(c => ({ id: c.id, code: c.code, label: c.label })))
+      }
+      // Update rarities by game
+      if (data.rarities) {
+        setRaritiesByGame({
+          pokemon: data.rarities.POKEMON?.map(r => ({ id: r.id, code: r.code, label: r.label })) || [],
+          onepiece: data.rarities.ONEPIECE?.map(r => ({ id: r.id, code: r.code, label: r.label })) || [],
+          other: data.rarities.OTHER?.map(r => ({ id: r.id, code: r.code, label: r.label })) || []
+        })
+      }
+      // Update card sets
+      if (data.cardSets) {
+        setCardSets({
+          pokemon: data.cardSets.POKEMON?.map(s => ({ label: s.label, value: s.value })) || [],
+          onepiece: data.cardSets.ONEPIECE?.map(s => ({ label: s.label, value: s.value })) || [],
+          other: data.cardSets.OTHER?.map(s => ({ label: s.label, value: s.value })) || []
+        })
+      }
+    })
   }, [])
 
   // Initialize filters from URL on mount
@@ -132,7 +184,11 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
     : [...cardSets.pokemon, ...cardSets.onepiece, ...cardSets.other]
 
   // Get rarities based on selected game
-  const availableRarities = getRaritiesByGame(selectedGame)
+  const availableRarities = selectedGame === "pokemon"
+    ? raritiesByGame.pokemon
+    : selectedGame === "onepiece"
+    ? raritiesByGame.onepiece
+    : [...raritiesByGame.pokemon, ...raritiesByGame.onepiece, ...raritiesByGame.other]
 
   // Check if any filters are active
   const hasActiveFilters = selectedGame || selectedSets.length > 0 ||
@@ -160,16 +216,16 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
         <div>
           <h3 className="font-medium text-sm mb-3">Card Game</h3>
           <div className="flex flex-wrap gap-2">
-            {CARD_GAMES.map((game) => (
+            {games.map((game) => (
               <Button
-                key={game.id}
-                variant={selectedGame === game.id ? "default" : "outline"}
+                key={game.code}
+                variant={selectedGame === game.code ? "default" : "outline"}
                 size="sm"
                 className="text-xs"
                 onClick={() => {
-                  setSelectedGame(selectedGame === game.id ? null : game.id)
+                  setSelectedGame(selectedGame === game.code ? null : game.code)
                   // Clear sets when switching games
-                  if (selectedGame !== game.id) {
+                  if (selectedGame !== game.code) {
                     setSelectedSets([])
                   }
                 }}
@@ -184,14 +240,14 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
         <div>
           <h3 className="font-medium text-sm mb-3">Product Type</h3>
           <div className="flex flex-wrap gap-2">
-            {PRODUCT_TYPES.map((type) => (
+            {productTypes.map((type) => (
               <Button
-                key={type.id}
-                variant={selectedProductType === type.id ? "default" : "outline"}
+                key={type.code}
+                variant={selectedProductType === type.code ? "default" : "outline"}
                 size="sm"
                 className="text-xs"
                 onClick={() => setSelectedProductType(
-                  selectedProductType === type.id ? null : type.id
+                  selectedProductType === type.code ? null : type.code
                 )}
               >
                 {type.label}
@@ -252,11 +308,11 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
           <div className="flex flex-wrap gap-2">
             {availableRarities.map((rarity) => (
               <Button
-                key={rarity.id}
-                variant={selectedRarities.includes(rarity.id) ? "default" : "outline"}
+                key={rarity.code}
+                variant={selectedRarities.includes(rarity.code) ? "default" : "outline"}
                 size="sm"
                 className="text-xs"
-                onClick={() => toggleRarity(rarity.id)}
+                onClick={() => toggleRarity(rarity.code)}
               >
                 {rarity.label}
               </Button>
@@ -268,15 +324,15 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
         <div>
           <h3 className="font-medium text-sm mb-3">Condition</h3>
           <div className="space-y-2">
-            {CONDITIONS.map((condition) => (
+            {conditions.map((condition) => (
               <label
-                key={condition.id}
+                key={condition.code}
                 className="flex items-center gap-2 text-sm cursor-pointer hover:text-primary transition-colors"
               >
                 <Checkbox
-                  id={condition.id}
-                  checked={selectedConditions.includes(condition.id)}
-                  onCheckedChange={() => toggleCondition(condition.id)}
+                  id={condition.code}
+                  checked={selectedConditions.includes(condition.code)}
+                  onCheckedChange={() => toggleCondition(condition.code)}
                 />
                 <span>{condition.label}</span>
               </label>
