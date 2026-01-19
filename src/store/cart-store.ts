@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
+
 export interface CartItem {
   id: string
   name: string
@@ -11,6 +13,14 @@ export interface CartItem {
   rarity?: string
   condition?: string
   stock: number
+  productType?: ProductType
+}
+
+interface ShippingInfo {
+  shipping: number
+  isFreeShipping: boolean
+  singleBoxTotal: number
+  otherTotal: number
 }
 
 interface CartStore {
@@ -21,6 +31,11 @@ interface CartStore {
   clearCart: () => void
   getTotalItems: () => number
   getTotalPrice: () => number
+  getBoxCount: () => number
+  getTotalPriceByType: (type: ProductType) => number
+  getShippingInfo: () => ShippingInfo
+  hasBoxItems: () => boolean
+  isBoxOrderValid: () => boolean
 }
 
 export const useCartStore = create<CartStore>()(
@@ -81,6 +96,54 @@ export const useCartStore = create<CartStore>()(
       
       getTotalPrice: () => {
         return get().items.reduce((total, item) => total + item.price * item.quantity, 0)
+      },
+
+      getBoxCount: () => {
+        return get().items
+          .filter((item) => item.productType === 'BOX')
+          .reduce((total, item) => total + item.quantity, 0)
+      },
+
+      getTotalPriceByType: (type: ProductType) => {
+        return get().items
+          .filter((item) => item.productType === type)
+          .reduce((total, item) => total + item.price * item.quantity, 0)
+      },
+
+      getShippingInfo: () => {
+        const items = get().items
+        const singleTotal = items
+          .filter((item) => item.productType === 'SINGLE')
+          .reduce((total, item) => total + item.price * item.quantity, 0)
+        const boxTotal = items
+          .filter((item) => item.productType === 'BOX')
+          .reduce((total, item) => total + item.price * item.quantity, 0)
+        const otherTotal = items
+          .filter((item) => item.productType === 'OTHER')
+          .reduce((total, item) => total + item.price * item.quantity, 0)
+
+        // シングル + BOX の合計が¥50,000以上で送料無料
+        const singleBoxTotal = singleTotal + boxTotal
+        const isFreeShipping = singleBoxTotal >= 50000 || singleBoxTotal === 0
+        const shipping = isFreeShipping ? 0 : 1500
+
+        return {
+          shipping,
+          isFreeShipping,
+          singleBoxTotal,
+          otherTotal
+        }
+      },
+
+      hasBoxItems: () => {
+        return get().items.some((item) => item.productType === 'BOX')
+      },
+
+      isBoxOrderValid: () => {
+        const boxCount = get().getBoxCount()
+        // BOX商品がない場合は有効（制限なし）
+        // BOX商品がある場合は5個以上必要
+        return boxCount === 0 || boxCount >= 5
       },
     }),
     {

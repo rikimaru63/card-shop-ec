@@ -19,6 +19,7 @@ export default function WishlistPage() {
         image: item.image,
         price: item.price,
         category: item.category,
+        productType: item.productType,
         rarity: item.rarity,
         condition: item.condition,
         stock: item.stock
@@ -101,6 +102,7 @@ export default function WishlistPage() {
               image={item.image}
               price={item.price}
               category={item.category || ""}
+              productType={item.productType}
               rarity={item.rarity}
               condition={item.condition}
               stock={item.stock}

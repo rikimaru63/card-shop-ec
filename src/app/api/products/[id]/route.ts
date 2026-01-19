@@ -54,6 +54,7 @@ export async function GET(
       lowStock: product.stock <= product.lowStock,
       images: product.images.map(img => img.url),
       category: product.category.name, // Or slug, depending on usage
+      productType: product.productType, // SINGLE, BOX, or OTHER
       language: product.language,
       foil: product.foil,
       firstEdition: product.firstEdition,

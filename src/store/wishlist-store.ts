@@ -1,12 +1,15 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
+
 export interface WishlistItem {
   id: string
   name: string
   image: string
   price: number
   category?: string
+  productType?: ProductType
   rarity?: string
   condition?: string
   stock: number

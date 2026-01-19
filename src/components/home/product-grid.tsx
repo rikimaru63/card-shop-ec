@@ -10,6 +10,8 @@ import { useCartStore } from "@/store/cart-store"
 import { useWishlistStore } from "@/store/wishlist-store"
 import { cn } from "@/lib/utils"
 
+type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
+
 interface Product {
   id: string
   name: string
@@ -23,6 +25,7 @@ interface Product {
   stock: number
   lowStock: boolean
   featured: boolean
+  productType?: ProductType
 }
 
 interface PaginationData {
@@ -134,6 +137,7 @@ export function ProductGrid() {
       image: product.image,
       price: product.price,
       category: product.cardSet || 'Pokemon Cards',
+      productType: product.productType,
       rarity: product.rarity || undefined,
       condition: product.condition || undefined,
       stock: product.stock

@@ -9,6 +9,8 @@ import { formatPrice } from "@/lib/utils"
 import { useCartStore } from "@/store/cart-store"
 import { useWishlistStore } from "@/store/wishlist-store"
 
+type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
+
 interface ProductCardProps {
   id: string
   name: string
@@ -16,6 +18,7 @@ interface ProductCardProps {
   price: number
   comparePrice?: number
   category: string
+  productType?: ProductType
   rarity?: string
   condition?: string
   stock: number
@@ -31,6 +34,7 @@ export function ProductCard({
   price,
   comparePrice,
   category,
+  productType,
   rarity,
   condition,
   stock,
@@ -60,6 +64,7 @@ export function ProductCard({
       image,
       price,
       category,
+      productType,
       rarity,
       condition,
       stock

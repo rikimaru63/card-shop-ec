@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
+import { Truck, Package, Box } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function HeroSection() {
@@ -43,7 +44,7 @@ export function HeroSection() {
           >
             From SAR to UR - Discover our extensive collection of premium Pokemon cards
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4 items-center">
             <Link href="/products">
               <Button size="lg" className="font-semibold shadow-lg">
                 Shop Now
@@ -58,6 +59,22 @@ export function HeroSection() {
                 Browse All
               </Button>
             </Link>
+
+            {/* Shipping Info Badges */}
+            <div className="flex flex-wrap gap-3 ml-0 md:ml-4 mt-4 md:mt-0">
+              <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
+                <Truck className="h-4 w-4 text-green-400" />
+                <span className="text-sm font-medium">¥50,000以上送料無料</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
+                <Box className="h-4 w-4 text-orange-400" />
+                <span className="text-sm font-medium">BOX 5個〜</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
+                <Package className="h-4 w-4 text-blue-400" />
+                <span className="text-sm font-medium">その他送料込</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

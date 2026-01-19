@@ -3,15 +3,17 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { 
-  Trash2, 
-  Minus, 
-  Plus, 
-  ShoppingBag, 
+import {
+  Trash2,
+  Minus,
+  Plus,
+  ShoppingBag,
   ArrowLeft,
   Truck,
   Shield,
-  CreditCard
+  CreditCard,
+  AlertTriangle,
+  Box
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,13 +21,29 @@ import { useCartStore } from "@/store/cart-store"
 import { formatPrice } from "@/lib/utils"
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, clearCart, getTotalPrice } = useCartStore()
+  const {
+    items,
+    removeItem,
+    updateQuantity,
+    clearCart,
+    getTotalPrice,
+    getBoxCount,
+    getShippingInfo,
+    hasBoxItems,
+    isBoxOrderValid
+  } = useCartStore()
   const [couponCode, setCouponCode] = useState("")
-  
+
   const subtotal = getTotalPrice()
-  const shipping = subtotal > 100 ? 0 : 10
-  const tax = subtotal * 0.08 // 8% tax
-  const total = subtotal + shipping + tax
+  const shippingInfo = getShippingInfo()
+  const shipping = shippingInfo.shipping
+  const total = subtotal + shipping
+
+  // BOX購入制限のチェック
+  const boxCount = getBoxCount()
+  const hasBox = hasBoxItems()
+  const boxOrderValid = isBoxOrderValid()
+  const boxNeeded = hasBox && !boxOrderValid ? 5 - boxCount : 0
 
   if (items.length === 0) {
     return (
@@ -209,30 +227,54 @@ export default function CartPage() {
                 </div>
               </div>
 
+              {/* BOX Warning */}
+              {hasBox && !boxOrderValid && (
+                <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-orange-800">
+                        BOXは5個以上からご購入いただけます
+                      </p>
+                      <p className="text-sm text-orange-600 mt-1">
+                        現在: {boxCount}個（あと{boxNeeded}個必要）
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Price Details */}
               <div className="space-y-3 border-t pt-4">
                 <div className="flex justify-between text-sm">
-                  <span>Subtotal</span>
+                  <span>小計</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Shipping</span>
-                  <span>{shipping === 0 ? "FREE" : formatPrice(shipping)}</span>
+                  <span>送料</span>
+                  <span className={shippingInfo.isFreeShipping ? "text-green-600 font-semibold" : ""}>
+                    {shipping === 0 ? "無料" : formatPrice(shipping)}
+                  </span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Tax</span>
-                  <span>{formatPrice(tax)}</span>
-                </div>
+                {!shippingInfo.isFreeShipping && shippingInfo.singleBoxTotal > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    ※ ¥{(50000 - shippingInfo.singleBoxTotal).toLocaleString()}以上の追加で送料無料
+                  </p>
+                )}
                 <div className="flex justify-between font-bold text-lg border-t pt-3">
-                  <span>Total</span>
+                  <span>合計</span>
                   <span className="text-primary">{formatPrice(total)}</span>
                 </div>
               </div>
 
               {/* Checkout Button */}
               <Link href="/checkout">
-                <Button className="w-full mt-6" size="lg">
-                  Proceed to Checkout
+                <Button
+                  className="w-full mt-6"
+                  size="lg"
+                  disabled={!boxOrderValid}
+                >
+                  {boxOrderValid ? "レジに進む" : "BOXを5個以上追加してください"}
                 </Button>
               </Link>
 
@@ -240,23 +282,26 @@ export default function CartPage() {
               <div className="mt-6 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  <span>Secure checkout</span>
+                  <span>安全なお支払い</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CreditCard className="h-4 w-4" />
-                  <span>Encrypted payment</span>
+                  <span>Wiseで簡単決済</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Truck className="h-4 w-4" />
-                  <span>Worldwide shipping available</span>
+                  <span>海外発送対応</span>
                 </div>
               </div>
 
               {/* Shipping Info */}
-              <div className="mt-6 p-4 bg-secondary/50 rounded-lg">
-                <p className="text-xs text-muted-foreground">
-                  Estimated delivery: 3-5 business days
-                </p>
+              <div className="mt-6 p-4 bg-secondary/50 rounded-lg space-y-2">
+                <p className="text-xs font-semibold">送料について</p>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>・シングル/BOX: ¥50,000以上で送料無料</li>
+                  <li>・BOX: 5個以上から購入可能</li>
+                  <li>・その他: 送料込み価格</li>
+                </ul>
               </div>
             </div>
           </div>

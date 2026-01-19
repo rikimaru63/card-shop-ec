@@ -9,6 +9,8 @@ import { useCartStore } from "@/store/cart-store"
 import { useWishlistStore } from "@/store/wishlist-store"
 import { cn } from "@/lib/utils"
 
+type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
+
 interface Product {
   id: string
   name: string
@@ -24,6 +26,7 @@ interface Product {
   featured: boolean
   isNewArrival: boolean
   isRecommended: boolean
+  productType?: ProductType
 }
 
 interface ProductSectionProps {
@@ -48,6 +51,7 @@ function ProductSection({ title, icon, products, loading, bgClass = "" }: Produc
       image: product.image,
       price: product.price,
       category: product.cardSet || 'Pokemon Cards',
+      productType: product.productType,
       rarity: product.rarity || undefined,
       condition: product.condition || undefined,
       stock: product.stock

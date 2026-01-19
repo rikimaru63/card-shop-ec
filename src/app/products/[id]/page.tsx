@@ -23,6 +23,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCartStore } from "@/store/cart-store"
 import { cn } from "@/lib/utils"
 
+type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
+
 // Type definition for Product
 interface Product {
   id: string
@@ -33,6 +35,7 @@ interface Product {
   price: number
   comparePrice?: number
   category: string
+  productType?: ProductType
   cardSet?: string
   cardNumber?: string
   rarity?: string
@@ -115,6 +118,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       image: product.images[0] || '/placeholder-card.svg',
       price: product.price,
       category: product.category,
+      productType: product.productType,
       rarity: product.rarity,
       condition: product.condition,
       stock: product.stock

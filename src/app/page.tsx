@@ -1,5 +1,6 @@
 import { HeroSection } from "@/components/home/hero-section"
 import { FeaturedSections } from "@/components/home/featured-sections"
+import { ShippingInfoSection } from "@/components/home/shipping-info-section"
 import { ProductGrid } from "@/components/home/product-grid"
 import { FilterSidebar } from "@/components/home/filter-sidebar"
 import AnnouncementBanner from "@/components/AnnouncementBanner"
@@ -16,6 +17,9 @@ export default function Home() {
 
       {/* Featured Sections (Recommended + New Arrivals) */}
       <FeaturedSections />
+
+      {/* Shipping Info Section */}
+      <ShippingInfoSection />
 
       {/* All Products Section */}
       <div className="container mx-auto px-4 py-8">

@@ -4,12 +4,29 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { sendInvoiceEmail } from "@/lib/email"
 
+type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
+
 type CartItem = {
   productId: string
   name: string
   price: number
   quantity: number
   image: string
+  productType?: ProductType
+}
+
+// Calculate shipping based on product types
+function calculateShipping(items: CartItem[]): { shipping: number; singleBoxTotal: number } {
+  // シングルカードとBOXの合計金額を計算
+  const singleBoxTotal = items
+    .filter(item => item.productType === 'SINGLE' || item.productType === 'BOX')
+    .reduce((total, item) => total + item.price * item.quantity, 0)
+
+  // シングル + BOX の合計が¥50,000以上、またはシングル/BOXが含まれない場合は送料無料
+  const isFreeShipping = singleBoxTotal >= 50000 || singleBoxTotal === 0
+  const shipping = isFreeShipping ? 0 : 1500
+
+  return { shipping, singleBoxTotal }
 }
 
 type ShippingAddress = {
@@ -138,7 +155,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{
 
     // Calculate totals (JPY)
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-    const shipping = subtotal >= 10000 ? 0 : 1500
+    const { shipping } = calculateShipping(items)
     const tax = 0
     const total = subtotal + shipping + tax
 
