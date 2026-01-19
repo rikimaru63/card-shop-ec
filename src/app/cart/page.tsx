@@ -234,10 +234,10 @@ export default function CartPage() {
                     <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-orange-800">
-                        BOXは5個以上からご購入いただけます
+                        Minimum 5 BOX required per order
                       </p>
                       <p className="text-sm text-orange-600 mt-1">
-                        現在: {boxCount}個（あと{boxNeeded}個必要）
+                        Current: {boxCount} BOX ({boxNeeded} more needed)
                       </p>
                     </div>
                   </div>
@@ -247,22 +247,22 @@ export default function CartPage() {
               {/* Price Details */}
               <div className="space-y-3 border-t pt-4">
                 <div className="flex justify-between text-sm">
-                  <span>小計</span>
+                  <span>Subtotal</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>送料</span>
+                  <span>Shipping</span>
                   <span className={shippingInfo.isFreeShipping ? "text-green-600 font-semibold" : ""}>
-                    {shipping === 0 ? "無料" : formatPrice(shipping)}
+                    {shipping === 0 ? "FREE" : formatPrice(shipping)}
                   </span>
                 </div>
                 {!shippingInfo.isFreeShipping && shippingInfo.singleBoxTotal > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    ※ ¥{(50000 - shippingInfo.singleBoxTotal).toLocaleString()}以上の追加で送料無料
+                    * Add ¥{(50000 - shippingInfo.singleBoxTotal).toLocaleString()} more for free shipping
                   </p>
                 )}
                 <div className="flex justify-between font-bold text-lg border-t pt-3">
-                  <span>合計</span>
+                  <span>Total</span>
                   <span className="text-primary">{formatPrice(total)}</span>
                 </div>
               </div>
@@ -274,7 +274,7 @@ export default function CartPage() {
                   size="lg"
                   disabled={!boxOrderValid}
                 >
-                  {boxOrderValid ? "レジに進む" : "BOXを5個以上追加してください"}
+                  {boxOrderValid ? "Proceed to Checkout" : "Add 5+ BOX to continue"}
                 </Button>
               </Link>
 
@@ -282,25 +282,25 @@ export default function CartPage() {
               <div className="mt-6 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  <span>安全なお支払い</span>
+                  <span>Secure checkout</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CreditCard className="h-4 w-4" />
-                  <span>Wiseで簡単決済</span>
+                  <span>Easy payment via Wise</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Truck className="h-4 w-4" />
-                  <span>海外発送対応</span>
+                  <span>Worldwide shipping</span>
                 </div>
               </div>
 
               {/* Shipping Info */}
               <div className="mt-6 p-4 bg-secondary/50 rounded-lg space-y-2">
-                <p className="text-xs font-semibold">送料について</p>
+                <p className="text-xs font-semibold">Shipping Policy</p>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>・シングル/BOX: ¥50,000以上で送料無料</li>
-                  <li>・BOX: 5個以上から購入可能</li>
-                  <li>・その他: 送料込み価格</li>
+                  <li>• Singles/BOX: Free shipping on ¥50,000+</li>
+                  <li>• BOX: Minimum 5 units per order</li>
+                  <li>• Others: Shipping included</li>
                 </ul>
               </div>
             </div>

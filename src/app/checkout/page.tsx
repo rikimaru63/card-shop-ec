@@ -325,10 +325,10 @@ export default function CheckoutPage() {
                       <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-semibold text-orange-800 text-sm">
-                          BOXは5個以上からご購入いただけます
+                          Minimum 5 BOX required per order
                         </p>
                         <p className="text-xs text-orange-600 mt-1">
-                          現在: {boxCount}個（あと{boxNeeded}個必要）
+                          Current: {boxCount} BOX ({boxNeeded} more needed)
                         </p>
                       </div>
                     </div>
@@ -337,22 +337,22 @@ export default function CheckoutPage() {
 
                 <div className="border-t pt-4 mt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>小計 ({getTotalItems()}点)</span>
+                    <span>Subtotal ({getTotalItems()} items)</span>
                     <span>¥{subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>送料</span>
+                    <span>Shipping</span>
                     <span className={shippingInfo.isFreeShipping ? "text-green-600 font-semibold" : ""}>
-                      {shipping === 0 ? "無料" : `¥${shipping.toLocaleString()}`}
+                      {shipping === 0 ? "FREE" : `¥${shipping.toLocaleString()}`}
                     </span>
                   </div>
                   {!shippingInfo.isFreeShipping && shippingInfo.singleBoxTotal > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      ※ ¥{(50000 - shippingInfo.singleBoxTotal).toLocaleString()}以上の追加で送料無料
+                      * Add ¥{(50000 - shippingInfo.singleBoxTotal).toLocaleString()} more for free shipping
                     </p>
                   )}
                   <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                    <span>合計</span>
+                    <span>Total</span>
                     <span className="text-primary">¥{total.toLocaleString()}</span>
                   </div>
                 </div>
@@ -585,7 +585,7 @@ export default function CheckoutPage() {
             {/* Sidebar */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg border shadow-sm p-6 sticky top-24">
-                <h2 className="text-lg font-semibold mb-6">ご注文確定</h2>
+                <h2 className="text-lg font-semibold mb-6">Place Order</h2>
 
                 {/* BOX Warning in Sidebar */}
                 {hasBox && !boxOrderValid && (
@@ -593,7 +593,7 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-orange-500 flex-shrink-0" />
                       <p className="text-sm text-orange-800">
-                        BOXは5個以上から購入可能です
+                        Minimum 5 BOX required
                       </p>
                     </div>
                   </div>
@@ -609,21 +609,21 @@ export default function CheckoutPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      処理中...
+                      Processing...
                     </>
                   ) : !boxOrderValid ? (
-                    "BOXを5個以上追加してください"
+                    "Add 5+ BOX to continue"
                   ) : (
                     <>
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      注文を確定する
+                      Confirm Order
                     </>
                   )}
                 </Button>
 
                 {!isAddressValid() && boxOrderValid && (
                   <p className="text-sm text-red-500 text-center mb-4">
-                    配送先住所を入力してください
+                    Please enter your shipping address
                   </p>
                 )}
 
@@ -634,7 +634,7 @@ export default function CheckoutPage() {
                   onClick={handleInstagramInquiry}
                 >
                   <MessageCircle className="h-4 w-4 mr-2" />
-                  Instagramでお問い合わせ
+                  Contact via Instagram
                   <ExternalLink className="h-3 w-3 ml-2" />
                 </Button>
 
@@ -642,15 +642,15 @@ export default function CheckoutPage() {
                 <div className="mt-6 pt-6 border-t space-y-3">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Shield className="h-4 w-4" />
-                    <span>安全なお支払い</span>
+                    <span>Secure checkout</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Truck className="h-4 w-4" />
-                    <span>海外発送対応</span>
+                    <span>Worldwide shipping</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Package className="h-4 w-4" />
-                    <span>丁寧な梱包</span>
+                    <span>Careful packaging</span>
                   </div>
                 </div>
 

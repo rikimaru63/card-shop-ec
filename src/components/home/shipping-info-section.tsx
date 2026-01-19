@@ -17,7 +17,7 @@ export function ShippingInfoSection() {
         {/* Purchase Flow */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-center mb-8">
-            ご購入の流れ
+            How to Order
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {/* Step 1 */}
@@ -28,9 +28,9 @@ export function ShippingInfoSection() {
               <div className="flex justify-center mb-3 mt-2">
                 <Package className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold text-sm md:text-base mb-1">商品を選ぶ</h3>
+              <h3 className="font-semibold text-sm md:text-base mb-1">Select Items</h3>
               <p className="text-xs md:text-sm text-muted-foreground">
-                お好きな商品をカートに追加
+                Add your favorite items to cart
               </p>
             </div>
 
@@ -42,9 +42,9 @@ export function ShippingInfoSection() {
               <div className="flex justify-center mb-3 mt-2">
                 <CreditCard className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold text-sm md:text-base mb-1">ご注文・決済</h3>
+              <h3 className="font-semibold text-sm md:text-base mb-1">Checkout</h3>
               <p className="text-xs md:text-sm text-muted-foreground">
-                Wiseで安全にお支払い
+                Pay securely via Wise
               </p>
             </div>
 
@@ -56,9 +56,9 @@ export function ShippingInfoSection() {
               <div className="flex justify-center mb-3 mt-2">
                 <Truck className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold text-sm md:text-base mb-1">発送</h3>
+              <h3 className="font-semibold text-sm md:text-base mb-1">Shipping</h3>
               <p className="text-xs md:text-sm text-muted-foreground">
-                丁寧に梱包して発送
+                Carefully packaged and shipped
               </p>
             </div>
 
@@ -70,9 +70,9 @@ export function ShippingInfoSection() {
               <div className="flex justify-center mb-3 mt-2">
                 <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
-              <h3 className="font-semibold text-sm md:text-base mb-1">お届け</h3>
+              <h3 className="font-semibold text-sm md:text-base mb-1">Delivery</h3>
               <p className="text-xs md:text-sm text-muted-foreground">
-                ご自宅で商品をお受け取り
+                Receive your order at home
               </p>
             </div>
           </div>
@@ -81,7 +81,7 @@ export function ShippingInfoSection() {
         {/* Shipping Rules */}
         <div>
           <h2 className="text-2xl font-bold text-center mb-8">
-            送料について
+            Shipping Policy
           </h2>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {/* Single Cards */}
@@ -90,14 +90,14 @@ export function ShippingInfoSection() {
                 <div className="bg-blue-100 p-2 rounded-lg">
                   <Tags className="h-6 w-6 text-blue-600" />
                 </div>
-                <h3 className="font-bold text-lg">シングルカード</h3>
+                <h3 className="font-bold text-lg">Single Cards</h3>
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">¥50,000以上</span>で送料無料
+                  <span className="font-semibold text-foreground">Free shipping</span> on orders ¥50,000+
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  ¥50,000未満は送料<span className="font-semibold text-foreground">¥1,500</span>
+                  Under ¥50,000: <span className="font-semibold text-foreground">¥1,500</span> shipping
                 </p>
               </div>
             </div>
@@ -108,17 +108,17 @@ export function ShippingInfoSection() {
                 <div className="bg-orange-100 p-2 rounded-lg">
                   <Box className="h-6 w-6 text-orange-600" />
                 </div>
-                <h3 className="font-bold text-lg">BOX・パック</h3>
+                <h3 className="font-bold text-lg">Sealed BOX & Packs</h3>
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">5BOX以上</span>からご購入可能
+                  <span className="font-semibold text-foreground">Minimum 5 BOX</span> per order
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  ¥50,000以上で送料無料
+                  Free shipping on orders ¥50,000+
                 </p>
                 <p className="text-xs text-orange-600 mt-2">
-                  ※種類は問いません
+                  *Any combination of BOX types
                 </p>
               </div>
             </div>
@@ -129,14 +129,14 @@ export function ShippingInfoSection() {
                 <div className="bg-green-100 p-2 rounded-lg">
                   <Gift className="h-6 w-6 text-green-600" />
                 </div>
-                <h3 className="font-bold text-lg">その他</h3>
+                <h3 className="font-bold text-lg">Other Items</h3>
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  表示価格に<span className="font-semibold text-green-600">送料込み</span>
+                  <span className="font-semibold text-green-600">Shipping included</span> in price
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  追加送料はかかりません
+                  No additional shipping fees
                 </p>
               </div>
             </div>
@@ -144,7 +144,7 @@ export function ShippingInfoSection() {
 
           {/* Note */}
           <p className="text-center text-sm text-muted-foreground mt-6">
-            ※ シングルカードとBOXの合計が¥50,000以上で送料無料になります
+            * Free shipping applies when Single Cards + BOX total is ¥50,000 or more
           </p>
         </div>
       </div>
