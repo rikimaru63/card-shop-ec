@@ -97,7 +97,7 @@ export function ShippingInfoSection() {
                   <span className="font-semibold text-foreground">Free shipping</span> on orders ¥50,000+
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Under ¥50,000: <span className="font-semibold text-foreground">¥1,500</span> shipping
+                  Under ¥50,000: <span className="font-semibold text-foreground">¥4,500</span> shipping
                 </p>
               </div>
             </div>

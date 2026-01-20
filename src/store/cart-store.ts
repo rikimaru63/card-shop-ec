@@ -125,7 +125,7 @@ export const useCartStore = create<CartStore>()(
         // シングル + BOX の合計が¥50,000以上で送料無料
         const singleBoxTotal = singleTotal + boxTotal
         const isFreeShipping = singleBoxTotal >= 50000 || singleBoxTotal === 0
-        const shipping = isFreeShipping ? 0 : 1500
+        const shipping = isFreeShipping ? 0 : 4500
 
         return {
           shipping,
