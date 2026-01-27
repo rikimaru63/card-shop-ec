@@ -26,6 +26,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useCartStore } from "@/store/cart-store"
 import { createOrder, getUserAddresses } from "./actions"
 import { toast } from "@/hooks/use-toast"
+import { CustomsNotice } from "@/components/CustomsNotice"
 
 interface SavedAddress {
   id: string
@@ -59,6 +60,7 @@ export default function CheckoutPage() {
   const {
     items,
     getTotalPrice,
+    getCustomsFee,
     getTotalItems,
     clearCart,
     getBoxCount,
@@ -254,9 +256,10 @@ export default function CheckoutPage() {
   }
 
   const subtotal = getTotalPrice()
+  const customsFee = getCustomsFee()
   const shippingInfo = getShippingInfo()
   const shipping = shippingInfo.shipping
-  const total = subtotal + shipping
+  const total = subtotal + customsFee + shipping
 
   // BOX購入制限のチェック
   const boxCount = getBoxCount()
@@ -339,6 +342,10 @@ export default function CheckoutPage() {
                   <div className="flex justify-between text-sm">
                     <span>Subtotal ({getTotalItems()} items)</span>
                     <span>¥{subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Customs Fee (20%)</span>
+                    <span>¥{customsFee.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Shipping</span>
@@ -579,6 +586,11 @@ export default function CheckoutPage() {
                     After confirming your order, a QR code will be displayed for payment via Wise.
                   </p>
                 </div>
+              </div>
+
+              {/* Customs Notice */}
+              <div className="bg-white rounded-lg border shadow-sm p-6">
+                <CustomsNotice />
               </div>
             </div>
 

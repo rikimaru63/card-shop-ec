@@ -155,7 +155,37 @@ export async function POST(request: NextRequest) {
 
     const rarity = body.rarity || null
     const condition = body.condition ? conditionMap[body.condition] || body.condition : null
-    
+
+    // Check for duplicate product (cardNumber + condition)
+    if (body.cardNumber && condition) {
+      const existingProduct = await prisma.product.findFirst({
+        where: {
+          categoryId: category.id,
+          cardNumber: body.cardNumber,
+          condition: condition as any
+        },
+        select: {
+          id: true,
+          name: true,
+          sku: true
+        }
+      })
+
+      if (existingProduct) {
+        return NextResponse.json(
+          {
+            error: 'この商品は既に登録されています',
+            existingProduct: {
+              id: existingProduct.id,
+              name: existingProduct.name,
+              sku: existingProduct.sku
+            }
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     // Create product
     const product = await prisma.product.create({
       data: {

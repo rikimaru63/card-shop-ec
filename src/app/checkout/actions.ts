@@ -155,9 +155,10 @@ export async function createOrder(input: CreateOrderInput): Promise<{
 
     // Calculate totals (JPY)
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    const customsFee = Math.floor(subtotal * 0.20)
     const { shipping } = calculateShipping(items)
     const tax = 0
-    const total = subtotal + shipping + tax
+    const total = subtotal + customsFee + shipping + tax
 
     // Generate unique order number
     const orderNumber = generateOrderNumber()
@@ -212,6 +213,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{
           userId: user.id,
           email: user.email,
           subtotal,
+          customsFee,
           tax,
           shipping,
           total,

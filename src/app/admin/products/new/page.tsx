@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Save } from "lucide-react"
+import { ArrowLeft, Save, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ImagePreview } from "@/components/admin/ImagePreview"
+import { toast } from "@/hooks/use-toast"
 
 // Types for API data
 interface OptionItem {
@@ -34,6 +36,8 @@ export default function NewProductPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [optionsLoading, setOptionsLoading] = useState(true)
+  const [images, setImages] = useState<File[]>([])
+  const [uploadProgress, setUploadProgress] = useState<string>("")
   const [formData, setFormData] = useState({
     name: "",
     cardType: "pokemon", // pokemon or onepiece
@@ -182,6 +186,9 @@ export default function NewProductPage() {
     const categorySlug = formData.cardType === "pokemon" ? "pokemon-cards" : "onepiece-cards"
 
     try {
+      setUploadProgress("商品を作成中...")
+
+      // Step 1: Create product
       const response = await fetch("/api/admin/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -194,13 +201,64 @@ export default function NewProductPage() {
         }),
       })
 
-      if (response.ok) {
-        router.push("/admin/products")
+      if (!response.ok) {
+        if (response.status === 409) {
+          // Duplicate error
+          const error = await response.json()
+          toast({
+            title: "重複エラー",
+            description: `${error.error}\n既存商品: ${error.existingProduct?.name || ''} (SKU: ${error.existingProduct?.sku || ''})`,
+            variant: "destructive"
+          })
+          setLoading(false)
+          setUploadProgress("")
+          return
+        }
+        throw new Error("商品作成に失敗しました")
       }
+
+      const product = await response.json()
+
+      // Step 2: Upload images if any
+      if (images.length > 0) {
+        setUploadProgress(`画像をアップロード中 (0/${images.length})`)
+
+        for (let i = 0; i < images.length; i++) {
+          const formDataImage = new FormData()
+          formDataImage.append('file', images[i], images[i].name)
+          formDataImage.append('order', i.toString())
+
+          try {
+            await fetch(`/api/admin/products/${product.id}/images`, {
+              method: 'POST',
+              body: formDataImage
+            })
+          } catch (error) {
+            console.error(`Failed to upload image ${i + 1}:`, error)
+          }
+
+          setUploadProgress(`画像をアップロード中 (${i + 1}/${images.length})`)
+        }
+      }
+
+      setUploadProgress("完了!")
+      toast({
+        title: "商品登録完了",
+        description: "商品が正常に登録されました"
+      })
+
+      // Redirect to product detail or list
+      router.push(`/admin/products/${product.id}`)
     } catch (error) {
       console.error("Failed to create product:", error)
+      toast({
+        title: "エラー",
+        description: error instanceof Error ? error.message : "商品の登録に失敗しました",
+        variant: "destructive"
+      })
     } finally {
       setLoading(false)
+      setUploadProgress("")
     }
   }
 
@@ -474,7 +532,7 @@ export default function NewProductPage() {
             {/* 備考 */}
             <div className="space-y-4">
               <h2 className="text-lg font-semibold border-b pb-2">備考</h2>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="description">商品説明</Label>
                 <textarea
@@ -487,6 +545,24 @@ export default function NewProductPage() {
                 />
               </div>
             </div>
+
+            {/* 画像プレビュー */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold border-b pb-2">商品画像</h2>
+              <ImagePreview
+                images={images}
+                onImagesChange={setImages}
+                maxImages={5}
+              />
+            </div>
+
+            {/* アップロード進捗 */}
+            {uploadProgress && (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                <span className="text-sm text-blue-800">{uploadProgress}</span>
+              </div>
+            )}
 
             {/* アクション */}
             <div className="flex gap-3 pt-4 border-t">

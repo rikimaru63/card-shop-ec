@@ -355,6 +355,10 @@ export default function PaymentPage() {
                 <span>¥{Number(order.subtotal).toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Customs Fee (20%)</span>
+                <span>¥{Number(order.customsFee || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Shipping</span>
                 <span>
                   {Number(order.shipping) === 0 ? "Free" : `¥${Number(order.shipping).toLocaleString()}`}

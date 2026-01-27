@@ -31,6 +31,7 @@ interface CartStore {
   clearCart: () => void
   getTotalItems: () => number
   getTotalPrice: () => number
+  getCustomsFee: () => number
   getBoxCount: () => number
   getTotalPriceByType: (type: ProductType) => number
   getShippingInfo: () => ShippingInfo
@@ -96,6 +97,11 @@ export const useCartStore = create<CartStore>()(
       
       getTotalPrice: () => {
         return get().items.reduce((total, item) => total + item.price * item.quantity, 0)
+      },
+
+      getCustomsFee: () => {
+        const subtotal = get().getTotalPrice()
+        return Math.floor(subtotal * 0.20)
       },
 
       getBoxCount: () => {

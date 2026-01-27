@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useCartStore } from "@/store/cart-store"
 import { formatPrice } from "@/lib/utils"
+import { CustomsNotice } from "@/components/CustomsNotice"
 
 export default function CartPage() {
   const {
@@ -27,6 +28,7 @@ export default function CartPage() {
     updateQuantity,
     clearCart,
     getTotalPrice,
+    getCustomsFee,
     getBoxCount,
     getShippingInfo,
     hasBoxItems,
@@ -35,9 +37,10 @@ export default function CartPage() {
   const [couponCode, setCouponCode] = useState("")
 
   const subtotal = getTotalPrice()
+  const customsFee = getCustomsFee()
   const shippingInfo = getShippingInfo()
   const shipping = shippingInfo.shipping
-  const total = subtotal + shipping
+  const total = subtotal + customsFee + shipping
 
   // BOX購入制限のチェック
   const boxCount = getBoxCount()
@@ -244,11 +247,20 @@ export default function CartPage() {
                 </div>
               )}
 
+              {/* Customs Notice */}
+              <div className="mb-4">
+                <CustomsNotice />
+              </div>
+
               {/* Price Details */}
               <div className="space-y-3 border-t pt-4">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
                   <span>{formatPrice(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Customs Fee (20%)</span>
+                  <span>{formatPrice(customsFee)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>

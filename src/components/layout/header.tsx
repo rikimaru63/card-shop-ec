@@ -110,7 +110,7 @@ export function Header() {
               >
                 <Link
                   href={category.href}
-                  className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
+                  className="px-4 py-2 text-sm font-semibold text-foreground hover:text-primary transition-colors flex items-center gap-1"
                 >
                   {category.name}
                   <ChevronDown className="h-3 w-3" />
@@ -327,7 +327,7 @@ export function Header() {
               <div key={category.name} className="py-2">
                 <Link
                   href={category.href}
-                  className="font-medium text-foreground/80 hover:text-primary"
+                  className="font-semibold text-foreground hover:text-primary"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {category.name}

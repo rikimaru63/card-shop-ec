@@ -178,12 +178,13 @@ model Order {
   phone String?
 
   // Amounts
-  subtotal Decimal @db.Money
-  tax      Decimal @db.Money
-  shipping Decimal @db.Money
-  discount Decimal @default(0) @db.Money
-  total    Decimal @db.Money
-  currency String  @default("USD")
+  subtotal   Decimal @db.Money
+  customsFee Decimal @default(0) @db.Money
+  tax        Decimal @default(0) @db.Money
+  shipping   Decimal @db.Money
+  discount   Decimal @default(0) @db.Money
+  total      Decimal @db.Money
+  currency   String  @default("USD")
 
   // Status
   status        OrderStatus   @default(PENDING)
