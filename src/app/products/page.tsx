@@ -52,6 +52,11 @@ export default function ProductsPage() {
     inStock: false
   })
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters])
+
   // 商品データを取得
   useEffect(() => {
     const fetchProducts = async () => {

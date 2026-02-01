@@ -699,6 +699,14 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
+                {/* Fee notice */}
+                <div className="flex items-start gap-2 mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">
+                    Please note: Fees may apply for payments and cancellations.
+                  </p>
+                </div>
+
                 {/* Main CTA */}
                 <Button
                   className="w-full mb-4"

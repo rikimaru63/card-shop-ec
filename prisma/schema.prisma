@@ -76,6 +76,7 @@ model Product {
   published     Boolean @default(true)
   isNewArrival  Boolean @default(false)  // Featured as new arrival
   isRecommended Boolean @default(false)  // Featured as recommended
+  sortOrder     Int     @default(0)      // Manual sort order for admin drag & drop
 
   // Relations
   categoryId    String

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -39,11 +39,30 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  CreditCard
+  CreditCard,
+  MapPin
 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 
 export const dynamic = 'force-dynamic'
+
+interface ShippingAddress {
+  firstName?: string
+  lastName?: string
+  contactName?: string
+  companyName?: string
+  company?: string
+  street1?: string
+  street2?: string
+  street3?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  country?: string
+  phone?: string
+  email?: string
+  isResidential?: boolean
+}
 
 interface OrderItem {
   id: string
@@ -65,6 +84,7 @@ interface Order {
   status: string
   paymentStatus: string
   trackingNumber: string | null
+  shippingAddress: ShippingAddress | null
   createdAt: string
   user: {
     id: string
@@ -80,21 +100,21 @@ interface Order {
 }
 
 const orderStatusLabels: Record<string, string> = {
-  PENDING: "保留中",
-  PROCESSING: "処理中",
-  SHIPPED: "発送済み",
-  DELIVERED: "配達完了",
-  CANCELLED: "キャンセル",
-  REFUNDED: "返金済み"
+  PENDING: "Pending",
+  PROCESSING: "Processing",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+  REFUNDED: "Refunded"
 }
 
 const paymentStatusLabels: Record<string, string> = {
-  PENDING: "未払い",
-  PROCESSING: "処理中",
-  COMPLETED: "支払済み",
-  FAILED: "失敗",
-  CANCELLED: "キャンセル",
-  REFUNDED: "返金済み"
+  PENDING: "Unpaid",
+  PROCESSING: "Processing",
+  COMPLETED: "Paid",
+  FAILED: "Failed",
+  CANCELLED: "Cancelled",
+  REFUNDED: "Refunded"
 }
 
 const orderStatusColors: Record<string, string> = {
@@ -124,6 +144,131 @@ const orderStatusIcons: Record<string, React.ReactNode> = {
   REFUNDED: <XCircle className="h-4 w-4" />
 }
 
+const ORDER_STATUSES = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"]
+const PAYMENT_STATUSES = ["PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED", "REFUNDED"]
+
+// Inline status badge with dropdown
+function InlineStatusSelect({
+  value,
+  options,
+  labels,
+  colors,
+  icons,
+  onUpdate,
+}: {
+  value: string
+  options: string[]
+  labels: Record<string, string>
+  colors: Record<string, string>
+  icons?: Record<string, React.ReactNode>
+  onUpdate: (newValue: string) => Promise<void>
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [isOpen])
+
+  const handleSelect = async (newValue: string) => {
+    if (newValue === value) {
+      setIsOpen(false)
+      return
+    }
+    setIsUpdating(true)
+    try {
+      await onUpdate(newValue)
+    } finally {
+      setIsUpdating(false)
+      setIsOpen(false)
+    }
+  }
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={isUpdating}
+        className="cursor-pointer"
+      >
+        <Badge className={`${colors[value]} ${isUpdating ? 'opacity-50' : 'hover:opacity-80'} transition-opacity`}>
+          {icons && <span className="mr-1">{icons[value]}</span>}
+          {labels[value] || value}
+        </Badge>
+      </button>
+      {isOpen && (
+        <div className="absolute z-50 mt-1 bg-white border rounded-lg shadow-lg py-1 min-w-[150px]">
+          {options.map((option) => (
+            <button
+              key={option}
+              onClick={() => handleSelect(option)}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${
+                option === value ? 'bg-gray-50 font-medium' : ''
+              }`}
+            >
+              <Badge className={`${colors[option]} text-xs`}>
+                {icons && <span className="mr-1">{icons[option]}</span>}
+                {labels[option]}
+              </Badge>
+              {option === value && <CheckCircle className="h-3 w-3 text-green-500 ml-auto" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Format shipping address for display
+function formatAddress(addr: ShippingAddress | null): string {
+  if (!addr) return "—"
+  const name = addr.contactName || [addr.firstName, addr.lastName].filter(Boolean).join(" ")
+  const lines = [
+    name,
+    addr.companyName || addr.company,
+    addr.street1,
+    [addr.street2, addr.street3].filter(Boolean).join(", "),
+    [addr.city, addr.state, addr.postalCode].filter(Boolean).join(", "),
+    addr.country,
+  ].filter(Boolean)
+  return lines.join(", ")
+}
+
+function formatAddressMultiline(addr: ShippingAddress | null): React.ReactNode {
+  if (!addr) return <span className="text-gray-400">No address</span>
+  const name = addr.contactName || [addr.firstName, addr.lastName].filter(Boolean).join(" ")
+  return (
+    <div className="text-sm space-y-0.5">
+      {name && <p className="font-medium">{name}</p>}
+      {(addr.companyName || addr.company) && (
+        <p className="text-gray-600">{addr.companyName || addr.company}</p>
+      )}
+      {addr.street1 && <p>{addr.street1}</p>}
+      {addr.street2 && <p>{addr.street2}</p>}
+      {addr.street3 && <p>{addr.street3}</p>}
+      <p>
+        {[addr.city, addr.state, addr.postalCode].filter(Boolean).join(", ")}
+      </p>
+      {addr.country && <p>{addr.country}</p>}
+      {addr.phone && <p className="text-gray-500">📞 {addr.phone}</p>}
+      {addr.isResidential !== undefined && (
+        <p className="text-xs text-gray-400">
+          {addr.isResidential ? "Residential" : "Commercial"}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -137,10 +282,6 @@ export default function OrdersPage() {
   // Dialog states
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
-  const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
-  const [newStatus, setNewStatus] = useState("")
-  const [newPaymentStatus, setNewPaymentStatus] = useState("")
-  const [trackingNumber, setTrackingNumber] = useState("")
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -159,8 +300,8 @@ export default function OrdersPage() {
       setTotal(data.pagination.total)
     } catch (error) {
       toast({
-        title: "エラー",
-        description: "注文の取得に失敗しました",
+        title: "Error",
+        description: "Failed to fetch orders",
         variant: "destructive"
       })
     } finally {
@@ -183,47 +324,43 @@ export default function OrdersPage() {
     setDetailDialogOpen(true)
   }
 
-  const handleEditStatus = (order: Order) => {
-    setSelectedOrder(order)
-    setNewStatus(order.status)
-    setNewPaymentStatus(order.paymentStatus)
-    setTrackingNumber(order.trackingNumber || "")
-    setUpdateDialogOpen(true)
-  }
-
-  const handleUpdateOrder = async () => {
-    if (!selectedOrder) return
-
+  // Inline status update
+  const updateOrderStatus = async (orderId: string, field: 'status' | 'paymentStatus', newValue: string) => {
     try {
-      const response = await fetch(`/api/admin/orders/${selectedOrder.id}`, {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: newStatus,
-          paymentStatus: newPaymentStatus,
-          trackingNumber: trackingNumber || null
-        })
+        body: JSON.stringify({ [field]: newValue })
       })
 
       if (response.ok) {
+        // Update local state
+        setOrders(prev => prev.map(o =>
+          o.id === orderId ? { ...o, [field]: newValue } : o
+        ))
+        // Also update selected order if open
+        if (selectedOrder?.id === orderId) {
+          setSelectedOrder(prev => prev ? { ...prev, [field]: newValue } : null)
+        }
         toast({
-          title: "成功",
-          description: "注文を更新しました"
+          title: "Updated",
+          description: `Order ${field === 'status' ? 'status' : 'payment status'} updated.`,
         })
-        setUpdateDialogOpen(false)
-        fetchOrders()
+      } else {
+        throw new Error('Update failed')
       }
     } catch (error) {
       toast({
-        title: "エラー",
-        description: "注文の更新に失敗しました",
+        title: "Error",
+        description: "Failed to update order",
         variant: "destructive"
       })
+      throw error
     }
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ja-JP', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -235,8 +372,8 @@ export default function OrdersPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">注文管理</h1>
-        <span className="text-gray-500">{total}件の注文</span>
+        <h1 className="text-3xl font-bold">Order Management</h1>
+        <span className="text-gray-500">{total} orders</span>
       </div>
 
       {/* Search and Filters */}
@@ -245,39 +382,39 @@ export default function OrdersPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="注文番号、メールで検索..."
+              placeholder="Search by order number or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
             />
           </div>
-          <Button type="submit">検索</Button>
+          <Button type="submit">Search</Button>
         </form>
 
         <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(1); }}>
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="注文状態" />
+            <SelectValue placeholder="Order Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">すべて</SelectItem>
-            <SelectItem value="PENDING">保留中</SelectItem>
-            <SelectItem value="PROCESSING">処理中</SelectItem>
-            <SelectItem value="SHIPPED">発送済み</SelectItem>
-            <SelectItem value="DELIVERED">配達完了</SelectItem>
-            <SelectItem value="CANCELLED">キャンセル</SelectItem>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="PROCESSING">Processing</SelectItem>
+            <SelectItem value="SHIPPED">Shipped</SelectItem>
+            <SelectItem value="DELIVERED">Delivered</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={paymentFilter} onValueChange={(value) => { setPaymentFilter(value); setPage(1); }}>
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="支払状態" />
+            <SelectValue placeholder="Payment Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">すべて</SelectItem>
-            <SelectItem value="PENDING">未払い</SelectItem>
-            <SelectItem value="COMPLETED">支払済み</SelectItem>
-            <SelectItem value="FAILED">失敗</SelectItem>
-            <SelectItem value="REFUNDED">返金済み</SelectItem>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="PENDING">Unpaid</SelectItem>
+            <SelectItem value="COMPLETED">Paid</SelectItem>
+            <SelectItem value="FAILED">Failed</SelectItem>
+            <SelectItem value="REFUNDED">Refunded</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -287,27 +424,28 @@ export default function OrdersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>注文番号</TableHead>
-              <TableHead>顧客</TableHead>
-              <TableHead>商品</TableHead>
-              <TableHead>合計金額</TableHead>
-              <TableHead>注文状態</TableHead>
-              <TableHead>支払状態</TableHead>
-              <TableHead>注文日</TableHead>
-              <TableHead className="text-right">操作</TableHead>
+              <TableHead>Order #</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Items</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Payment</TableHead>
+              <TableHead>Shipping Address</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
-                  読み込み中...
+                <TableCell colSpan={9} className="text-center py-8">
+                  Loading...
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                  注文が見つかりません
+                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                  No orders found
                 </TableCell>
               </TableRow>
             ) : (
@@ -318,7 +456,7 @@ export default function OrdersPage() {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{order.user?.name || "ゲスト"}</p>
+                      <p className="font-medium">{order.user?.name || "Guest"}</p>
                       <p className="text-sm text-gray-500">{order.email}</p>
                     </div>
                   </TableCell>
@@ -336,7 +474,7 @@ export default function OrdersPage() {
                       <div>
                         <p className="text-sm">{order.items[0]?.product.name}</p>
                         {order.items.length > 1 && (
-                          <p className="text-xs text-gray-500">他{order.items.length - 1}件</p>
+                          <p className="text-xs text-gray-500">+{order.items.length - 1} more</p>
                         )}
                       </div>
                     </div>
@@ -345,37 +483,47 @@ export default function OrdersPage() {
                     ¥{Number(order.total).toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    <Badge className={orderStatusColors[order.status]}>
-                      <span className="mr-1">{orderStatusIcons[order.status]}</span>
-                      {orderStatusLabels[order.status]}
-                    </Badge>
+                    <InlineStatusSelect
+                      value={order.status}
+                      options={ORDER_STATUSES}
+                      labels={orderStatusLabels}
+                      colors={orderStatusColors}
+                      icons={orderStatusIcons}
+                      onUpdate={(newVal) => updateOrderStatus(order.id, 'status', newVal)}
+                    />
                   </TableCell>
                   <TableCell>
-                    <Badge className={paymentStatusColors[order.paymentStatus]}>
-                      <CreditCard className="h-3 w-3 mr-1" />
-                      {paymentStatusLabels[order.paymentStatus]}
-                    </Badge>
+                    <InlineStatusSelect
+                      value={order.paymentStatus}
+                      options={PAYMENT_STATUSES}
+                      labels={paymentStatusLabels}
+                      colors={paymentStatusColors}
+                      onUpdate={(newVal) => updateOrderStatus(order.id, 'paymentStatus', newVal)}
+                    />
+                  </TableCell>
+                  <TableCell className="max-w-[200px]">
+                    <p className="text-xs text-gray-600 truncate" title={formatAddress(order.shippingAddress)}>
+                      {order.shippingAddress ? (
+                        <>
+                          <MapPin className="h-3 w-3 inline mr-1" />
+                          {formatAddress(order.shippingAddress)}
+                        </>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </p>
                   </TableCell>
                   <TableCell className="text-sm text-gray-500">
                     {formatDate(order.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewDetail(order)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditStatus(order)}
-                      >
-                        更新
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewDetail(order)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -387,7 +535,7 @@ export default function OrdersPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t">
             <div className="text-sm text-gray-500">
-              {total}件中 {(page - 1) * 20 + 1} - {Math.min(page * 20, total)}件
+              Showing {(page - 1) * 20 + 1} - {Math.min(page * 20, total)} of {total}
             </div>
             <div className="flex gap-2">
               <Button
@@ -416,9 +564,9 @@ export default function OrdersPage() {
 
       {/* Order Detail Dialog */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>注文詳細</DialogTitle>
+            <DialogTitle>Order Details</DialogTitle>
             <DialogDescription>
               #{selectedOrder?.orderNumber.slice(-8)}
             </DialogDescription>
@@ -427,25 +575,62 @@ export default function OrdersPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-gray-500">顧客名</Label>
-                  <p className="font-medium">{selectedOrder.user?.name || "ゲスト"}</p>
+                  <Label className="text-sm text-gray-500">Customer</Label>
+                  <p className="font-medium">{selectedOrder.user?.name || "Guest"}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-gray-500">メールアドレス</Label>
+                  <Label className="text-sm text-gray-500">Email</Label>
                   <p className="font-medium">{selectedOrder.email}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-gray-500">注文日</Label>
+                  <Label className="text-sm text-gray-500">Order Date</Label>
                   <p className="font-medium">{formatDate(selectedOrder.createdAt)}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-gray-500">追跡番号</Label>
-                  <p className="font-medium">{selectedOrder.trackingNumber || "未設定"}</p>
+                  <Label className="text-sm text-gray-500">Tracking Number</Label>
+                  <p className="font-medium">{selectedOrder.trackingNumber || "Not set"}</p>
                 </div>
               </div>
 
+              {/* Status Inline Edit */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm text-gray-500 mb-1 block">Order Status</Label>
+                  <InlineStatusSelect
+                    value={selectedOrder.status}
+                    options={ORDER_STATUSES}
+                    labels={orderStatusLabels}
+                    colors={orderStatusColors}
+                    icons={orderStatusIcons}
+                    onUpdate={(newVal) => updateOrderStatus(selectedOrder.id, 'status', newVal)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm text-gray-500 mb-1 block">Payment Status</Label>
+                  <InlineStatusSelect
+                    value={selectedOrder.paymentStatus}
+                    options={PAYMENT_STATUSES}
+                    labels={paymentStatusLabels}
+                    colors={paymentStatusColors}
+                    onUpdate={(newVal) => updateOrderStatus(selectedOrder.id, 'paymentStatus', newVal)}
+                  />
+                </div>
+              </div>
+
+              {/* Shipping Address */}
               <div>
-                <Label className="text-sm text-gray-500 mb-2 block">商品</Label>
+                <Label className="text-sm text-gray-500 mb-2 block">
+                  <MapPin className="h-4 w-4 inline mr-1" />
+                  Shipping Address
+                </Label>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  {formatAddressMultiline(selectedOrder.shippingAddress)}
+                </div>
+              </div>
+
+              {/* Order Items */}
+              <div>
+                <Label className="text-sm text-gray-500 mb-2 block">Items</Label>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                   {selectedOrder.items.map((item) => (
                     <div key={item.id} className="flex items-center gap-3">
@@ -473,77 +658,13 @@ export default function OrdersPage() {
               </div>
 
               <div className="flex justify-between items-center pt-4 border-t">
-                <span className="text-lg font-semibold">合計</span>
+                <span className="text-lg font-semibold">Total</span>
                 <span className="text-xl font-bold">
                   ¥{Number(selectedOrder.total).toLocaleString()}
                 </span>
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Update Status Dialog */}
-      <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>注文ステータスを更新</DialogTitle>
-            <DialogDescription>
-              #{selectedOrder?.orderNumber.slice(-8)} のステータスを変更します
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>注文状態</Label>
-              <Select value={newStatus} onValueChange={setNewStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PENDING">保留中</SelectItem>
-                  <SelectItem value="PROCESSING">処理中</SelectItem>
-                  <SelectItem value="SHIPPED">発送済み</SelectItem>
-                  <SelectItem value="DELIVERED">配達完了</SelectItem>
-                  <SelectItem value="CANCELLED">キャンセル</SelectItem>
-                  <SelectItem value="REFUNDED">返金済み</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>支払状態</Label>
-              <Select value={newPaymentStatus} onValueChange={setNewPaymentStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PENDING">未払い</SelectItem>
-                  <SelectItem value="PROCESSING">処理中</SelectItem>
-                  <SelectItem value="COMPLETED">支払済み</SelectItem>
-                  <SelectItem value="FAILED">失敗</SelectItem>
-                  <SelectItem value="CANCELLED">キャンセル</SelectItem>
-                  <SelectItem value="REFUNDED">返金済み</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>追跡番号</Label>
-              <Input
-                value={trackingNumber}
-                onChange={(e) => setTrackingNumber(e.target.value)}
-                placeholder="追跡番号を入力"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setUpdateDialogOpen(false)}>
-              キャンセル
-            </Button>
-            <Button onClick={handleUpdateOrder}>
-              更新
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
