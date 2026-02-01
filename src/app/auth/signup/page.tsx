@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, CheckCircle, Mail } from "lucide-react"
 
 const countries = [
-  { code: "JP", name: "Japan" },
   { code: "US", name: "United States" },
   { code: "GB", name: "United Kingdom" },
   { code: "AU", name: "Australia" },
@@ -28,6 +28,7 @@ const countries = [
   { code: "NO", name: "Norway" },
   { code: "DK", name: "Denmark" },
   { code: "FI", name: "Finland" },
+  { code: "JP", name: "Japan" },
   { code: "SG", name: "Singapore" },
   { code: "HK", name: "Hong Kong" },
   { code: "TW", name: "Taiwan" },
@@ -45,16 +46,19 @@ export default function SignUpPage() {
     password: "",
     confirmPassword: "",
     // Personal info
-    firstName: "",
-    lastName: "",
+    name: "",
     phone: "",
-    // Address
-    country: "",
+    // Shipping Address (FedEx format)
+    contactName: "",
+    companyName: "",
+    country: "US",
     postalCode: "",
     state: "",
     city: "",
     street1: "",
     street2: "",
+    street3: "",
+    isResidential: false,
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -65,22 +69,22 @@ export default function SignUpPage() {
 
     if (step === 1) {
       if (!formData.email || !formData.password || !formData.confirmPassword) {
-        setError("すべての必須項目を入力してください")
+        setError("Please fill in all required fields")
         return
       }
       if (formData.password !== formData.confirmPassword) {
-        setError("パスワードが一致しません")
+        setError("Passwords do not match")
         return
       }
       if (formData.password.length < 8) {
-        setError("パスワードは8文字以上で入力してください")
+        setError("Password must be at least 8 characters")
         return
       }
     }
 
     if (step === 2) {
-      if (!formData.firstName || !formData.lastName) {
-        setError("氏名を入力してください")
+      if (!formData.name) {
+        setError("Please enter your name")
         return
       }
     }
@@ -99,30 +103,35 @@ export default function SignUpPage() {
 
     // Final validation
     if (!formData.country || !formData.postalCode || !formData.state || !formData.city || !formData.street1) {
-      setError("住所の必須項目を入力してください")
+      setError("Please fill in all required address fields")
       setLoading(false)
       return
     }
+
+    const contactName = formData.contactName || formData.name
 
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: `${formData.firstName} ${formData.lastName}`,
+          name: formData.name,
           email: formData.email,
           password: formData.password,
           phone: formData.phone || undefined,
           address: {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
+            firstName: contactName,
+            lastName: "",
+            company: formData.companyName || undefined,
             country: formData.country,
             postalCode: formData.postalCode,
             state: formData.state,
             city: formData.city,
             street1: formData.street1,
             street2: formData.street2 || undefined,
+            street3: formData.street3 || undefined,
             phone: formData.phone || undefined,
+            isResidential: formData.isResidential,
           }
         })
       })
@@ -130,14 +139,14 @@ export default function SignUpPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.message || "登録に失敗しました")
+        setError(data.message || "Registration failed")
         setLoading(false)
         return
       }
 
       setSuccess(true)
     } catch (err) {
-      setError("登録に失敗しました。もう一度お試しください。")
+      setError("Registration failed. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -151,22 +160,22 @@ export default function SignUpPage() {
             <div className="mx-auto mb-4">
               <Mail className="h-16 w-16 text-primary" />
             </div>
-            <CardTitle>確認メールを送信しました</CardTitle>
+            <CardTitle>Verification Email Sent</CardTitle>
             <CardDescription>
-              {formData.email} に確認メールを送信しました。
-              メール内のリンクをクリックして、登録を完了してください。
+              We&apos;ve sent a verification email to {formData.email}.
+              Please click the link in the email to complete your registration.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
               <CheckCircle className="h-4 w-4" />
               <AlertDescription>
-                メールが届かない場合は、迷惑メールフォルダをご確認ください。
+                If you don&apos;t see the email, please check your spam or junk folder.
               </AlertDescription>
             </Alert>
             <Link href="/auth/signin">
               <Button variant="outline" className="w-full">
-                ログインページへ
+                Go to Sign In
               </Button>
             </Link>
           </CardContent>
@@ -179,9 +188,9 @@ export default function SignUpPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">アカウント作成</CardTitle>
+          <CardTitle className="text-2xl">Create Account</CardTitle>
           <CardDescription>
-            ステップ {step} / 3
+            Step {step} of 3
           </CardDescription>
           {/* Progress bar */}
           <div className="flex gap-2 mt-4">
@@ -205,9 +214,9 @@ export default function SignUpPage() {
             {/* Step 1: Account Info */}
             {step === 1 && (
               <>
-                <h3 className="font-semibold">アカウント情報</h3>
+                <h3 className="font-semibold">Account Information</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="email">メールアドレス *</Label>
+                  <Label htmlFor="email">Email Address *</Label>
                   <Input
                     id="email"
                     type="email"
@@ -218,11 +227,11 @@ export default function SignUpPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">パスワード *</Label>
+                  <Label htmlFor="password">Password *</Label>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="8文字以上"
+                    placeholder="At least 8 characters"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
@@ -230,11 +239,11 @@ export default function SignUpPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">パスワード（確認） *</Label>
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
-                    placeholder="もう一度入力"
+                    placeholder="Re-enter your password"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     required
@@ -246,55 +255,63 @@ export default function SignUpPage() {
             {/* Step 2: Personal Info */}
             {step === 2 && (
               <>
-                <h3 className="font-semibold">お客様情報</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">名 (First Name) *</Label>
-                    <Input
-                      id="firstName"
-                      placeholder="Taro"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">姓 (Last Name) *</Label>
-                    <Input
-                      id="lastName"
-                      placeholder="Yamada"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      required
-                    />
-                  </div>
+                <h3 className="font-semibold">Your Information</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="John Doe"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">電話番号（任意）</Label>
+                  <Label htmlFor="phone">Phone Number (optional)</Label>
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+81 90-1234-5678"
+                    placeholder="+1 234 567 8900"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
-                  <p className="text-xs text-gray-500">配送に関するご連絡に使用します</p>
+                  <p className="text-xs text-gray-500">Used for shipping-related communication</p>
                 </div>
               </>
             )}
 
-            {/* Step 3: Shipping Address */}
+            {/* Step 3: Shipping Address (FedEx format) */}
             {step === 3 && (
               <>
-                <h3 className="font-semibold">配送先住所 (Shipping Address)</h3>
+                <h3 className="font-semibold">Shipping Address</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="country">国 (Country) *</Label>
+                  <Label htmlFor="contactName">Contact Name *</Label>
+                  <Input
+                    id="contactName"
+                    placeholder="John Doe"
+                    value={formData.contactName}
+                    onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                    required
+                  />
+                  <p className="text-xs text-gray-500">Leave blank to use your account name</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">Company Name (optional)</Label>
+                  <Input
+                    id="companyName"
+                    placeholder="Company Inc."
+                    value={formData.companyName}
+                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country / Region *</Label>
                   <Select
                     value={formData.country}
                     onValueChange={(value) => setFormData({ ...formData, country: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="国を選択" />
+                      <SelectValue placeholder="Select a country" />
                     </SelectTrigger>
                     <SelectContent>
                       {countries.map((country) => (
@@ -305,22 +322,50 @@ export default function SignUpPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="street1">Address Line 1 *</Label>
+                  <Input
+                    id="street1"
+                    placeholder="123 Main St"
+                    value={formData.street1}
+                    onChange={(e) => setFormData({ ...formData, street1: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="street2">Address Line 2</Label>
+                  <Input
+                    id="street2"
+                    placeholder="Apt, Suite, Unit, etc."
+                    value={formData.street2}
+                    onChange={(e) => setFormData({ ...formData, street2: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="street3">Address Line 3</Label>
+                  <Input
+                    id="street3"
+                    placeholder="Additional address info"
+                    value={formData.street3}
+                    onChange={(e) => setFormData({ ...formData, street3: e.target.value })}
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="postalCode">郵便番号 (Postal Code) *</Label>
+                    <Label htmlFor="city">City *</Label>
                     <Input
-                      id="postalCode"
-                      placeholder="123-4567"
-                      value={formData.postalCode}
-                      onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                      id="city"
+                      placeholder="Los Angeles"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="state">都道府県/州 (State) *</Label>
+                    <Label htmlFor="state">State / Province *</Label>
                     <Input
                       id="state"
-                      placeholder="Tokyo"
+                      placeholder="CA"
                       value={formData.state}
                       onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                       required
@@ -328,34 +373,24 @@ export default function SignUpPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="city">市区町村 (City) *</Label>
+                  <Label htmlFor="postalCode">ZIP / Postal Code *</Label>
                   <Input
-                    id="city"
-                    placeholder="Shibuya-ku"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    id="postalCode"
+                    placeholder="90001"
+                    value={formData.postalCode}
+                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="street1">住所1 (Address Line 1) *</Label>
-                  <Input
-                    id="street1"
-                    placeholder="1-2-3 Shibuya"
-                    value={formData.street1}
-                    onChange={(e) => setFormData({ ...formData, street1: e.target.value })}
-                    required
+                <div className="flex items-center space-x-2 pt-2">
+                  <Checkbox
+                    id="isResidential"
+                    checked={formData.isResidential}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isResidential: checked === true })}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="street2">住所2 (Address Line 2)</Label>
-                  <Input
-                    id="street2"
-                    placeholder="Building name, Room number"
-                    value={formData.street2}
-                    onChange={(e) => setFormData({ ...formData, street2: e.target.value })}
-                  />
-                  <p className="text-xs text-gray-500">建物名・部屋番号など（任意）</p>
+                  <Label htmlFor="isResidential" className="text-sm cursor-pointer">
+                    This is a residential address
+                  </Label>
                 </div>
               </>
             )}
@@ -365,31 +400,31 @@ export default function SignUpPage() {
             <div className="flex gap-2 w-full">
               {step > 1 && (
                 <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
-                  戻る
+                  Back
                 </Button>
               )}
               {step < 3 ? (
                 <Button type="button" onClick={handleNext} className="flex-1">
-                  次へ
+                  Next
                 </Button>
               ) : (
                 <Button type="submit" className="flex-1" disabled={loading}>
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      登録中...
+                      Creating Account...
                     </>
                   ) : (
-                    "アカウントを作成"
+                    "Create Account"
                   )}
                 </Button>
               )}
             </div>
 
             <p className="text-sm text-center text-gray-600">
-              既にアカウントをお持ちですか？{" "}
+              Already have an account?{" "}
               <Link href="/auth/signin" className="text-primary hover:underline">
-                ログイン
+                Sign In
               </Link>
             </p>
           </CardFooter>

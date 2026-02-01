@@ -124,12 +124,12 @@ export default function AnnouncementBanner() {
                     {isExpanded ? (
                       <>
                         <ChevronUp className="h-4 w-4" />
-                        閉じる
+                        Show less
                       </>
                     ) : (
                       <>
                         <ChevronDown className="h-4 w-4" />
-                        続きを読む
+                        Read more
                       </>
                     )}
                   </button>

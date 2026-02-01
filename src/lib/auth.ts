@@ -1,6 +1,5 @@
 import { NextAuthOptions } from "next-auth"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
@@ -39,10 +38,6 @@ export const authOptions: NextAuthOptions = {
     },
   },
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -51,7 +46,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("メールアドレスとパスワードを入力してください")
+          throw new Error("Please enter your email and password")
         }
 
         const user = await prisma.user.findUnique({
@@ -61,7 +56,7 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user || !user.hashedPassword) {
-          throw new Error("メールアドレスまたはパスワードが正しくありません")
+          throw new Error("Invalid email or password")
         }
 
         const isCorrectPassword = await bcrypt.compare(
@@ -70,7 +65,12 @@ export const authOptions: NextAuthOptions = {
         )
 
         if (!isCorrectPassword) {
-          throw new Error("メールアドレスまたはパスワードが正しくありません")
+          throw new Error("Invalid email or password")
+        }
+
+        // Check if email is verified
+        if (!user.emailVerified) {
+          throw new Error("UNVERIFIED_EMAIL")
         }
 
         return {

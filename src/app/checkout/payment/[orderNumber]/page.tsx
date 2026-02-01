@@ -43,13 +43,11 @@ export default function PaymentPage() {
         return
       }
 
-      // If payment already processed, redirect
       if (orderData.paymentStatus === "PROCESSING" || orderData.paymentStatus === "COMPLETED") {
         router.push(`/checkout/success?orderNumber=${orderNumber}`)
         return
       }
 
-      // If cancelled, redirect
       if (orderData.status === "CANCELLED") {
         router.push("/account/orders")
         return
@@ -98,14 +96,14 @@ export default function PaymentPage() {
 
     if (result.success) {
       toast({
-        title: "決済確認完了",
-        description: "ご注文ありがとうございます。入金確認後、発送準備を開始します。"
+        title: "Payment Confirmed",
+        description: "Thank you for your order! We'll begin processing your shipment once payment is verified."
       })
       router.push(`/checkout/success?orderNumber=${orderNumber}`)
     } else {
       toast({
-        title: "エラー",
-        description: result.message || "決済確認に失敗しました",
+        title: "Error",
+        description: result.message || "Payment confirmation failed",
         variant: "destructive"
       })
       setConfirming(false)
@@ -113,20 +111,20 @@ export default function PaymentPage() {
   }
 
   const handleCancelOrder = async () => {
-    if (!confirm("注文をキャンセルしますか？在庫は解放されます。")) return
+    if (!confirm("Are you sure you want to cancel this order? Stock will be released.")) return
 
     const result = await cancelOrder(orderNumber)
 
     if (result.success) {
       toast({
-        title: "注文キャンセル",
-        description: "注文がキャンセルされました"
+        title: "Order Cancelled",
+        description: "Your order has been cancelled"
       })
       router.push("/cart")
     } else {
       toast({
-        title: "エラー",
-        description: result.message || "キャンセルに失敗しました",
+        title: "Error",
+        description: result.message || "Failed to cancel order",
         variant: "destructive"
       })
     }
@@ -169,18 +167,18 @@ export default function PaymentPage() {
             Time Expired
           </h1>
           <p className="text-gray-600 mb-6">
-            在庫予約の有効期限が切れました。<br />
-            注文は自動的にキャンセルされます。
+            Your stock reservation has expired.<br />
+            The order will be automatically cancelled.
           </p>
           <div className="space-y-3">
             <Link href="/cart">
               <Button className="w-full">
-                カートに戻る
+                Back to Cart
               </Button>
             </Link>
             <Link href="/products">
               <Button variant="outline" className="w-full">
-                商品一覧へ
+                Browse Products
               </Button>
             </Link>
           </div>
@@ -207,12 +205,12 @@ export default function PaymentPage() {
           )}
           <div className="flex-1">
             <p className="font-medium">
-              残り時間: {formatTime(timeRemaining)}
+              Time Remaining: {formatTime(timeRemaining)}
             </p>
             <p className="text-sm opacity-80">
               {timeRemaining <= 300
-                ? "時間内に決済を完了してください！"
-                : "30分以内にWiseで支払いを完了し、「決済完了」ボタンを押してください"}
+                ? "Please complete payment before time runs out!"
+                : "Complete payment via Wise and click \"Payment Complete\" within 30 minutes"}
             </p>
           </div>
         </div>
@@ -285,9 +283,9 @@ export default function PaymentPage() {
             <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">
               <p className="font-medium mb-2">Payment Instructions:</p>
               <ol className="list-decimal list-inside space-y-1">
-                <li>QRコードをスキャンするか、下のボタンでWiseを開く</li>
-                <li>上記の金額を送金する</li>
-                <li>送金完了後、「決済完了」ボタンを押す</li>
+                <li>Scan the QR code or click the button below to open Wise</li>
+                <li>Send the amount shown above</li>
+                <li>After payment, click the &quot;Payment Complete&quot; button</li>
               </ol>
             </div>
           </div>
@@ -322,7 +320,7 @@ export default function PaymentPage() {
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  決済完了
+                  Payment Complete
                 </>
               )}
             </Button>
@@ -332,7 +330,7 @@ export default function PaymentPage() {
               className="w-full text-gray-500 hover:text-red-600"
               onClick={handleCancelOrder}
             >
-              注文をキャンセル
+              Cancel Order
             </Button>
           </div>
         </div>

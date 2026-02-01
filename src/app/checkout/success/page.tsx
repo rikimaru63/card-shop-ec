@@ -57,8 +57,8 @@ function CheckoutSuccessContent() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
     toast({
-      title: "コピーしました",
-      description: "クリップボードにコピーしました",
+      title: "Copied",
+      description: "Copied to clipboard",
     })
   }
 
@@ -74,29 +74,29 @@ function CheckoutSuccessContent() {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
               <CheckCircle className="h-12 w-12 text-green-600" />
             </div>
-            <h1 className="text-3xl font-bold mb-2">ご注文ありがとうございます!</h1>
+            <h1 className="text-3xl font-bold mb-2">Thank You for Your Order!</h1>
             <p className="text-muted-foreground">
-              ご注文が完了しました。以下の方法でお支払いください。
+              Your order has been placed. Please complete payment using the method below.
             </p>
           </div>
 
           {/* Order Details */}
           <div className="bg-white rounded-lg border p-6 mb-6">
             <div className="text-center mb-4">
-              <p className="text-sm text-muted-foreground mb-1">注文番号</p>
+              <p className="text-sm text-muted-foreground mb-1">Order Number</p>
               <p className="text-xl font-mono font-bold">{orderNumber}</p>
             </div>
 
             {totalAmount > 0 && (
               <div className="text-center mb-4 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">お支払い金額</p>
+                <p className="text-sm text-muted-foreground mb-1">Amount Due</p>
                 <p className="text-3xl font-bold text-primary">¥{totalAmount.toLocaleString()}</p>
               </div>
             )}
 
             {order?.items && (
               <div className="border-t pt-4 mb-4">
-                <p className="text-sm text-muted-foreground mb-2">ご注文内容</p>
+                <p className="text-sm text-muted-foreground mb-2">Order Items</p>
                 <div className="space-y-2">
                   {order.items.map((item, index) => (
                     <div key={index} className="flex justify-between text-sm">
@@ -113,9 +113,9 @@ function CheckoutSuccessContent() {
           <div className="bg-white rounded-lg border p-6 mb-6">
             <div className="text-center mb-4">
               <CreditCard className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-              <h2 className="text-xl font-bold">お支払い方法</h2>
+              <h2 className="text-xl font-bold">Payment Method</h2>
               <p className="text-sm text-muted-foreground">
-                Wise（ワイズ）でのお支払いをお願いいたします
+                Please complete your payment via Wise
               </p>
             </div>
 
@@ -130,13 +130,13 @@ function CheckoutSuccessContent() {
                 />
               </div>
               <p className="text-sm text-muted-foreground text-center">
-                スマートフォンでQRコードをスキャンしてお支払いください
+                Scan the QR code with your phone to pay
               </p>
             </div>
 
             {/* Payment Link */}
             <div className="bg-blue-50 rounded-lg p-4 mb-4">
-              <p className="text-sm font-medium mb-2">または以下のリンクからお支払い:</p>
+              <p className="text-sm font-medium mb-2">Or pay using this link:</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 bg-white px-3 py-2 rounded text-sm overflow-x-auto">
                   {WISE_PAY_URL}
@@ -158,19 +158,19 @@ function CheckoutSuccessContent() {
 
             {/* Payment Instructions */}
             <div className="bg-amber-50 rounded-lg p-4">
-              <h3 className="font-semibold text-amber-800 mb-2">お支払い時の注意事項</h3>
+              <h3 className="font-semibold text-amber-800 mb-2">Payment Instructions</h3>
               <ul className="space-y-2 text-sm text-amber-700">
                 <li className="flex items-start gap-2">
                   <span className="font-bold">1.</span>
-                  <span>お支払い金額: <strong>¥{totalAmount.toLocaleString()}</strong></span>
+                  <span>Amount to pay: <strong>¥{totalAmount.toLocaleString()}</strong></span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold">2.</span>
-                  <span>送金時のメモ欄に注文番号 <strong>{orderNumber}</strong> を必ずご記入ください</span>
+                  <span>Please include order number <strong>{orderNumber}</strong> in the payment reference</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold">3.</span>
-                  <span>お支払い確認後、商品の発送準備を開始いたします</span>
+                  <span>Once payment is confirmed, we will begin preparing your shipment</span>
                 </li>
               </ul>
             </div>
@@ -183,26 +183,26 @@ function CheckoutSuccessContent() {
                 className="gap-2"
               >
                 <Copy className="h-4 w-4" />
-                注文番号をコピー
+                Copy Order Number
               </Button>
             </div>
           </div>
 
           {/* What's Next */}
           <div className="bg-blue-50 rounded-lg p-6 mb-8">
-            <h2 className="font-semibold mb-3">次のステップ</h2>
+            <h2 className="font-semibold mb-3">What Happens Next</h2>
             <ul className="space-y-2 text-sm">
               <li className="flex items-start gap-2">
                 <Package className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                <span>上記のQRコードまたはリンクからWiseでお支払いください</span>
+                <span>Complete your payment via the QR code or link above</span>
               </li>
               <li className="flex items-start gap-2">
                 <Mail className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                <span>お支払い確認後、確認メールをお送りいたします</span>
+                <span>We&apos;ll send you a confirmation email once payment is received</span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                <span>発送後、追跡番号をメールでお知らせします</span>
+                <span>You&apos;ll receive a tracking number by email after shipment</span>
               </li>
             </ul>
           </div>
@@ -211,13 +211,13 @@ function CheckoutSuccessContent() {
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/products" className="flex-1">
               <Button className="w-full" size="lg">
-                買い物を続ける
+                Continue Shopping
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </Link>
             <Link href="/account/orders" className="flex-1">
               <Button variant="outline" className="w-full" size="lg">
-                注文履歴を見る
+                View Order History
               </Button>
             </Link>
           </div>
@@ -225,11 +225,10 @@ function CheckoutSuccessContent() {
           {/* Help Section */}
           <div className="text-center mt-8 text-sm text-muted-foreground">
             <p>
-              ご不明な点がございましたら{" "}
-              <a href="mailto:support@cardshop.com" className="text-primary underline">
-                support@cardshop.com
+              Have questions? Contact us at{" "}
+              <a href="mailto:support@samuraicardhub.com" className="text-primary underline">
+                support@samuraicardhub.com
               </a>
-              {" "}までお問い合わせください
             </p>
           </div>
         </div>
@@ -244,7 +243,7 @@ export default function CheckoutSuccessPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p>読み込み中...</p>
+          <p>Loading...</p>
         </div>
       </div>
     }>

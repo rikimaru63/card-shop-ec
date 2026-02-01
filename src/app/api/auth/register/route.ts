@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
     if (!name || !email || !password) {
       return NextResponse.json(
-        { message: "名前、メールアドレス、パスワードは必須です" },
+        { message: "Name, email, and password are required" },
         { status: 400 }
       )
     }
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { message: "有効なメールアドレスを入力してください" },
+        { message: "Please enter a valid email address" },
         { status: 400 }
       )
     }
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     // Validate password strength
     if (password.length < 8) {
       return NextResponse.json(
-        { message: "パスワードは8文字以上で入力してください" },
+        { message: "Password must be at least 8 characters" },
         { status: 400 }
       )
     }
@@ -40,17 +40,17 @@ export async function POST(request: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { message: "このメールアドレスは既に登録されています" },
+        { message: "An account with this email already exists" },
         { status: 400 }
       )
     }
 
     // Validate address if provided
     if (address) {
-      if (!address.firstName || !address.lastName || !address.country ||
+      if (!address.firstName || !address.country ||
           !address.postalCode || !address.state || !address.city || !address.street1) {
         return NextResponse.json(
-          { message: "配送先住所の必須項目を入力してください" },
+          { message: "Please fill in all required address fields" },
           { status: 400 }
         )
       }
@@ -85,7 +85,8 @@ export async function POST(request: Request) {
             type: 'SHIPPING',
             isDefault: true,
             firstName: address.firstName,
-            lastName: address.lastName,
+            lastName: address.lastName || "",
+            company: address.company || null,
             street1: address.street1,
             street2: address.street2 || null,
             city: address.city,
@@ -116,7 +117,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        message: "登録が完了しました。メールアドレスに確認メールを送信しました。",
+        message: "Registration successful! We've sent a verification email to your address.",
         requiresVerification: true,
         user: {
           id: user.id,
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Registration error:", error)
     return NextResponse.json(
-      { message: "登録に失敗しました。もう一度お試しください。" },
+      { message: "Registration failed. Please try again." },
       { status: 500 }
     )
   }

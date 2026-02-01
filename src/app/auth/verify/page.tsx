@@ -18,7 +18,7 @@ function VerifyEmailContent() {
   useEffect(() => {
     if (!token) {
       setStatus('no-token')
-      setMessage('確認リンクが無効です')
+      setMessage('Invalid verification link')
       return
     }
 
@@ -42,7 +42,7 @@ function VerifyEmailContent() {
         }
       } catch (error) {
         setStatus('error')
-        setMessage('確認に失敗しました。もう一度お試しください。')
+        setMessage('Verification failed. Please try again.')
       }
     }
 
@@ -60,28 +60,28 @@ function VerifyEmailContent() {
             {status === 'no-token' && <Mail className="h-16 w-16 text-gray-400" />}
           </div>
           <CardTitle>
-            {status === 'loading' && '確認中...'}
-            {status === 'success' && '確認完了'}
-            {status === 'error' && '確認失敗'}
-            {status === 'no-token' && 'メール確認'}
+            {status === 'loading' && 'Verifying...'}
+            {status === 'success' && 'Email Verified'}
+            {status === 'error' && 'Verification Failed'}
+            {status === 'no-token' && 'Email Verification'}
           </CardTitle>
           <CardDescription>{message}</CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
           {status === 'success' && (
             <p className="text-sm text-gray-500">
-              3秒後にログインページへ移動します...
+              Redirecting to sign in page in 3 seconds...
             </p>
           )}
 
           {status === 'error' && (
             <div className="space-y-2">
               <p className="text-sm text-gray-500">
-                リンクの有効期限が切れているか、既に確認済みの可能性があります。
+                The link may have expired or was already used.
               </p>
               <Link href="/auth/signin">
                 <Button variant="outline" className="w-full">
-                  ログインページへ
+                  Go to Sign In
                 </Button>
               </Link>
             </div>
@@ -90,11 +90,11 @@ function VerifyEmailContent() {
           {status === 'no-token' && (
             <div className="space-y-2">
               <p className="text-sm text-gray-500">
-                登録時に送信された確認メールのリンクをクリックしてください。
+                Please click the verification link in the email we sent you during registration.
               </p>
               <Link href="/auth/signin">
                 <Button variant="outline" className="w-full">
-                  ログインページへ
+                  Go to Sign In
                 </Button>
               </Link>
             </div>

@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
     if (!token) {
       return NextResponse.json(
-        { message: "確認トークンが必要です" },
+        { message: "Verification token is required" },
         { status: 400 }
       )
     }
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json(
-        { message: "無効または期限切れのトークンです" },
+        { message: "Invalid or expired verification token" },
         { status: 400 }
       )
     }
@@ -56,13 +56,13 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({
-      message: "メールアドレスが確認されました。ログインできます。",
+      message: "Your email has been verified. You can now sign in.",
       success: true
     })
   } catch (error) {
     console.error("Verification error:", error)
     return NextResponse.json(
-      { message: "確認に失敗しました: " + (error instanceof Error ? error.message : "Unknown") },
+      { message: "Verification failed: " + (error instanceof Error ? error.message : "Unknown") },
       { status: 500 }
     )
   }
@@ -74,7 +74,7 @@ export async function PUT(request: Request) {
 
     if (!email) {
       return NextResponse.json(
-        { message: "メールアドレスが必要です" },
+        { message: "Email address is required" },
         { status: 400 }
       )
     }
@@ -84,15 +84,16 @@ export async function PUT(request: Request) {
     })
 
     if (!user) {
+      // Return success even if user not found (security)
       return NextResponse.json({
-        message: "確認メールを再送信しました",
+        message: "Verification email has been resent",
         success: true
       })
     }
 
     if (user.emailVerified) {
       return NextResponse.json(
-        { message: "このメールアドレスは既に確認済みです" },
+        { message: "This email address has already been verified" },
         { status: 400 }
       )
     }
@@ -116,18 +117,18 @@ export async function PUT(request: Request) {
 
     await sendVerificationEmail({
       to: email,
-      name: user.name || 'ユーザー',
+      name: user.name || 'Customer',
       verificationUrl: verificationUrl
     })
 
     return NextResponse.json({
-      message: "確認メールを再送信しました",
+      message: "Verification email has been resent",
       success: true
     })
   } catch (error) {
     console.error("Resend verification error:", error)
     return NextResponse.json(
-      { message: "再送信に失敗しました" },
+      { message: "Failed to resend verification email" },
       { status: 500 }
     )
   }

@@ -23,15 +23,44 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCartStore } from "@/store/cart-store"
 import { createOrder, getUserAddresses } from "./actions"
 import { toast } from "@/hooks/use-toast"
 import { CustomsNotice } from "@/components/CustomsNotice"
 
+const countries = [
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "AU", name: "Australia" },
+  { code: "CA", name: "Canada" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "IT", name: "Italy" },
+  { code: "ES", name: "Spain" },
+  { code: "NL", name: "Netherlands" },
+  { code: "BE", name: "Belgium" },
+  { code: "CH", name: "Switzerland" },
+  { code: "AT", name: "Austria" },
+  { code: "SE", name: "Sweden" },
+  { code: "NO", name: "Norway" },
+  { code: "DK", name: "Denmark" },
+  { code: "FI", name: "Finland" },
+  { code: "JP", name: "Japan" },
+  { code: "SG", name: "Singapore" },
+  { code: "HK", name: "Hong Kong" },
+  { code: "TW", name: "Taiwan" },
+  { code: "KR", name: "South Korea" },
+  { code: "NZ", name: "New Zealand" },
+  { code: "MX", name: "Mexico" },
+  { code: "BR", name: "Brazil" },
+]
+
 interface SavedAddress {
   id: string
   firstName: string
   lastName: string
+  company?: string | null
   street1: string
   street2?: string | null
   city: string
@@ -45,13 +74,17 @@ interface SavedAddress {
 interface ShippingAddress {
   firstName: string
   lastName: string
+  company?: string
   street1: string
   street2?: string
+  street3?: string
   city: string
   state: string
   postalCode: string
   country: string
   phone?: string
+  email?: string
+  isResidential?: boolean
 }
 
 export default function CheckoutPage() {
@@ -74,21 +107,25 @@ export default function CheckoutPage() {
   // Address state
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
-  const [addressMode, setAddressMode] = useState<"registered" | "new">("registered") // 登録済み or 別住所
+  const [addressMode, setAddressMode] = useState<"registered" | "new">("registered")
   const [saveAddress, setSaveAddress] = useState(true)
   const [loadingAddresses, setLoadingAddresses] = useState(true)
 
-  // New address form
+  // New address form (FedEx format)
   const [newAddress, setNewAddress] = useState<ShippingAddress>({
     firstName: "",
     lastName: "",
+    company: "",
     street1: "",
     street2: "",
+    street3: "",
     city: "",
     state: "",
     postalCode: "",
-    country: "Japan",
-    phone: ""
+    country: "US",
+    phone: "",
+    email: "",
+    isResidential: false,
   })
 
   useEffect(() => {
@@ -102,7 +139,6 @@ export default function CheckoutPage() {
         try {
           const addresses = await getUserAddresses(session.user.id)
           setSavedAddresses(addresses as SavedAddress[])
-          // Select default address if exists
           const defaultAddr = addresses.find((a: SavedAddress) => a.isDefault)
           if (defaultAddr) {
             setSelectedAddressId(defaultAddr.id)
@@ -137,9 +173,8 @@ export default function CheckoutPage() {
 
   const getSelectedAddress = (): ShippingAddress | null => {
     if (addressMode === "new") {
-      // Validate new address
-      if (!newAddress.firstName || !newAddress.lastName || !newAddress.street1 ||
-          !newAddress.city || !newAddress.state || !newAddress.postalCode) {
+      if (!newAddress.firstName || !newAddress.street1 ||
+          !newAddress.city || !newAddress.state || !newAddress.postalCode || !newAddress.country) {
         return null
       }
       return newAddress
@@ -151,6 +186,7 @@ export default function CheckoutPage() {
     return {
       firstName: selected.firstName,
       lastName: selected.lastName,
+      company: selected.company || undefined,
       street1: selected.street1,
       street2: selected.street2 || undefined,
       city: selected.city,
@@ -194,7 +230,6 @@ export default function CheckoutPage() {
 
       if (result.success && result.orderNumber) {
         clearCart()
-        // Redirect to payment page with 30-minute countdown
         router.push(`/checkout/payment/${result.orderNumber}`)
       } else {
         toast({
@@ -228,7 +263,6 @@ export default function CheckoutPage() {
     )
   }
 
-  // Not authenticated
   if (!session) {
     return null
   }
@@ -261,7 +295,6 @@ export default function CheckoutPage() {
   const shipping = shippingInfo.shipping
   const total = subtotal + customsFee + shipping
 
-  // BOX購入制限のチェック
   const boxCount = getBoxCount()
   const hasBox = hasBoxItems()
   const boxOrderValid = isBoxOrderValid()
@@ -269,8 +302,8 @@ export default function CheckoutPage() {
 
   const isAddressValid = () => {
     if (addressMode === "new") {
-      return newAddress.firstName && newAddress.lastName && newAddress.street1 &&
-             newAddress.city && newAddress.state && newAddress.postalCode
+      return newAddress.firstName && newAddress.street1 &&
+             newAddress.city && newAddress.state && newAddress.postalCode && newAddress.country
     }
     return selectedAddressId !== null
   }
@@ -365,7 +398,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Shipping Address Card */}
+              {/* Shipping Address Card (FedEx format) */}
               <div className="bg-white rounded-lg border shadow-sm p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <MapPin className="h-5 w-5 text-primary" />
@@ -399,7 +432,7 @@ export default function CheckoutPage() {
                                 <div className="w-3 h-3 rounded-full bg-primary" />
                               )}
                             </div>
-                            <span className="font-medium">Send to registered address</span>
+                            <span className="font-medium">Use saved address</span>
                           </div>
                           {addressMode === "registered" && (
                             <div className="mt-4 ml-8 space-y-2">
@@ -426,9 +459,13 @@ export default function CheckoutPage() {
                                           </span>
                                         )}
                                       </p>
+                                      {address.company && (
+                                        <p className="text-xs text-muted-foreground">{address.company}</p>
+                                      )}
                                       <p className="text-xs text-muted-foreground mt-1">
-                                        〒{address.postalCode} {address.state} {address.city} {address.street1}
-                                        {address.street2 && ` ${address.street2}`}
+                                        {address.street1}
+                                        {address.street2 && `, ${address.street2}`}
+                                        {`, ${address.city}, ${address.state} ${address.postalCode}`}
                                       </p>
                                     </div>
                                     {selectedAddressId === address.id && (
@@ -458,69 +495,79 @@ export default function CheckoutPage() {
                                 <div className="w-3 h-3 rounded-full bg-primary" />
                               )}
                             </div>
-                            <span className="font-medium">Send to a different address</span>
+                            <span className="font-medium">Ship to a different address</span>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* New Address Form */}
+                    {/* New Address Form (FedEx format) */}
                     {(addressMode === "new" || savedAddresses.length === 0) && (
                       <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="contactName">Contact Name <span className="text-red-500">*</span></Label>
+                          <Input
+                            id="contactName"
+                            value={newAddress.firstName}
+                            onChange={(e) => setNewAddress({...newAddress, firstName: e.target.value})}
+                            placeholder="John Doe"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="companyName">Company Name (optional)</Label>
+                          <Input
+                            id="companyName"
+                            value={newAddress.company}
+                            onChange={(e) => setNewAddress({...newAddress, company: e.target.value})}
+                            placeholder="Company Inc."
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">If left blank, your account name will be used</p>
+                        </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
+                            <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
                             <Input
-                              id="firstName"
-                              value={newAddress.firstName}
-                              onChange={(e) => setNewAddress({...newAddress, firstName: e.target.value})}
-                              placeholder="John"
+                              id="phone"
+                              value={newAddress.phone}
+                              onChange={(e) => setNewAddress({...newAddress, phone: e.target.value})}
+                              placeholder="+1 234 567 8900"
                             />
                           </div>
                           <div>
-                            <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
+                            <Label htmlFor="email">Email Address</Label>
                             <Input
-                              id="lastName"
-                              value={newAddress.lastName}
-                              onChange={(e) => setNewAddress({...newAddress, lastName: e.target.value})}
-                              placeholder="Doe"
+                              id="email"
+                              type="email"
+                              value={newAddress.email}
+                              onChange={(e) => setNewAddress({...newAddress, email: e.target.value})}
+                              placeholder="john@example.com"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <Label htmlFor="postalCode">Postal Code <span className="text-red-500">*</span></Label>
-                          <Input
-                            id="postalCode"
-                            value={newAddress.postalCode}
-                            onChange={(e) => setNewAddress({...newAddress, postalCode: e.target.value})}
-                            placeholder="12345"
-                          />
+                          <Label htmlFor="country">Country / Region <span className="text-red-500">*</span></Label>
+                          <Select
+                            value={newAddress.country}
+                            onValueChange={(value) => setNewAddress({...newAddress, country: value})}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a country" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {countries.map((country) => (
+                                <SelectItem key={country.code} value={country.code}>
+                                  {country.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         <div>
-                          <Label htmlFor="state">State/Province <span className="text-red-500">*</span></Label>
-                          <Input
-                            id="state"
-                            value={newAddress.state}
-                            onChange={(e) => setNewAddress({...newAddress, state: e.target.value})}
-                            placeholder="California"
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
-                          <Input
-                            id="city"
-                            value={newAddress.city}
-                            onChange={(e) => setNewAddress({...newAddress, city: e.target.value})}
-                            placeholder="Los Angeles"
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="street1">Street Address <span className="text-red-500">*</span></Label>
+                          <Label htmlFor="street1">Address Line 1 <span className="text-red-500">*</span></Label>
                           <Input
                             id="street1"
                             value={newAddress.street1}
@@ -530,26 +577,67 @@ export default function CheckoutPage() {
                         </div>
 
                         <div>
-                          <Label htmlFor="street2">Apartment, Suite, etc. (Optional)</Label>
+                          <Label htmlFor="street2">Address Line 2</Label>
                           <Input
                             id="street2"
                             value={newAddress.street2}
                             onChange={(e) => setNewAddress({...newAddress, street2: e.target.value})}
-                            placeholder="Apt 4B"
+                            placeholder="Apt, Suite, Unit, etc."
                           />
                         </div>
 
                         <div>
-                          <Label htmlFor="phone">Phone Number (Optional)</Label>
+                          <Label htmlFor="street3">Address Line 3</Label>
                           <Input
-                            id="phone"
-                            value={newAddress.phone}
-                            onChange={(e) => setNewAddress({...newAddress, phone: e.target.value})}
-                            placeholder="+1 234 567 8900"
+                            id="street3"
+                            value={newAddress.street3}
+                            onChange={(e) => setNewAddress({...newAddress, street3: e.target.value})}
+                            placeholder="Additional address info"
                           />
                         </div>
 
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
+                            <Input
+                              id="city"
+                              value={newAddress.city}
+                              onChange={(e) => setNewAddress({...newAddress, city: e.target.value})}
+                              placeholder="Los Angeles"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="state">State / Province <span className="text-red-500">*</span></Label>
+                            <Input
+                              id="state"
+                              value={newAddress.state}
+                              onChange={(e) => setNewAddress({...newAddress, state: e.target.value})}
+                              placeholder="CA"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="postalCode">ZIP Code <span className="text-red-500">*</span></Label>
+                            <Input
+                              id="postalCode"
+                              value={newAddress.postalCode}
+                              onChange={(e) => setNewAddress({...newAddress, postalCode: e.target.value})}
+                              placeholder="90001"
+                            />
+                          </div>
+                        </div>
+
                         <div className="flex items-center space-x-2 pt-2">
+                          <Checkbox
+                            id="isResidential"
+                            checked={newAddress.isResidential}
+                            onCheckedChange={(checked) => setNewAddress({...newAddress, isResidential: checked === true})}
+                          />
+                          <Label htmlFor="isResidential" className="text-sm cursor-pointer">
+                            This is a residential address
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
                           <Checkbox
                             id="saveAddress"
                             checked={saveAddress}

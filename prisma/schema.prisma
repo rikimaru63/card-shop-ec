@@ -330,16 +330,19 @@ model Address {
   type      AddressType @default(SHIPPING)
   isDefault Boolean     @default(false)
 
-  firstName  String
-  lastName   String
-  company    String?
-  street1    String
-  street2    String?
-  city       String
-  state      String
-  postalCode String
-  country    String
-  phone      String?
+  firstName     String
+  lastName      String
+  companyName   String?   // Company name (FedEx format)
+  company       String?   // Legacy field
+  street1       String
+  street2       String?
+  street3       String?   // Address line 3 (FedEx format)
+  city          String
+  state         String
+  postalCode    String
+  country       String
+  phone         String?
+  isResidential Boolean   @default(false) // "This is a residential address" flag
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

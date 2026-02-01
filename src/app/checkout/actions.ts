@@ -129,7 +129,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{
     const { items, email, shippingAddress, saveAddress } = input
 
     if (!items || items.length === 0) {
-      return { success: false, message: "カートが空です" }
+      return { success: false, message: "Your cart is empty" }
     }
 
     // Find user by email
@@ -138,18 +138,18 @@ export async function createOrder(input: CreateOrderInput): Promise<{
     })
 
     if (!user) {
-      return { success: false, message: "ユーザーが見つかりません" }
+      return { success: false, message: "User not found" }
     }
 
     // Check stock availability
     const stockCheck = await checkStockAvailability(items)
     if (!stockCheck.available) {
       const itemList = stockCheck.unavailableItems
-        .map(item => `${item.name}（在庫: ${item.available}個）`)
+        .map(item => `${item.name} (available: ${item.available})`)
         .join(", ")
       return {
         success: false,
-        message: `在庫不足: ${itemList}`
+        message: `Out of stock: ${itemList}`
       }
     }
 
@@ -190,7 +190,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{
 
           // Double-check available stock in transaction
           if (availableStock < item.quantity) {
-            throw new Error(`在庫不足: ${item.name}`)
+            throw new Error(`Out of stock: ${item.name}`)
           }
 
           // Create reservation (stock is held but not decremented)
@@ -280,7 +280,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{
     const emailResult = await sendInvoiceEmail({
       to: user.email,
       orderNumber: order.orderNumber,
-      customerName: `${shippingAddress.lastName} ${shippingAddress.firstName}` || user.name || user.email,
+      customerName: `${shippingAddress.firstName} ${shippingAddress.lastName}`.trim() || user.name || user.email,
       items: items.map(item => ({
         name: item.name,
         quantity: item.quantity,
@@ -308,7 +308,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{
     }
   } catch (error) {
     console.error("Failed to create order:", error)
-    const errorMessage = error instanceof Error ? error.message : "注文の作成に失敗しました。もう一度お試しください。"
+    const errorMessage = error instanceof Error ? error.message : "Failed to create order. Please try again."
     return {
       success: false,
       message: errorMessage
@@ -361,15 +361,15 @@ export async function cancelOrder(orderNumber: string): Promise<{
     })
 
     if (!order) {
-      return { success: false, message: "注文が見つかりません" }
+      return { success: false, message: "Order not found" }
     }
 
     if (order.status === "CANCELLED") {
-      return { success: false, message: "この注文は既にキャンセルされています" }
+      return { success: false, message: "This order has already been cancelled" }
     }
 
     if (order.status === "SHIPPED" || order.status === "DELIVERED") {
-      return { success: false, message: "発送済みの注文はキャンセルできません" }
+      return { success: false, message: "Shipped orders cannot be cancelled" }
     }
 
     // Use transaction to update order status AND handle stock
@@ -413,7 +413,7 @@ export async function cancelOrder(orderNumber: string): Promise<{
     return { success: true }
   } catch (error) {
     console.error("Failed to cancel order:", error)
-    return { success: false, message: "キャンセルに失敗しました" }
+    return { success: false, message: "Failed to cancel order" }
   }
 }
 
@@ -429,20 +429,20 @@ export async function confirmPayment(orderNumber: string): Promise<{
     })
 
     if (!order) {
-      return { success: false, message: "注文が見つかりません" }
+      return { success: false, message: "Order not found" }
     }
 
     if (order.status === "CANCELLED") {
-      return { success: false, message: "この注文はキャンセルされています" }
+      return { success: false, message: "This order has been cancelled" }
     }
 
     if (order.paymentStatus === "PROCESSING" || order.paymentStatus === "COMPLETED") {
-      return { success: false, message: "この注文は既に決済処理済みです" }
+      return { success: false, message: "This order has already been processed" }
     }
 
     // Check if reservation has expired
     if (order.reservationExpiresAt && new Date() > order.reservationExpiresAt) {
-      return { success: false, message: "在庫予約の有効期限が切れています。注文をやり直してください。" }
+      return { success: false, message: "Stock reservation has expired. Please place a new order." }
     }
 
     // Use transaction to confirm reservations and decrement stock
@@ -462,7 +462,7 @@ export async function confirmPayment(orderNumber: string): Promise<{
         if (product?.trackStock) {
           // Verify stock is still available
           if (product.stock < reservation.quantity) {
-            throw new Error("在庫が不足しています")
+            throw new Error("Insufficient stock")
           }
 
           // Actually decrement the stock now
@@ -497,7 +497,7 @@ export async function confirmPayment(orderNumber: string): Promise<{
     return { success: true }
   } catch (error) {
     console.error("Failed to confirm payment:", error)
-    const errorMessage = error instanceof Error ? error.message : "決済確認に失敗しました"
+    const errorMessage = error instanceof Error ? error.message : "Payment confirmation failed"
     return { success: false, message: errorMessage }
   }
 }

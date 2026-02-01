@@ -49,8 +49,10 @@ interface Order {
   shippingAddress: {
     firstName: string
     lastName: string
+    company?: string
     street1: string
     street2?: string
+    street3?: string
     city: string
     state: string
     postalCode: string
@@ -60,19 +62,19 @@ interface Order {
 }
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  PENDING: { label: "支払い待ち", color: "bg-yellow-100 text-yellow-800", icon: Clock },
-  PROCESSING: { label: "処理中", color: "bg-blue-100 text-blue-800", icon: Package },
-  SHIPPED: { label: "発送済み", color: "bg-purple-100 text-purple-800", icon: Truck },
-  DELIVERED: { label: "配達完了", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  CANCELLED: { label: "キャンセル", color: "bg-red-100 text-red-800", icon: XCircle },
+  PENDING: { label: "Awaiting Payment", color: "bg-yellow-100 text-yellow-800", icon: Clock },
+  PROCESSING: { label: "Processing", color: "bg-blue-100 text-blue-800", icon: Package },
+  SHIPPED: { label: "Shipped", color: "bg-purple-100 text-purple-800", icon: Truck },
+  DELIVERED: { label: "Delivered", color: "bg-green-100 text-green-800", icon: CheckCircle },
+  CANCELLED: { label: "Cancelled", color: "bg-red-100 text-red-800", icon: XCircle },
 }
 
 const paymentStatusConfig: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "未払い", color: "bg-yellow-100 text-yellow-800" },
-  PROCESSING: { label: "処理中", color: "bg-blue-100 text-blue-800" },
-  COMPLETED: { label: "支払い済み", color: "bg-green-100 text-green-800" },
-  FAILED: { label: "失敗", color: "bg-red-100 text-red-800" },
-  CANCELLED: { label: "キャンセル", color: "bg-gray-100 text-gray-800" },
+  PENDING: { label: "Unpaid", color: "bg-yellow-100 text-yellow-800" },
+  PROCESSING: { label: "Processing", color: "bg-blue-100 text-blue-800" },
+  COMPLETED: { label: "Paid", color: "bg-green-100 text-green-800" },
+  FAILED: { label: "Failed", color: "bg-red-100 text-red-800" },
+  CANCELLED: { label: "Cancelled", color: "bg-gray-100 text-gray-800" },
 }
 
 export default function OrdersPage() {
@@ -125,13 +127,13 @@ export default function OrdersPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
     toast({
-      title: "コピーしました",
-      description: "クリップボードにコピーしました",
+      title: "Copied",
+      description: "Copied to clipboard",
     })
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ja-JP", {
+    return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -162,20 +164,20 @@ export default function OrdersPage() {
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
-            アカウントに戻る
+            Back to Account
           </Link>
-          <h1 className="text-3xl font-bold">注文履歴</h1>
+          <h1 className="text-3xl font-bold">Order History</h1>
         </div>
 
         {orders.length === 0 ? (
           <div className="bg-white rounded-lg border shadow-sm p-12 text-center">
             <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">注文履歴がありません</h2>
+            <h2 className="text-xl font-semibold mb-2">No Orders Yet</h2>
             <p className="text-muted-foreground mb-6">
-              まだ注文がありません。商品を探してみましょう。
+              You haven&apos;t placed any orders yet. Start browsing our products!
             </p>
             <Link href="/products">
-              <Button>商品を見る</Button>
+              <Button>Browse Products</Button>
             </Link>
           </div>
         ) : (
@@ -258,7 +260,7 @@ export default function OrdersPage() {
                           </div>
                         )}
                         <span className="text-sm text-muted-foreground ml-2">
-                          {order.items.length}点の商品
+                          {order.items.length} {order.items.length === 1 ? "item" : "items"}
                         </span>
                       </div>
                     )}
@@ -269,7 +271,7 @@ export default function OrdersPage() {
                     <div className="border-t">
                       {/* Order Items */}
                       <div className="p-4 space-y-3">
-                        <h3 className="font-semibold mb-3">注文内容</h3>
+                        <h3 className="font-semibold mb-3">Order Items</h3>
                         {order.items.map((item) => (
                           <div key={item.id} className="flex items-center gap-4">
                             <div className="relative w-16 h-16 rounded bg-gray-100 overflow-hidden flex-shrink-0">
@@ -298,23 +300,23 @@ export default function OrdersPage() {
                         <div className="grid md:grid-cols-2 gap-6">
                           {/* Price Summary */}
                           <div>
-                            <h3 className="font-semibold mb-3">金額詳細</h3>
+                            <h3 className="font-semibold mb-3">Price Details</h3>
                             <div className="space-y-2 text-sm">
                               <div className="flex justify-between">
-                                <span>小計</span>
+                                <span>Subtotal</span>
                                 <span>¥{Number(order.subtotal).toLocaleString()}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span>送料</span>
+                                <span>Shipping</span>
                                 <span>
                                   {Number(order.shipping) === 0
-                                    ? "無料"
+                                    ? "Free"
                                     : `¥${Number(order.shipping).toLocaleString()}`
                                   }
                                 </span>
                               </div>
                               <div className="flex justify-between font-bold text-base pt-2 border-t">
-                                <span>合計</span>
+                                <span>Total</span>
                                 <span>¥{Number(order.total).toLocaleString()}</span>
                               </div>
                             </div>
@@ -322,22 +324,27 @@ export default function OrdersPage() {
 
                           {/* Shipping Address */}
                           <div>
-                            <h3 className="font-semibold mb-3">配送先</h3>
+                            <h3 className="font-semibold mb-3">Shipping Address</h3>
                             <div className="text-sm text-muted-foreground">
                               <p className="font-medium text-foreground">
-                                {order.shippingAddress.lastName} {order.shippingAddress.firstName}
+                                {order.shippingAddress.firstName} {order.shippingAddress.lastName}
                               </p>
-                              <p>〒{order.shippingAddress.postalCode}</p>
-                              <p>
-                                {order.shippingAddress.state}
-                                {order.shippingAddress.city}
-                                {order.shippingAddress.street1}
-                              </p>
+                              {order.shippingAddress.company && (
+                                <p>{order.shippingAddress.company}</p>
+                              )}
+                              <p>{order.shippingAddress.street1}</p>
                               {order.shippingAddress.street2 && (
                                 <p>{order.shippingAddress.street2}</p>
                               )}
+                              {order.shippingAddress.street3 && (
+                                <p>{order.shippingAddress.street3}</p>
+                              )}
+                              <p>
+                                {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}
+                              </p>
+                              <p>{order.shippingAddress.country}</p>
                               {order.shippingAddress.phone && (
-                                <p>TEL: {order.shippingAddress.phone}</p>
+                                <p>Phone: {order.shippingAddress.phone}</p>
                               )}
                             </div>
                           </div>
@@ -346,7 +353,7 @@ export default function OrdersPage() {
                         {/* Tracking Info */}
                         {order.trackingNumber && (
                           <div className="mt-4 pt-4 border-t">
-                            <h3 className="font-semibold mb-2">追跡情報</h3>
+                            <h3 className="font-semibold mb-2">Tracking Information</h3>
                             <div className="flex items-center gap-2">
                               <span className="font-mono">{order.trackingNumber}</span>
                               <button
@@ -364,7 +371,7 @@ export default function OrdersPage() {
                           <div className="mt-4 pt-4 border-t">
                             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                               <p className="text-sm text-amber-800 mb-3">
-                                お支払いがまだ完了していません。Wiseでお支払いください。
+                                Your payment has not been completed yet. Please pay via Wise.
                               </p>
                               <a
                                 href="https://wise.com/pay/business/kms22"
@@ -372,7 +379,7 @@ export default function OrdersPage() {
                                 rel="noopener noreferrer"
                               >
                                 <Button className="bg-green-600 hover:bg-green-700">
-                                  Wiseで支払う
+                                  Pay with Wise
                                   <ExternalLink className="h-4 w-4 ml-2" />
                                 </Button>
                               </a>

@@ -137,7 +137,7 @@ export default function ProductsPage() {
     image: product.image || "/placeholder-card.svg",
     price: product.price,
     comparePrice: product.comparePrice,
-    category: product.category?.name || "その他",
+    category: product.category?.name || "Other",
     rarity: product.rarity,
     condition: product.condition,
     stock: product.stock,
