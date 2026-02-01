@@ -106,28 +106,37 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
   }, [])
 
   // Initialize filters from URL on mount
+  // Use a ref to prevent URL→State sync from triggering State→URL sync
+  const isSyncingFromUrl = useRef(false)
+
   useEffect(() => {
+    isSyncingFromUrl.current = true
+
     const game = searchParams.get("game")
     const sets = searchParams.get("cardSet")?.split(",").filter(Boolean) || []
     const rarities = searchParams.get("rarity")?.split(",").filter(Boolean) || []
-    const conditions = searchParams.get("condition")?.split(",").filter(Boolean) || []
+    const conditionParams = searchParams.get("condition")?.split(",").filter(Boolean) || []
     const productType = searchParams.get("productType")
     const minPrice = searchParams.get("minPrice")
     const maxPrice = searchParams.get("maxPrice")
     const inStock = searchParams.get("inStock") === "true"
 
-    if (game) setSelectedGame(game)
-    if (sets.length > 0) setSelectedSets(sets)
-    if (rarities.length > 0) setSelectedRarities(rarities)
-    if (conditions.length > 0) setSelectedConditions(conditions)
-    if (productType) setSelectedProductType(productType)
-    if (minPrice || maxPrice) {
-      setPriceRange([
-        minPrice ? parseInt(minPrice) : 0,
-        maxPrice ? parseInt(maxPrice) : 100000
-      ])
-    }
+    setSelectedGame(game)
+    setSelectedSets(sets)
+    setSelectedRarities(rarities)
+    setSelectedConditions(conditionParams)
+    setSelectedProductType(productType)
+    setPriceRange([
+      minPrice ? parseInt(minPrice) : 0,
+      maxPrice ? parseInt(maxPrice) : 100000
+    ])
     setInStockOnly(inStock)
+
+    // Allow state→URL sync again after React processes these updates
+    // Use requestAnimationFrame to ensure all state updates are batched
+    requestAnimationFrame(() => {
+      isSyncingFromUrl.current = false
+    })
   }, [searchParams])
 
   // Auto-apply: update URL whenever any filter state changes
@@ -138,6 +147,11 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
     // Skip auto-apply during initial URL → state sync
     if (!isInitialized.current) {
       isInitialized.current = true
+      return
+    }
+
+    // Skip if currently syncing from URL (prevents redirect loop)
+    if (isSyncingFromUrl.current) {
       return
     }
 
@@ -153,8 +167,13 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
     if (inStockOnly) params.set("inStock", "true")
 
     const queryString = params.toString()
-    router.push(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false })
-  }, [router, pathname, selectedGame, selectedSets, selectedRarities, selectedConditions, selectedProductType, priceRange, inStockOnly])
+    const currentQuery = searchParams.toString()
+
+    // Only push if the URL actually needs to change
+    if (queryString !== currentQuery) {
+      router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false })
+    }
+  }, [router, pathname, searchParams, selectedGame, selectedSets, selectedRarities, selectedConditions, selectedProductType, priceRange, inStockOnly])
 
   // Clear all filters
   const clearFilters = () => {
