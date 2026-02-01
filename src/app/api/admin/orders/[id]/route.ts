@@ -140,3 +140,34 @@ export async function PATCH(
     )
   }
 }
+
+// DELETE - Delete order
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const isAuthorized = await isAdminAuthorized(request)
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Delete related records first, then order
+    await prisma.$transaction(async (tx) => {
+      await tx.orderItem.deleteMany({ where: { orderId: params.id } })
+      await tx.payment.deleteMany({ where: { orderId: params.id } })
+      await tx.order.delete({ where: { id: params.id } })
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting order:', error)
+    return NextResponse.json(
+      { error: '注文の削除に失敗しました' },
+      { status: 500 }
+    )
+  }
+}

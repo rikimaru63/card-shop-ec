@@ -40,7 +40,8 @@ import {
   XCircle,
   Clock,
   CreditCard,
-  MapPin
+  MapPin,
+  Trash2
 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 
@@ -282,6 +283,9 @@ export default function OrdersPage() {
   // Dialog states
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -322,6 +326,33 @@ export default function OrdersPage() {
   const handleViewDetail = (order: Order) => {
     setSelectedOrder(order)
     setDetailDialogOpen(true)
+  }
+
+  const handleDeleteClick = (order: Order) => {
+    setOrderToDelete(order)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!orderToDelete) return
+    setDeleting(true)
+    try {
+      const response = await fetch(`/api/admin/orders/${orderToDelete.id}`, {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        toast({ title: "Deleted", description: `Order #${orderToDelete.orderNumber.slice(-8)} deleted.` })
+        setDeleteDialogOpen(false)
+        setOrderToDelete(null)
+        fetchOrders()
+      } else {
+        throw new Error('Delete failed')
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete order", variant: "destructive" })
+    } finally {
+      setDeleting(false)
+    }
   }
 
   // Inline status update
@@ -516,13 +547,21 @@ export default function OrdersPage() {
                   <TableCell className="text-sm text-gray-500">
                     {formatDate(order.createdAt)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-1">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleViewDetail(order)}
                     >
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteClick(order)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -561,6 +600,26 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Order</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete order #{orderToDelete?.orderNumber.slice(-8)}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Order Detail Dialog */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
