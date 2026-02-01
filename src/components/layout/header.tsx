@@ -100,20 +100,24 @@ export function Header() {
             />
           </Link>
 
-          <nav className="hidden lg:flex items-center space-x-1">
-            {categories.map((category) => (
+          <nav className="hidden lg:flex items-center">
+            {categories.map((category, index) => (
               <div
                 key={category.name}
-                className="relative"
+                className="relative flex-shrink-0"
                 onMouseEnter={() => setActiveCategory(category.name)}
                 onMouseLeave={() => setActiveCategory(null)}
               >
                 <Link
                   href={category.href}
-                  className="px-4 py-2 text-sm font-semibold text-foreground hover:text-primary transition-colors flex items-center gap-1"
+                  className="block px-4 py-2 text-sm font-semibold text-foreground hover:text-primary transition-colors duration-150 flex items-center gap-1 whitespace-nowrap"
+                  style={{
+                    minWidth: 'fit-content',
+                    textDecoration: 'none',
+                  }}
                 >
-                  {category.name}
-                  <ChevronDown className="h-3 w-3" />
+                  <span className="inline-block">{category.name}</span>
+                  <ChevronDown className="h-3 w-3 flex-shrink-0" />
                 </Link>
 
                 {activeCategory === category.name && (

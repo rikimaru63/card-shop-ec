@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nav Bug Debug</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <h1 class="text-2xl p-4">Navigation Bug Debug Test</h1>
+    
+    <!-- Original Navigation Structure -->
+    <div class="bg-white border-b p-4 mb-4">
+        <h2 class="text-lg mb-2">Current Navigation (Normal)</h2>
+        <nav class="hidden lg:flex items-center space-x-1">
+            <div class="relative">
+                <a href="/?game=pokemon" class="px-4 py-2 text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors flex items-center gap-1">
+                    Pokemon Cards
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </a>
+            </div>
+            <div class="relative">
+                <a href="/?game=onepiece" class="px-4 py-2 text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors flex items-center gap-1">
+                    One Piece Cards
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </a>
+            </div>
+            <div class="relative">
+                <a href="/?game=other" class="px-4 py-2 text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors flex items-center gap-1">
+                    Other
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Test potential issues -->
+    <div class="bg-white border-b p-4 mb-4">
+        <h2 class="text-lg mb-2">Test: Text Overlap Issue</h2>
+        <div class="text-sm">Simulated broken text: PokemonPokemon CardsOne PieOne Piece CardsOther - Other</div>
+    </div>
+
+    <!-- Test with different CSS -->
+    <div class="bg-white border-b p-4 mb-4">
+        <h2 class="text-lg mb-2">Test: Potential CSS Issue</h2>
+        <nav class="flex items-center space-x-1" style="white-space: nowrap; overflow: hidden;">
+            <div class="relative">
+                <a href="#" class="px-4 py-2 text-sm font-semibold flex items-center gap-1">
+                    Pokemon Cards
+                </a>
+            </div>
+            <div class="relative">
+                <a href="#" class="px-4 py-2 text-sm font-semibold flex items-center gap-1">
+                    One Piece Cards
+                </a>
+            </div>
+            <div class="relative">
+                <a href="#" class="px-4 py-2 text-sm font-semibold flex items-center gap-1">
+                    Other
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <script>
+        console.log('Navigation debug page loaded');
+        // Test dynamic content changes
+        setTimeout(() => {
+            console.log('Simulating filter change...');
+        }, 1000);
+    </script>
+</body>
+</html>
