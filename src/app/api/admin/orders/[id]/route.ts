@@ -54,6 +54,39 @@ export async function GET(
   }
 }
 
+// DELETE - Delete an order
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const isAuthorized = await isAdminAuthorized(request)
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Delete payment first (no cascade), then order (OrderItems cascade-delete)
+    await prisma.payment.deleteMany({
+      where: { orderId: params.id }
+    })
+
+    await prisma.order.delete({
+      where: { id: params.id }
+    })
+
+    return NextResponse.json({ success: true, message: '注文を削除しました' })
+  } catch (error) {
+    console.error('Error deleting order:', error)
+    return NextResponse.json(
+      { error: '注文の削除に失敗しました' },
+      { status: 500 }
+    )
+  }
+}
+
 // PATCH - Update order status
 export async function PATCH(
   request: NextRequest,

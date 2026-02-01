@@ -49,23 +49,23 @@ type ProductWithImages = Product & { images: ProductImage[]; category: Category 
 
 // Display labels
 const productTypeLabels: { [key: string]: string } = {
-  'SINGLE': 'Single',
+  'SINGLE': 'シングル',
   'BOX': 'BOX',
-  'OTHER': 'Other',
+  'OTHER': 'その他',
 };
 
 const conditionLabels: { [key: string]: string } = {
-  'GRADE_A': 'A',
-  'GRADE_B': 'B',
-  'GRADE_C': 'C',
+  'GRADE_A': 'A：美品',
+  'GRADE_B': 'B：良品',
+  'GRADE_C': 'C：ダメージ',
   'PSA': 'PSA',
-  'SEALED': 'Sealed',
+  'SEALED': '未開封',
 };
 
 const categoryLabels: { [key: string]: string } = {
-  'pokemon-cards': 'Pokémon',
-  'onepiece-cards': 'One Piece',
-  'other-cards': 'Other',
+  'pokemon-cards': 'ポケモン',
+  'onepiece-cards': 'ワンピース',
+  'other-cards': 'その他',
 };
 
 interface ProductListProps {
@@ -146,14 +146,14 @@ function SortableRow({
           onClick={() => onEdit(product.id)}
         >
           <ImageIcon className="h-4 w-4 mr-1" />
-          Edit
+          編集
         </Button>
         <Button
           variant="destructive"
           size="sm"
           onClick={() => onDelete(product.id)}
         >
-          Delete
+          削除
         </Button>
       </TableCell>
     </TableRow>
@@ -225,8 +225,8 @@ export function ProductList({ initialProducts, onRefresh }: ProductListProps) {
       const result = await deleteProduct(productToDeleteId);
       if (result.success) {
         toast({
-          title: "Success",
-          description: "Product deleted successfully.",
+          title: "削除完了",
+          description: "商品を削除しました",
         });
         setProducts(products.filter(product => product.id !== productToDeleteId));
         if (onRefresh) {
@@ -234,8 +234,8 @@ export function ProductList({ initialProducts, onRefresh }: ProductListProps) {
         }
       } else {
         toast({
-          title: "Error",
-          description: result.message || "Failed to delete product.",
+          title: "エラー",
+          description: result.message || "商品の削除に失敗しました",
           variant: "destructive",
         });
       }
@@ -253,8 +253,8 @@ export function ProductList({ initialProducts, onRefresh }: ProductListProps) {
     // Only allow reorder when not searching
     if (searchQuery.trim()) {
       toast({
-        title: "Note",
-        description: "Clear search to reorder products.",
+        title: "お知らせ",
+        description: "並び替えるには検索をクリアしてください",
       });
       return;
     }
@@ -283,15 +283,15 @@ export function ProductList({ initialProducts, onRefresh }: ProductListProps) {
       }
 
       toast({
-        title: "Saved",
-        description: "Product order updated.",
+        title: "保存完了",
+        description: "商品の並び順を更新しました",
       });
     } catch (error) {
       // Revert on failure
       setProducts(initialProducts);
       toast({
-        title: "Error",
-        description: "Failed to save product order.",
+        title: "エラー",
+        description: "並び順の保存に失敗しました",
         variant: "destructive",
       });
     }
@@ -307,7 +307,7 @@ export function ProductList({ initialProducts, onRefresh }: ProductListProps) {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             type="text"
-            placeholder="Search by name, card no., card set..."
+            placeholder="商品名、カードNo.、カードセットで検索..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 pr-10"
@@ -323,12 +323,12 @@ export function ProductList({ initialProducts, onRefresh }: ProductListProps) {
         </div>
         {searchQuery && (
           <p className="text-sm text-gray-500 mt-2">
-            {filteredProducts.length} products found
+            {filteredProducts.length}件の商品が見つかりました
           </p>
         )}
         {!searchQuery && (
           <p className="text-xs text-gray-400 mt-2">
-            💡 Drag rows to reorder products. Order is saved automatically.
+            💡 行をドラッグして商品の並び順を変更できます。順序は自動保存されます。
           </p>
         )}
       </div>
@@ -343,15 +343,15 @@ export function ProductList({ initialProducts, onRefresh }: ProductListProps) {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[40px]"></TableHead>
-                <TableHead className="w-[80px]">Image</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="w-[100px]">Card No.</TableHead>
-                <TableHead className="w-[80px]">Category</TableHead>
-                <TableHead className="w-[80px]">Type</TableHead>
-                <TableHead className="w-[70px]">Condition</TableHead>
-                <TableHead className="w-[80px]">Price</TableHead>
-                <TableHead className="w-[50px]">Stock</TableHead>
-                <TableHead className="text-right w-[140px]">Actions</TableHead>
+                <TableHead className="w-[80px]">画像</TableHead>
+                <TableHead>商品名</TableHead>
+                <TableHead className="w-[100px]">カードNo.</TableHead>
+                <TableHead className="w-[80px]">カテゴリ</TableHead>
+                <TableHead className="w-[80px]">タイプ</TableHead>
+                <TableHead className="w-[70px]">状態</TableHead>
+                <TableHead className="w-[80px]">価格</TableHead>
+                <TableHead className="w-[50px]">在庫</TableHead>
+                <TableHead className="text-right w-[140px]">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -377,14 +377,14 @@ export function ProductList({ initialProducts, onRefresh }: ProductListProps) {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>商品を削除しますか？</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The product data will be permanently deleted.
+              この操作は取り消せません。商品データは完全に削除されます。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>削除</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

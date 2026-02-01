@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Heart, ShoppingCart, Star, Check } from "lucide-react"
+import { Heart, ShoppingCart, Star, Check, Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn, formatPrice } from "@/lib/utils"
 import { formatCategoryName, formatConditionLabel } from "@/lib/filter-config"
@@ -45,6 +45,7 @@ export function ProductCard({
   const [showAddedToCart, setShowAddedToCart] = useState(false)
   const [imageError, setImageError] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [quantity, setQuantity] = useState(1)
   const addToCart = useCartStore((state) => state.addItem)
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
   const isWishlisted = isInWishlist(id)
@@ -68,9 +69,19 @@ export function ProductCard({
       rarity,
       condition,
       stock
-    })
+    }, quantity)
     setShowAddedToCart(true)
+    setQuantity(1)
     setTimeout(() => setShowAddedToCart(false), 2000)
+  }
+
+  const handleQuantityChange = (e: React.MouseEvent, delta: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const newQty = quantity + delta
+    if (newQty >= 1 && newQty <= stock) {
+      setQuantity(newQty)
+    }
   }
   
   const handleToggleWishlist = (e: React.MouseEvent) => {
@@ -257,8 +268,27 @@ export function ProductCard({
         </div>
       </Link>
 
-      {/* カートボタン */}
-      <div className="px-4 pb-4">
+      {/* 数量選択 & カートボタン */}
+      <div className="px-4 pb-4 space-y-2">
+        {!isOutOfStock && (
+          <div className="flex items-center justify-center gap-1">
+            <button
+              onClick={(e) => handleQuantityChange(e, -1)}
+              disabled={quantity <= 1}
+              className="h-7 w-7 flex items-center justify-center rounded border border-input bg-background hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Minus className="h-3 w-3" />
+            </button>
+            <span className="min-w-[36px] text-center text-sm font-medium">{quantity}</span>
+            <button
+              onClick={(e) => handleQuantityChange(e, 1)}
+              disabled={quantity >= stock}
+              className="h-7 w-7 flex items-center justify-center rounded border border-input bg-background hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Plus className="h-3 w-3" />
+            </button>
+          </div>
+        )}
         <Button
           size="sm"
           className="w-full"
@@ -268,12 +298,12 @@ export function ProductCard({
           {showAddedToCart ? (
             <>
               <Check className="h-4 w-4 mr-2" />
-              Added to Cart
+              カートに追加しました
             </>
           ) : (
             <>
               <ShoppingCart className="h-4 w-4 mr-2" />
-              {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+              {isOutOfStock ? "在庫切れ" : "カートに追加"}
             </>
           )}
         </Button>

@@ -40,7 +40,9 @@ import {
   XCircle,
   Clock,
   CreditCard,
-  MapPin
+  MapPin,
+  Trash2,
+  Ban
 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 
@@ -100,21 +102,21 @@ interface Order {
 }
 
 const orderStatusLabels: Record<string, string> = {
-  PENDING: "Pending",
-  PROCESSING: "Processing",
-  SHIPPED: "Shipped",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
-  REFUNDED: "Refunded"
+  PENDING: "保留中",
+  PROCESSING: "処理中",
+  SHIPPED: "発送済み",
+  DELIVERED: "配達完了",
+  CANCELLED: "キャンセル",
+  REFUNDED: "返金済み"
 }
 
 const paymentStatusLabels: Record<string, string> = {
-  PENDING: "Unpaid",
-  PROCESSING: "Processing",
-  COMPLETED: "Paid",
-  FAILED: "Failed",
-  CANCELLED: "Cancelled",
-  REFUNDED: "Refunded"
+  PENDING: "未払い",
+  PROCESSING: "処理中",
+  COMPLETED: "支払済み",
+  FAILED: "失敗",
+  CANCELLED: "キャンセル",
+  REFUNDED: "返金済み"
 }
 
 const orderStatusColors: Record<string, string> = {
@@ -244,7 +246,7 @@ function formatAddress(addr: ShippingAddress | null): string {
 }
 
 function formatAddressMultiline(addr: ShippingAddress | null): React.ReactNode {
-  if (!addr) return <span className="text-gray-400">No address</span>
+  if (!addr) return <span className="text-gray-400">住所なし</span>
   const name = addr.contactName || [addr.firstName, addr.lastName].filter(Boolean).join(" ")
   return (
     <div className="text-sm space-y-0.5">
@@ -262,7 +264,7 @@ function formatAddressMultiline(addr: ShippingAddress | null): React.ReactNode {
       {addr.phone && <p className="text-gray-500">📞 {addr.phone}</p>}
       {addr.isResidential !== undefined && (
         <p className="text-xs text-gray-400">
-          {addr.isResidential ? "Residential" : "Commercial"}
+          {addr.isResidential ? "個人宅" : "法人"}
         </p>
       )}
     </div>
@@ -282,6 +284,8 @@ export default function OrdersPage() {
   // Dialog states
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -300,8 +304,8 @@ export default function OrdersPage() {
       setTotal(data.pagination.total)
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to fetch orders",
+        title: "エラー",
+        description: "注文の取得に失敗しました",
         variant: "destructive"
       })
     } finally {
@@ -343,24 +347,71 @@ export default function OrdersPage() {
           setSelectedOrder(prev => prev ? { ...prev, [field]: newValue } : null)
         }
         toast({
-          title: "Updated",
-          description: `Order ${field === 'status' ? 'status' : 'payment status'} updated.`,
+          title: "更新完了",
+          description: `${field === 'status' ? '注文ステータス' : '支払いステータス'}を更新しました`,
         })
       } else {
         throw new Error('Update failed')
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update order",
+        title: "エラー",
+        description: "注文の更新に失敗しました",
         variant: "destructive"
       })
       throw error
     }
   }
 
+  // 注文を削除
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return
+
+    try {
+      const response = await fetch(`/api/admin/orders/${orderToDelete.id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        toast({
+          title: "削除完了",
+          description: `注文 #${orderToDelete.orderNumber.slice(-8)} を削除しました`,
+        })
+        setDeleteDialogOpen(false)
+        setOrderToDelete(null)
+        // Close detail dialog if this order was open
+        if (selectedOrder?.id === orderToDelete.id) {
+          setDetailDialogOpen(false)
+        }
+        fetchOrders()
+      } else {
+        throw new Error('Delete failed')
+      }
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "注文の削除に失敗しました",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // 注文をキャンセル（ステータス変更）
+  const handleCancelOrder = async (order: Order) => {
+    try {
+      await updateOrderStatus(order.id, 'status', 'CANCELLED')
+    } catch (error) {
+      // updateOrderStatus already shows toast
+    }
+  }
+
+  const confirmDeleteOrder = (order: Order) => {
+    setOrderToDelete(order)
+    setDeleteDialogOpen(true)
+  }
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('ja-JP', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -372,8 +423,8 @@ export default function OrdersPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Order Management</h1>
-        <span className="text-gray-500">{total} orders</span>
+        <h1 className="text-3xl font-bold">注文管理</h1>
+        <span className="text-gray-500">{total}件の注文</span>
       </div>
 
       {/* Search and Filters */}
@@ -382,39 +433,39 @@ export default function OrdersPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search by order number or email..."
+              placeholder="注文番号またはメールで検索..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
             />
           </div>
-          <Button type="submit">Search</Button>
+          <Button type="submit">検索</Button>
         </form>
 
         <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(1); }}>
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="Order Status" />
+            <SelectValue placeholder="注文ステータス" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="PROCESSING">Processing</SelectItem>
-            <SelectItem value="SHIPPED">Shipped</SelectItem>
-            <SelectItem value="DELIVERED">Delivered</SelectItem>
-            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+            <SelectItem value="all">すべて</SelectItem>
+            <SelectItem value="PENDING">保留中</SelectItem>
+            <SelectItem value="PROCESSING">処理中</SelectItem>
+            <SelectItem value="SHIPPED">発送済み</SelectItem>
+            <SelectItem value="DELIVERED">配達完了</SelectItem>
+            <SelectItem value="CANCELLED">キャンセル</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={paymentFilter} onValueChange={(value) => { setPaymentFilter(value); setPage(1); }}>
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="Payment Status" />
+            <SelectValue placeholder="支払いステータス" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="PENDING">Unpaid</SelectItem>
-            <SelectItem value="COMPLETED">Paid</SelectItem>
-            <SelectItem value="FAILED">Failed</SelectItem>
-            <SelectItem value="REFUNDED">Refunded</SelectItem>
+            <SelectItem value="all">すべて</SelectItem>
+            <SelectItem value="PENDING">未払い</SelectItem>
+            <SelectItem value="COMPLETED">支払済み</SelectItem>
+            <SelectItem value="FAILED">失敗</SelectItem>
+            <SelectItem value="REFUNDED">返金済み</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -424,28 +475,28 @@ export default function OrdersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Order #</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Payment</TableHead>
-              <TableHead>Shipping Address</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>注文番号</TableHead>
+              <TableHead>顧客</TableHead>
+              <TableHead>商品</TableHead>
+              <TableHead>合計</TableHead>
+              <TableHead>ステータス</TableHead>
+              <TableHead>支払い</TableHead>
+              <TableHead>配送先</TableHead>
+              <TableHead>日付</TableHead>
+              <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8">
-                  Loading...
+                  読み込み中...
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8 text-gray-500">
-                  No orders found
+                  注文が見つかりません
                 </TableCell>
               </TableRow>
             ) : (
@@ -456,7 +507,7 @@ export default function OrdersPage() {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{order.user?.name || "Guest"}</p>
+                      <p className="font-medium">{order.user?.name || "ゲスト"}</p>
                       <p className="text-sm text-gray-500">{order.email}</p>
                     </div>
                   </TableCell>
@@ -517,13 +568,36 @@ export default function OrdersPage() {
                     {formatDate(order.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewDetail(order)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="詳細を見る"
+                        onClick={() => handleViewDetail(order)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="キャンセル"
+                          className="text-orange-600 hover:text-orange-700"
+                          onClick={() => handleCancelOrder(order)}
+                        >
+                          <Ban className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="削除"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => confirmDeleteOrder(order)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -535,7 +609,7 @@ export default function OrdersPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t">
             <div className="text-sm text-gray-500">
-              Showing {(page - 1) * 20 + 1} - {Math.min(page * 20, total)} of {total}
+              {total}件中 {(page - 1) * 20 + 1} - {Math.min(page * 20, total)}件
             </div>
             <div className="flex gap-2">
               <Button
@@ -562,11 +636,32 @@ export default function OrdersPage() {
         )}
       </div>
 
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>注文を削除</DialogTitle>
+            <DialogDescription>
+              注文 #{orderToDelete?.orderNumber.slice(-8)} を削除しますか？
+              この操作は取り消せません。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              キャンセル
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteOrder}>
+              削除する
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Order Detail Dialog */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Order Details</DialogTitle>
+            <DialogTitle>注文詳細</DialogTitle>
             <DialogDescription>
               #{selectedOrder?.orderNumber.slice(-8)}
             </DialogDescription>
@@ -575,27 +670,27 @@ export default function OrdersPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-gray-500">Customer</Label>
-                  <p className="font-medium">{selectedOrder.user?.name || "Guest"}</p>
+                  <Label className="text-sm text-gray-500">顧客</Label>
+                  <p className="font-medium">{selectedOrder.user?.name || "ゲスト"}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-gray-500">Email</Label>
+                  <Label className="text-sm text-gray-500">メールアドレス</Label>
                   <p className="font-medium">{selectedOrder.email}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-gray-500">Order Date</Label>
+                  <Label className="text-sm text-gray-500">注文日</Label>
                   <p className="font-medium">{formatDate(selectedOrder.createdAt)}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-gray-500">Tracking Number</Label>
-                  <p className="font-medium">{selectedOrder.trackingNumber || "Not set"}</p>
+                  <Label className="text-sm text-gray-500">追跡番号</Label>
+                  <p className="font-medium">{selectedOrder.trackingNumber || "未設定"}</p>
                 </div>
               </div>
 
               {/* Status Inline Edit */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-gray-500 mb-1 block">Order Status</Label>
+                  <Label className="text-sm text-gray-500 mb-1 block">注文ステータス</Label>
                   <InlineStatusSelect
                     value={selectedOrder.status}
                     options={ORDER_STATUSES}
@@ -606,7 +701,7 @@ export default function OrdersPage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm text-gray-500 mb-1 block">Payment Status</Label>
+                  <Label className="text-sm text-gray-500 mb-1 block">支払いステータス</Label>
                   <InlineStatusSelect
                     value={selectedOrder.paymentStatus}
                     options={PAYMENT_STATUSES}
@@ -621,7 +716,7 @@ export default function OrdersPage() {
               <div>
                 <Label className="text-sm text-gray-500 mb-2 block">
                   <MapPin className="h-4 w-4 inline mr-1" />
-                  Shipping Address
+                  配送先住所
                 </Label>
                 <div className="bg-gray-50 rounded-lg p-4">
                   {formatAddressMultiline(selectedOrder.shippingAddress)}
@@ -630,7 +725,7 @@ export default function OrdersPage() {
 
               {/* Order Items */}
               <div>
-                <Label className="text-sm text-gray-500 mb-2 block">Items</Label>
+                <Label className="text-sm text-gray-500 mb-2 block">商品</Label>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                   {selectedOrder.items.map((item) => (
                     <div key={item.id} className="flex items-center gap-3">
@@ -657,8 +752,32 @@ export default function OrdersPage() {
                 </div>
               </div>
 
+              {/* キャンセル・削除ボタン */}
+              <div className="flex gap-2 pt-4 border-t">
+                {selectedOrder.status !== 'CANCELLED' && selectedOrder.status !== 'DELIVERED' && (
+                  <Button
+                    variant="outline"
+                    className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                    onClick={() => handleCancelOrder(selectedOrder)}
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    注文をキャンセル
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setDetailDialogOpen(false)
+                    confirmDeleteOrder(selectedOrder)
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  注文を削除
+                </Button>
+              </div>
+
               <div className="flex justify-between items-center pt-4 border-t">
-                <span className="text-lg font-semibold">Total</span>
+                <span className="text-lg font-semibold">合計</span>
                 <span className="text-xl font-bold">
                   ¥{Number(selectedOrder.total).toLocaleString()}
                 </span>

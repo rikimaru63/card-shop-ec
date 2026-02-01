@@ -123,7 +123,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       rarity: product.rarity,
       condition: product.condition,
       stock: product.stock
-    })
+    }, quantity)
     setShowAddedToCart(true)
     setTimeout(() => setShowAddedToCart(false), 3000)
   }

@@ -25,7 +25,7 @@ interface ShippingInfo {
 
 interface CartStore {
   items: CartItem[]
-  addItem: (item: Omit<CartItem, 'quantity'>) => void
+  addItem: (item: Omit<CartItem, 'quantity'>, qty?: number) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
@@ -44,29 +44,24 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       
-      addItem: (item) => {
-        console.log('🏪 Cart Store: addItem called with:', item)
+      addItem: (item, qty?: number) => {
+        const addQty = qty && qty > 0 ? qty : 1
         
         set((state) => {
-          console.log('📊 Current cart state:', state.items)
           const existingItem = state.items.find((i) => i.id === item.id)
           
           if (existingItem) {
-            console.log('🔄 Item exists, incrementing quantity')
             // アイテムが既に存在する場合、数量を増やす
             const newItems = state.items.map((i) =>
               i.id === item.id
-                ? { ...i, quantity: Math.min(i.quantity + 1, i.stock) }
+                ? { ...i, quantity: Math.min(i.quantity + addQty, i.stock) }
                 : i
             )
-            console.log('✅ Updated cart:', newItems)
             return { items: newItems }
           }
           
-          console.log('➕ Adding new item to cart')
           // 新しいアイテムを追加
-          const newItems = [...state.items, { ...item, quantity: 1 }]
-          console.log('✅ New cart:', newItems)
+          const newItems = [...state.items, { ...item, quantity: Math.min(addQty, item.stock) }]
           return { items: newItems }
         })
       },
