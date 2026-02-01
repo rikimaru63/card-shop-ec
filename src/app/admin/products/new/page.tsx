@@ -247,8 +247,8 @@ export default function NewProductPage() {
         description: "商品が正常に登録されました"
       })
 
-      // Redirect to product detail or list
-      router.push(`/admin/products/${product.id}`)
+      // Redirect to product list (detail page doesn't exist)
+      router.push('/admin/products')
     } catch (error) {
       console.error("Failed to create product:", error)
       toast({
