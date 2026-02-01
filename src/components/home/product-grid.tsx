@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { useCartStore } from "@/store/cart-store"
 import { useWishlistStore } from "@/store/wishlist-store"
 import { cn } from "@/lib/utils"
+import { formatConditionLabel } from "@/lib/filter-config"
 
 type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
 
@@ -184,15 +185,7 @@ export function ProductGrid() {
   // Format condition for display
   const formatCondition = (condition: string | null): string => {
     if (!condition) return ''
-    const map: { [key: string]: string } = {
-      'MINT': 'Mint',
-      'NEAR_MINT': 'Near Mint',
-      'LIGHTLY_PLAYED': 'Lightly Played',
-      'MODERATELY_PLAYED': 'Moderately Played',
-      'HEAVILY_PLAYED': 'Heavily Played',
-      'DAMAGED': 'Damaged'
-    }
-    return map[condition] || condition
+    return formatConditionLabel(condition)
   }
 
   // Price change indicator

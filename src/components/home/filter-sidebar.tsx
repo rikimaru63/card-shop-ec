@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -130,8 +130,17 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
     setInStockOnly(inStock)
   }, [searchParams])
 
-  // Update URL with filters
-  const updateFilters = useCallback(() => {
+  // Auto-apply: update URL whenever any filter state changes
+  // Skip the first render (initialization from URL) using a ref
+  const isInitialized = useRef(false)
+
+  useEffect(() => {
+    // Skip auto-apply during initial URL → state sync
+    if (!isInitialized.current) {
+      isInitialized.current = true
+      return
+    }
+
     const params = new URLSearchParams()
 
     if (selectedGame) params.set("game", selectedGame)
@@ -353,10 +362,6 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
           </label>
         </div>
 
-        {/* Apply Button */}
-        <Button className="w-full" onClick={updateFilters}>
-          Apply Filters
-        </Button>
       </div>
     </div>
   )

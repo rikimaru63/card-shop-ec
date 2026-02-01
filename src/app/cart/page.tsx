@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useCartStore } from "@/store/cart-store"
 import { formatPrice } from "@/lib/utils"
+import { formatCategoryName, formatConditionLabel } from "@/lib/filter-config"
 import { CustomsNotice } from "@/components/CustomsNotice"
 
 export default function CartPage() {
@@ -137,7 +138,7 @@ export default function CartPage() {
                           <div className="flex gap-2 mt-1">
                             {item.category && (
                               <span className="text-xs text-muted-foreground">
-                                {item.category}
+                                {formatCategoryName(item.category)}
                               </span>
                             )}
                             {item.rarity && (
@@ -147,7 +148,7 @@ export default function CartPage() {
                             )}
                             {item.condition && (
                               <span className="text-xs text-muted-foreground">
-                                • {item.condition}
+                                • {formatConditionLabel(item.condition)}
                               </span>
                             )}
                           </div>

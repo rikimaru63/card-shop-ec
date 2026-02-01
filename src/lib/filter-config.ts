@@ -96,6 +96,32 @@ export const CONDITIONS = [
 export type ConditionId = typeof CONDITIONS[number]["id"]
 
 // ============================================
+// Display Format Helpers
+// ============================================
+
+// Category name mapping (DB Japanese name → English display)
+const CATEGORY_NAME_MAP: Record<string, string> = {
+  'ポケモンカード': 'Pokemon Cards',
+  'ワンピースカード': 'One Piece Cards',
+  'その他': 'Other Cards',
+}
+
+/**
+ * Convert DB category name to English display name
+ */
+export function formatCategoryName(category: string): string {
+  return CATEGORY_NAME_MAP[category] || category
+}
+
+/**
+ * Convert condition enum value (e.g. "GRADE_A") to friendly label (e.g. "Grade A (Near Mint)")
+ */
+export function formatConditionLabel(condition: string): string {
+  const found = CONDITIONS.find(c => c.id === condition)
+  return found ? found.label : condition
+}
+
+// ============================================
 // Price Ranges
 // ============================================
 export const PRICE_RANGES = [

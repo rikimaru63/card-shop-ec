@@ -4,8 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import { Heart, ShoppingCart, Star, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { formatPrice } from "@/lib/utils"
+import { cn, formatPrice } from "@/lib/utils"
+import { formatCategoryName, formatConditionLabel } from "@/lib/filter-config"
 import { useCartStore } from "@/store/cart-store"
 import { useWishlistStore } from "@/store/wishlist-store"
 
@@ -194,7 +194,7 @@ export function ProductCard({
         <div className="p-4">
           {/* カテゴリー */}
           <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1">
-            {category}
+            {formatCategoryName(category)}
           </p>
 
           {/* タイトル */}
@@ -211,7 +211,7 @@ export function ProductCard({
             )}
             {condition && (
               <span className="px-2 py-0.5 bg-secondary text-xs font-medium rounded">
-                {condition}
+                {formatConditionLabel(condition)}
               </span>
             )}
           </div>

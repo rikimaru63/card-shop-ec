@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCartStore } from "@/store/cart-store"
 import { cn } from "@/lib/utils"
+import { formatCategoryName, formatConditionLabel } from "@/lib/filter-config"
 
 type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
 
@@ -93,7 +94,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           specifications: { // Default specs
             "Set": data.cardSet || "Unknown",
             "Rarity": data.rarity || "Unknown",
-            "Condition": data.condition || "Unknown"
+            "Condition": data.condition ? formatConditionLabel(data.condition) : "Unknown"
           }
         })
       } catch (err) {
@@ -272,9 +273,9 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
               {/* Attributes */}
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">{product.category}</Badge>
+                <Badge variant="secondary">{formatCategoryName(product.category)}</Badge>
                 {product.rarity && <Badge variant="secondary">{product.rarity}</Badge>}
-                {product.condition && <Badge variant="secondary">{product.condition}</Badge>}
+                {product.condition && <Badge variant="secondary">{formatConditionLabel(product.condition)}</Badge>}
                 {product.foil && <Badge variant="secondary">Foil</Badge>}
                 {product.firstEdition && <Badge variant="secondary">1st Edition</Badge>}
                 {product.language && <Badge variant="secondary">{product.language}</Badge>}
