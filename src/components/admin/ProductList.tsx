@@ -71,6 +71,8 @@ const categoryLabels: { [key: string]: string } = {
 interface ProductListProps {
     initialProducts: ProductWithImages[];
     onRefresh?: () => void;
+    /** When true, hides the built-in search bar (parent handles search) */
+    hideSearch?: boolean;
 }
 
 // Sortable row component
@@ -160,7 +162,7 @@ function SortableRow({
   );
 }
 
-export function ProductList({ initialProducts, onRefresh }: ProductListProps) {
+export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductListProps) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
   const [searchQuery, setSearchQuery] = useState('');
@@ -301,37 +303,39 @@ export function ProductList({ initialProducts, onRefresh }: ProductListProps) {
 
   return (
     <>
-      {/* Search bar */}
-      <div className="mb-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Search by name, card no., card set..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-10"
-          />
+      {/* Search bar - hidden when parent handles search */}
+      {!hideSearch && (
+        <div className="mb-4">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search by name, card no., card set..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-10"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
           {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <p className="text-sm text-gray-500 mt-2">
+              {filteredProducts.length} products found
+            </p>
+          )}
+          {!searchQuery && (
+            <p className="text-xs text-gray-400 mt-2">
+              💡 Drag rows to reorder products. Order is saved automatically.
+            </p>
           )}
         </div>
-        {searchQuery && (
-          <p className="text-sm text-gray-500 mt-2">
-            {filteredProducts.length} products found
-          </p>
-        )}
-        {!searchQuery && (
-          <p className="text-xs text-gray-400 mt-2">
-            💡 Drag rows to reorder products. Order is saved automatically.
-          </p>
-        )}
-      </div>
+      )}
 
       <div className="rounded-md border">
         <DndContext

@@ -19,40 +19,150 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams
+
+    // Pagination
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const limit = parseInt(searchParams.get('limit') || '50')
+
+    // Existing filters
     const search = searchParams.get('search')
     const published = searchParams.get('published')
-    
+
+    // New filters - aligned with public /api/products
+    const game = searchParams.get('game')
+    const rarity = searchParams.get('rarity')
+    const condition = searchParams.get('condition')
+    const cardSet = searchParams.get('cardSet')
+    const productType = searchParams.get('productType')
+    const minPrice = searchParams.get('minPrice')
+    const maxPrice = searchParams.get('maxPrice')
+    const inStock = searchParams.get('inStock')
+    const sortBy = searchParams.get('sortBy') || 'sortOrder'
+
     const where: Prisma.ProductWhereInput = {}
-    
+
+    // Search filter (name, cardNumber, sku)
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
+        { nameJa: { contains: search, mode: 'insensitive' } },
+        { cardNumber: { contains: search, mode: 'insensitive' } },
         { sku: { contains: search, mode: 'insensitive' } }
       ]
     }
-    
-    if (published !== null) {
+
+    // Published filter
+    if (published === 'true' || published === 'false') {
       where.published = published === 'true'
     }
-    
+
+    // Game filter (maps to category slug)
+    if (game) {
+      if (game === 'pokemon') {
+        where.category = { slug: 'pokemon-cards' }
+      } else if (game === 'onepiece') {
+        where.category = { slug: 'onepiece-cards' }
+      } else if (game === 'other') {
+        where.category = { slug: 'other-cards' }
+      }
+    }
+
+    // Rarity filter (supports comma-separated)
+    if (rarity) {
+      const rarities = rarity.split(',').filter(Boolean)
+      if (rarities.length === 1) {
+        where.rarity = rarities[0]
+      } else if (rarities.length > 1) {
+        where.rarity = { in: rarities }
+      }
+    }
+
+    // Condition filter (supports comma-separated)
+    if (condition) {
+      const conditions = condition.split(',').filter(Boolean) as Prisma.EnumConditionFilter['in']
+      if (conditions!.length === 1) {
+        where.condition = conditions![0] as any
+      } else if (conditions!.length! > 1) {
+        where.condition = { in: conditions as any }
+      }
+    }
+
+    // Card set filter (supports comma-separated, partial matching)
+    if (cardSet) {
+      const cardSets = cardSet.split(',').filter(Boolean)
+      if (cardSets.length === 1) {
+        where.cardSet = { contains: cardSets[0] }
+      } else if (cardSets.length > 1) {
+        if (!where.AND) where.AND = []
+        ;(where.AND as Prisma.ProductWhereInput[]).push({
+          OR: cardSets.map(cs => ({ cardSet: { contains: cs } }))
+        })
+      }
+    }
+
+    // Product type filter
+    if (productType) {
+      where.productType = productType as any
+    }
+
+    // Price range filter
+    if (minPrice || maxPrice) {
+      where.price = {}
+      if (minPrice) where.price.gte = parseFloat(minPrice)
+      if (maxPrice) where.price.lte = parseFloat(maxPrice)
+    }
+
+    // In stock filter
+    if (inStock === 'true') {
+      where.stock = { gt: 0 }
+    }
+
+    // Sort order
+    let orderBy: Prisma.ProductOrderByWithRelationInput[] = [
+      { sortOrder: 'asc' },
+      { createdAt: 'desc' }
+    ]
+    switch (sortBy) {
+      case 'newest':
+        orderBy = [{ createdAt: 'desc' }]
+        break
+      case 'oldest':
+        orderBy = [{ createdAt: 'asc' }]
+        break
+      case 'price-asc':
+        orderBy = [{ price: 'asc' }]
+        break
+      case 'price-desc':
+        orderBy = [{ price: 'desc' }]
+        break
+      case 'name-asc':
+        orderBy = [{ name: 'asc' }]
+        break
+      case 'stock-asc':
+        orderBy = [{ stock: 'asc' }]
+        break
+      case 'stock-desc':
+        orderBy = [{ stock: 'desc' }]
+        break
+      // default 'sortOrder' keeps the manual drag order
+    }
+
     const skip = (page - 1) * limit
-    
+
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: limit,
         include: {
           category: true,
-          images: { take: 1 }
+          images: { take: 1, orderBy: { order: 'asc' } }
         }
       }),
       prisma.product.count({ where })
     ])
-    
+
     return NextResponse.json({
       products,
       pagination: {

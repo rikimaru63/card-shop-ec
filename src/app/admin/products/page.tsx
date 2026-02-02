@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { ProductList } from '@/components/admin/ProductList'
+import { AdminProductsClient } from '@/components/admin/AdminProductsClient'
 import Link from 'next/link'
 import { Download, FileSpreadsheet, Plus } from 'lucide-react'
 
@@ -10,7 +10,10 @@ export const revalidate = 0
 export default async function AdminProductsPage() {
   const products = await prisma.product.findMany({
     include: {
-      images: true,
+      images: {
+        take: 1,
+        orderBy: { order: 'asc' },
+      },
       category: true,
     },
     orderBy: [
@@ -48,7 +51,7 @@ export default async function AdminProductsPage() {
           </Link>
         </div>
       </div>
-      <ProductList initialProducts={products} />
+      <AdminProductsClient initialProducts={products} />
     </div>
   )
 }
