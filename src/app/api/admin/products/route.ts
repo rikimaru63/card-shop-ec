@@ -79,10 +79,10 @@ export async function GET(request: NextRequest) {
 
     // Condition filter (supports comma-separated)
     if (condition) {
-      const conditions = condition.split(',').filter(Boolean) as Prisma.EnumConditionFilter['in']
-      if (conditions!.length === 1) {
-        where.condition = conditions![0] as any
-      } else if (conditions!.length! > 1) {
+      const conditions = condition.split(',').filter(Boolean)
+      if (conditions.length === 1) {
+        where.condition = conditions[0] as any
+      } else if (conditions.length > 1) {
         where.condition = { in: conditions as any }
       }
     }
