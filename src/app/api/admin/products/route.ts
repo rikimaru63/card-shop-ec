@@ -162,7 +162,8 @@ export async function POST(request: NextRequest) {
         where: {
           categoryId: category.id,
           cardNumber: body.cardNumber,
-          condition: condition as any
+          condition: condition as any,
+          cardSet: body.cardSet
         },
         select: {
           id: true,
