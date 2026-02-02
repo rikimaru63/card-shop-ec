@@ -39,12 +39,14 @@ interface ProductSectionProps {
 
 function ProductSection({ title, icon, products, loading, bgClass = "" }: ProductSectionProps) {
   const [addedToCart, setAddedToCart] = useState<string | null>(null)
+  const [selectedQty, setSelectedQty] = useState<Record<string, number>>({})
   const addToCart = useCartStore((state) => state.addItem)
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
 
   const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    const qty = selectedQty[product.id] || 1
     addToCart({
       id: product.id,
       name: product.name,
@@ -55,7 +57,7 @@ function ProductSection({ title, icon, products, loading, bgClass = "" }: Produc
       rarity: product.rarity || undefined,
       condition: product.condition || undefined,
       stock: product.stock
-    })
+    }, qty)
     setAddedToCart(product.id)
     setTimeout(() => setAddedToCart(null), 2000)
   }
@@ -206,14 +208,31 @@ function ProductSection({ title, icon, products, loading, bgClass = "" }: Produc
                         </span>
                       )}
                     </div>
-                    <Button
-                      size="sm"
-                      className="h-7 text-xs px-2"
-                      onClick={(e) => handleAddToCart(product, e)}
-                      disabled={addedToCart === product.id || product.stock === 0}
-                    >
-                      <ShoppingCart className="h-3 w-3" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      {product.stock > 1 && (
+                        <select
+                          value={selectedQty[product.id] || 1}
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            setSelectedQty((prev) => ({ ...prev, [product.id]: Number(e.target.value) }))
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-7 w-10 text-xs border rounded px-0.5"
+                        >
+                          {Array.from({ length: Math.min(product.stock, 10) }, (_, i) => (
+                            <option key={i + 1} value={i + 1}>{i + 1}</option>
+                          ))}
+                        </select>
+                      )}
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs px-2"
+                        onClick={(e) => handleAddToCart(product, e)}
+                        disabled={addedToCart === product.id || product.stock === 0}
+                      >
+                        <ShoppingCart className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
