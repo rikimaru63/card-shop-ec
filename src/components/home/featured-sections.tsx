@@ -39,14 +39,12 @@ interface ProductSectionProps {
 
 function ProductSection({ title, icon, products, loading, bgClass = "" }: ProductSectionProps) {
   const [addedToCart, setAddedToCart] = useState<string | null>(null)
-  const [quantities, setQuantities] = useState<Record<string, number>>({})
   const addToCart = useCartStore((state) => state.addItem)
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
 
   const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    const qty = quantities[product.id] || 1
     addToCart({
       id: product.id,
       name: product.name,
@@ -57,7 +55,7 @@ function ProductSection({ title, icon, products, loading, bgClass = "" }: Produc
       rarity: product.rarity || undefined,
       condition: product.condition || undefined,
       stock: product.stock
-    }, qty)
+    })
     setAddedToCart(product.id)
     setTimeout(() => setAddedToCart(null), 2000)
   }
@@ -208,21 +206,6 @@ function ProductSection({ title, icon, products, loading, bgClass = "" }: Produc
                         </span>
                       )}
                     </div>
-                    <select
-                      className="h-7 text-xs border rounded px-1 bg-white"
-                      value={quantities[product.id] || 1}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                      onChange={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setQuantities(q => ({ ...q, [product.id]: parseInt(e.target.value) }))
-                      }}
-                      disabled={product.stock === 0}
-                    >
-                      {Array.from({ length: Math.min(product.stock || 0, 10) }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </select>
                     <Button
                       size="sm"
                       className="h-7 text-xs px-2"
