@@ -25,7 +25,7 @@ interface ShippingInfo {
 
 interface CartStore {
   items: CartItem[]
-  addItem: (item: Omit<CartItem, 'quantity'>) => void
+  addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
@@ -44,7 +44,7 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       
-      addItem: (item) => {
+      addItem: (item, quantity = 1) => {
         console.log('🏪 Cart Store: addItem called with:', item)
         
         set((state) => {
@@ -56,7 +56,7 @@ export const useCartStore = create<CartStore>()(
             // アイテムが既に存在する場合、数量を増やす
             const newItems = state.items.map((i) =>
               i.id === item.id
-                ? { ...i, quantity: Math.min(i.quantity + 1, i.stock) }
+                ? { ...i, quantity: Math.min(i.quantity + quantity, i.stock) }
                 : i
             )
             console.log('✅ Updated cart:', newItems)
@@ -65,7 +65,7 @@ export const useCartStore = create<CartStore>()(
           
           console.log('➕ Adding new item to cart')
           // 新しいアイテムを追加
-          const newItems = [...state.items, { ...item, quantity: 1 }]
+          const newItems = [...state.items, { ...item, quantity: Math.max(1, Math.min(quantity, item.stock)) }]
           console.log('✅ New cart:', newItems)
           return { items: newItems }
         })

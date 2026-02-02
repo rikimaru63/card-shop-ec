@@ -46,6 +46,7 @@ export function ProductGrid() {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortBy, setSortBy] = useState("newest")
   const [addedToCart, setAddedToCart] = useState<string | null>(null)
+  const [quantities, setQuantities] = useState<Record<string, number>>({})
 
   const addToCart = useCartStore((state) => state.addItem)
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore()
@@ -131,6 +132,7 @@ export function ProductGrid() {
   const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    const qty = quantities[product.id] || 1
 
     const cartItem = {
       id: product.id,
@@ -144,7 +146,7 @@ export function ProductGrid() {
       stock: product.stock
     }
 
-    addToCart(cartItem)
+    addToCart(cartItem, qty)
     setAddedToCart(product.id)
     setTimeout(() => setAddedToCart(null), 2000)
   }
@@ -368,6 +370,21 @@ export function ProductGrid() {
                           </span>
                         )}
                       </div>
+                      <select
+                        className="h-8 text-xs border rounded px-1 bg-white"
+                        value={quantities[product.id] || 1}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onChange={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setQuantities(q => ({ ...q, [product.id]: parseInt(e.target.value) }))
+                        }}
+                        disabled={product.stock === 0}
+                      >
+                        {Array.from({ length: Math.min(product.stock || 0, 10) }, (_, i) => i + 1).map((n) => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
                       <Button
                         size="sm"
                         className="h-8"
