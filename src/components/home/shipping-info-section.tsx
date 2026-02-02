@@ -83,7 +83,7 @@ export function ShippingInfoSection() {
           <h2 className="text-2xl font-bold text-center mb-8">
             Shipping Policy
           </h2>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {/* Single Cards */}
             <div className="bg-white rounded-lg border p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
@@ -139,6 +139,23 @@ export function ShippingInfoSection() {
                   No additional shipping fees
                 </p>
               </div>
+            </div>
+
+
+            {/* Shipping Method */}
+            <div className="bg-white rounded-lg border p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <Truck className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Shipping Method</p>
+                  <h3 className="font-bold text-lg">FedEx Air Shipping</h3>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                The items are in stock and available at our physical store. Orders will be shipped on the next business day after payment is confirmed. (We are closed on Saturdays, Sundays, and public holidays.)
+              </p>
             </div>
           </div>
 
