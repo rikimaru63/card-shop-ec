@@ -161,6 +161,7 @@ export async function POST(request: NextRequest) {
       const existingProduct = await prisma.product.findFirst({
         where: {
           categoryId: category.id,
+          cardSet: body.cardSet,
           cardNumber: body.cardNumber,
           condition: condition as any
         },
