@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { AuthProvider } from '@/components/providers/session-provider'
+import { PageViewTracker } from '@/components/page-view-tracker'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,6 +27,7 @@ export default function RootLayout({
         inter.className
       )}>
         <AuthProvider>
+          <PageViewTracker />
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />

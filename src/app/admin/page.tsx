@@ -10,10 +10,12 @@ import {
   ArrowUpRight,
   BarChart3,
   Settings,
-  Minus
+  Minus,
+  Eye,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { prisma } from "@/lib/prisma"
+import { AccessRanking } from "@/components/admin/access-ranking"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -36,6 +38,8 @@ export default async function AdminDashboard() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay())
 
   // Fetch all stats in parallel
   const [
@@ -50,6 +54,10 @@ export default async function AdminDashboard() {
     totalUsers,
     // Recent orders
     recentOrders,
+    // Today's page views
+    todayPageViews,
+    // Yesterday's page views
+    yesterdayPageViews,
     // Low stock products
     lowStockProducts
   ] = await Promise.all([
@@ -110,6 +118,19 @@ export default async function AdminDashboard() {
         }
       }
     }),
+    // Today's page views
+    prisma.pageView.count({
+      where: { createdAt: { gte: startOfToday } }
+    }),
+    // Yesterday's page views (for comparison)
+    prisma.pageView.count({
+      where: {
+        createdAt: {
+          gte: new Date(startOfToday.getTime() - 86400000),
+          lt: startOfToday
+        }
+      }
+    }),
     // Low stock products (stock <= 3)
     prisma.product.findMany({
       where: {
@@ -131,6 +152,7 @@ export default async function AdminDashboard() {
   const lastSales = lastMonthSales._sum.total?.toNumber() || 0
   const salesChange = lastSales > 0 ? ((currentSales - lastSales) / lastSales * 100).toFixed(1) : 0
   const orderChange = lastMonthOrders > 0 ? ((currentMonthOrders - lastMonthOrders) / lastMonthOrders * 100).toFixed(1) : 0
+  const pvChange = yesterdayPageViews > 0 ? ((todayPageViews - yesterdayPageViews) / yesterdayPageViews * 100).toFixed(1) : 0
 
   // Format stats for display
   const stats = [
@@ -161,6 +183,13 @@ export default async function AdminDashboard() {
       change: "総ユーザー数",
       icon: Users,
       trend: "neutral"
+    },
+    {
+      title: "今日のアクセス数",
+      value: todayPageViews.toLocaleString(),
+      change: `昨日比 ${Number(pvChange) >= 0 ? '+' : ''}${pvChange}%`,
+      icon: Eye,
+      trend: Number(pvChange) >= 0 ? "up" : "down"
     }
   ]
 
@@ -221,7 +250,7 @@ export default async function AdminDashboard() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           {stats.map((stat) => {
             const Icon = stat.icon
             return (
@@ -332,6 +361,9 @@ export default async function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Access Ranking */}
+        <AccessRanking />
 
         {/* Quick Actions */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

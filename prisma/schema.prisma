@@ -513,3 +513,19 @@ model ConditionOption {
   @@index([isActive])
   @@index([order])
 }
+
+// ==================== Page Views (Access Counter) ====================
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String   // ページパス (e.g. "/products/xxx")
+  productId String?  // 商品ページの場合、商品ID
+  userAgent String?  // ブラウザUA
+  ipHash    String?  // IPアドレスのSHA-256ハッシュ
+  createdAt DateTime @default(now())
+
+  @@index([path])
+  @@index([productId])
+  @@index([createdAt])
+  @@index([productId, createdAt])
+}
