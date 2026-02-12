@@ -245,6 +245,7 @@ export function AdminProductFilters({
             <SelectItem value="name-asc">Name: A→Z</SelectItem>
             <SelectItem value="stock-asc">Stock: Low→High</SelectItem>
             <SelectItem value="stock-desc">Stock: High→Low</SelectItem>
+            <SelectItem value="updatedAt">Last Updated</SelectItem>
           </SelectContent>
         </Select>
 
