@@ -97,6 +97,17 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             "Condition": data.condition ? formatConditionLabel(data.condition) : "Unknown"
           }
         })
+
+        // Meta Pixel: ViewContent
+        if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+          window.fbq('track', 'ViewContent', {
+            content_name: data.name,
+            content_ids: [data.id],
+            content_type: 'product',
+            value: Number(data.price),
+            currency: 'JPY',
+          });
+        }
       } catch (err) {
         console.error(err)
         setError(err instanceof Error ? err.message : "An error occurred")
@@ -124,6 +135,18 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       condition: product.condition,
       stock: product.stock
     })
+
+    // Meta Pixel: AddToCart
+    if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+      window.fbq('track', 'AddToCart', {
+        content_name: product.name,
+        content_ids: [product.id],
+        content_type: 'product',
+        value: product.price * quantity,
+        currency: 'JPY',
+      });
+    }
+
     setShowAddedToCart(true)
     setTimeout(() => setShowAddedToCart(false), 3000)
   }

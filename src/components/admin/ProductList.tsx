@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import Image from 'next/image';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -80,10 +80,12 @@ function SortableRow({
   product,
   onEdit,
   onDelete,
+  onProductUpdate,
 }: {
   product: ProductWithImages;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onProductUpdate: (productId: string, updates: Partial<Product>) => void;
 }) {
   const {
     attributes,
@@ -99,6 +101,109 @@ function SortableRow({
     transition,
     opacity: isDragging ? 0.5 : 1,
     backgroundColor: isDragging ? '#f0f9ff' : undefined,
+  };
+
+  // === Inline edit state ===
+  const [editingField, setEditingField] = useState<'price' | 'stock' | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (editingField && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingField]);
+
+  // Start editing
+  const startEdit = (field: 'price' | 'stock') => {
+    setEditingField(field);
+    setEditValue(
+      field === 'price'
+        ? String(Number(product.price))
+        : String(product.stock)
+    );
+  };
+
+  // Save edit
+  const saveEdit = async () => {
+    if (!editingField) return;
+
+    const numValue = editingField === 'price' ? parseFloat(editValue) : parseInt(editValue, 10);
+    if (isNaN(numValue) || (editingField === 'price' && numValue <= 0) || (editingField === 'stock' && numValue < 0)) {
+      toast({
+        title: "Invalid value",
+        description: editingField === 'price' ? "Price must be greater than 0." : "Stock cannot be negative.",
+        variant: "destructive",
+      });
+      setEditingField(null);
+      return;
+    }
+
+    // Skip save if value hasn't changed
+    const currentValue = editingField === 'price' ? Number(product.price) : product.stock;
+    if (numValue === currentValue) {
+      setEditingField(null);
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const payload: Record<string, string> = {};
+      payload[editingField] = editValue;
+
+      const response = await fetch(`/api/admin/products/${product.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error('Failed to save');
+
+      const updated = await response.json();
+
+      // Notify parent to update state
+      onProductUpdate(product.id, {
+        price: updated.price,
+        stock: updated.stock,
+        updatedAt: updated.updatedAt,
+      });
+
+      toast({
+        title: "Saved",
+        description: `${editingField === 'price' ? 'Price' : 'Stock'} updated.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save changes.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+      setEditingField(null);
+    }
+  };
+
+  // Cancel editing
+  const cancelEdit = () => {
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  // Key handler
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveEdit();
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEdit();
+    }
   };
 
   return (
@@ -138,8 +243,67 @@ function SortableRow({
       <TableCell className="text-sm">
         {conditionLabels[product.condition || ''] || product.condition || '-'}
       </TableCell>
-      <TableCell>¥{Number(product.price).toLocaleString()}</TableCell>
-      <TableCell>{product.stock}</TableCell>
+      {/* Price - inline editable */}
+      <TableCell
+        className="cursor-pointer hover:bg-blue-50 transition-colors"
+        onDoubleClick={() => startEdit('price')}
+      >
+        {editingField === 'price' ? (
+          <div className="flex items-center gap-1">
+            <span className="text-gray-400">¥</span>
+            <Input
+              ref={inputRef}
+              type="number"
+              min="0"
+              step="1"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={saveEdit}
+              className="h-7 w-24 text-sm"
+              disabled={saving}
+            />
+          </div>
+        ) : (
+          <span title="Double-click to edit">
+            ¥{Number(product.price).toLocaleString()}
+          </span>
+        )}
+      </TableCell>
+      {/* Stock - inline editable */}
+      <TableCell
+        className="cursor-pointer hover:bg-blue-50 transition-colors"
+        onDoubleClick={() => startEdit('stock')}
+      >
+        {editingField === 'stock' ? (
+          <div className="flex items-center gap-1">
+            <Input
+              ref={inputRef}
+              type="number"
+              min="0"
+              step="1"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={saveEdit}
+              className="h-7 w-16 text-sm"
+              disabled={saving}
+            />
+          </div>
+        ) : (
+          <span title="Double-click to edit">{product.stock}</span>
+        )}
+      </TableCell>
+      {/* Updated date */}
+      <TableCell className="text-sm text-gray-500 whitespace-nowrap">
+        {product.updatedAt
+          ? new Date(product.updatedAt).toLocaleDateString('ja-JP', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+            })
+          : '-'}
+      </TableCell>
       <TableCell className="text-right">
         <Button
           variant="outline"
@@ -245,6 +409,13 @@ export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductL
       setProductToDeleteId(null);
     }
   };
+
+  // Handle inline edit updates from SortableRow
+  const handleProductUpdate = useCallback((productId: string, updates: Partial<Product>) => {
+    setProducts(prev => prev.map(p =>
+      p.id === productId ? { ...p, ...updates } : p
+    ));
+  }, []);
 
   // Handle drag end - reorder products
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
@@ -355,6 +526,7 @@ export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductL
                 <TableHead className="w-[70px]">Condition</TableHead>
                 <TableHead className="w-[80px]">Price</TableHead>
                 <TableHead className="w-[50px]">Stock</TableHead>
+                <TableHead className="w-[110px]">Updated</TableHead>
                 <TableHead className="text-right w-[140px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -370,6 +542,7 @@ export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductL
                     product={product}
                     onEdit={handleEditClick}
                     onDelete={handleDeleteClick}
+                    onProductUpdate={handleProductUpdate}
                   />
                 ))}
               </SortableContext>

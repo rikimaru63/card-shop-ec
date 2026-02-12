@@ -38,6 +38,17 @@ function CheckoutSuccessContent() {
         if (response.ok) {
           const data = await response.json()
           setOrder(data)
+
+          // Meta Pixel: Purchase
+          if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+            window.fbq('track', 'Purchase', {
+              content_ids: data.items?.map((item: any) => item.product?.id || item.productId) || [],
+              content_type: 'product',
+              value: Number(data.total),
+              currency: 'JPY',
+              num_items: data.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0,
+            });
+          }
         }
       } catch (error) {
         console.error('Failed to fetch order:', error)
