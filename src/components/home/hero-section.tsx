@@ -11,7 +11,7 @@ export function HeroSection() {
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
-          src="/hero-bg-2.png"
+          src="/hero-bg-eu-1.png"
           alt="Pokemon Trading Cards"
           fill
           priority
