@@ -5,10 +5,10 @@ import {
   Package,
   CreditCard,
   CheckCircle2,
-  Box,
   Tags,
   Gift,
-  Plane
+  Plane,
+  ShieldCheck
 } from "lucide-react"
 
 export function ShippingInfoSection() {
@@ -59,7 +59,7 @@ export function ShippingInfoSection() {
               </div>
               <h3 className="font-semibold text-sm md:text-base mb-1">Shipping</h3>
               <p className="text-xs md:text-sm text-muted-foreground">
-                Carefully packaged and shipped
+                Shipped directly from Japan to Europe
               </p>
             </div>
 
@@ -103,23 +103,20 @@ export function ShippingInfoSection() {
               </div>
             </div>
 
-            {/* BOX */}
+            {/* No Customs */}
             <div className="bg-white rounded-lg border p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="bg-orange-100 p-2 rounded-lg">
-                  <Box className="h-6 w-6 text-orange-600" />
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <ShieldCheck className="h-6 w-6 text-green-600" />
                 </div>
-                <h3 className="font-bold text-lg">Sealed BOX & Packs</h3>
+                <h3 className="font-bold text-lg">No Customs Fees</h3>
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">Minimum 5 BOX</span> per order
+                  <span className="font-semibold text-green-600">All customs handled</span> by us
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Free shipping on orders ¥50,000+
-                </p>
-                <p className="text-xs text-orange-600 mt-2">
-                  *Any combination of BOX types
+                  No surprise fees at delivery
                 </p>
               </div>
             </div>
@@ -127,14 +124,14 @@ export function ShippingInfoSection() {
             {/* Others */}
             <div className="bg-white rounded-lg border p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="bg-green-100 p-2 rounded-lg">
-                  <Gift className="h-6 w-6 text-green-600" />
+                <div className="bg-orange-100 p-2 rounded-lg">
+                  <Gift className="h-6 w-6 text-orange-600" />
                 </div>
                 <h3 className="font-bold text-lg">Other Items</h3>
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-green-600">Shipping included</span> in price
+                  <span className="font-semibold text-foreground">Shipping included</span> in price
                 </p>
                 <p className="text-sm text-muted-foreground">
                   No additional shipping fees
@@ -155,7 +152,7 @@ export function ShippingInfoSection() {
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  The items are in stock and available at our physical store. Orders will be shipped on the next business day after payment is confirmed. (We are closed on Saturdays, Sundays, and public holidays.)
+                  Orders ship from Japan on the next business day after payment confirmation. Closed on weekends and Japanese public holidays.
                 </p>
               </div>
             </div>
@@ -163,7 +160,7 @@ export function ShippingInfoSection() {
 
           {/* Note */}
           <p className="text-center text-sm text-muted-foreground mt-6">
-            * Free shipping applies when Single Cards + BOX total is ¥50,000 or more
+            * Free shipping applies when Single Cards total is ¥50,000 or more
           </p>
         </div>
       </div>

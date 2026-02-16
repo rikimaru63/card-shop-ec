@@ -5,7 +5,6 @@ import {
   Instagram,
   Youtube,
   Mail,
-  Phone,
   MapPin,
   CreditCard,
   Shield
@@ -103,14 +102,8 @@ export function Footer() {
                 </a>
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <a href="tel:+1234567890" className="hover:text-primary">
-                  +1 (234) 567-890
-                </a>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>Los Angeles, CA, USA</span>
+                <span>Shipping from Japan to Europe</span>
               </div>
             </div>
           </div>

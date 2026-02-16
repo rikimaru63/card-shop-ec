@@ -303,8 +303,8 @@ export default function CartPage() {
               <div className="mt-6 p-4 bg-secondary/50 rounded-lg space-y-2">
                 <p className="text-xs font-semibold">Shipping Policy</p>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• Singles/BOX: Free shipping on ¥50,000+</li>
-                  <li>• BOX: Minimum 5 units per order</li>
+                  <li>• Free shipping on orders ¥50,000+</li>
+                  <li>• No customs fees — all handled by us</li>
                   <li>• Others: Shipping included</li>
                 </ul>
               </div>

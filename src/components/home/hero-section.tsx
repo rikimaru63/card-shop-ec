@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Truck, Package, Box } from "lucide-react"
+import { Truck, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function HeroSection() {
@@ -30,7 +30,7 @@ export function HeroSection() {
       <div className="relative z-10 h-full container mx-auto px-4 flex items-center">
         <div className="max-w-2xl text-white">
           <p className="text-primary text-sm font-semibold mb-2 uppercase tracking-wider drop-shadow-lg">
-            Premium Pokemon Cards
+            Direct from Japan
           </p>
           <h1
             className="text-4xl md:text-6xl font-bold mb-4 leading-tight"
@@ -42,7 +42,7 @@ export function HeroSection() {
             className="text-lg md:text-xl mb-8 text-gray-100"
             style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}
           >
-            From SAR to UR - Discover our extensive collection of premium Pokemon cards
+            Authentic Japanese Pokemon cards shipped directly to Europe — No customs hassle
           </p>
           <div className="flex flex-wrap gap-4 items-center">
             <Link href="/products">
@@ -67,12 +67,8 @@ export function HeroSection() {
                 <span className="text-sm font-medium">Free shipping ¥50,000+</span>
               </div>
               <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
-                <Box className="h-4 w-4 text-orange-400" />
-                <span className="text-sm font-medium">BOX: Min 5 units</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
                 <Package className="h-4 w-4 text-blue-400" />
-                <span className="text-sm font-medium">Others: Shipping incl.</span>
+                <span className="text-sm font-medium">No customs fees</span>
               </div>
             </div>
           </div>
