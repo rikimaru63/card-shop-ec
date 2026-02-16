@@ -101,8 +101,8 @@ export const useCartStore = create<CartStore>()(
       },
 
       getCustomsFee: () => {
-        const subtotal = get().getTotalPrice()
-        return Math.floor(subtotal * 0.20)
+        // EU version: no customs fee
+        return 0
       },
 
       getBoxCount: () => {

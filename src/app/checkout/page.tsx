@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCartStore } from "@/store/cart-store"
 import { createOrder, getUserAddresses } from "./actions"
 import { toast } from "@/hooks/use-toast"
-import { CustomsNotice } from "@/components/CustomsNotice"
+// CustomsNotice removed for EU version
 
 const countries = [
   { code: "US", name: "United States" },
@@ -376,10 +376,7 @@ export default function CheckoutPage() {
                     <span>Subtotal ({getTotalItems()} items)</span>
                     <span>¥{subtotal.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Customs Fee (20%)</span>
-                    <span>¥{customsFee.toLocaleString()}</span>
-                  </div>
+                  {/* Customs fee removed for EU version */}
                   <div className="flex justify-between text-sm">
                     <span>Shipping</span>
                     <span className={shippingInfo.isFreeShipping ? "text-green-600 font-semibold" : ""}>
@@ -676,10 +673,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Customs Notice */}
-              <div className="bg-white rounded-lg border shadow-sm p-6">
-                <CustomsNotice />
-              </div>
+              {/* Customs Notice removed for EU version */}
             </div>
 
             {/* Sidebar */}

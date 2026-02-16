@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input"
 import { useCartStore } from "@/store/cart-store"
 import { formatPrice } from "@/lib/utils"
 import { formatCategoryName, formatConditionLabel } from "@/lib/filter-config"
-import { CustomsNotice } from "@/components/CustomsNotice"
+// CustomsNotice removed for EU version
 
 export default function CartPage() {
   const {
@@ -248,21 +248,13 @@ export default function CartPage() {
                 </div>
               )}
 
-              {/* Customs Notice */}
-              <div className="mb-4">
-                <CustomsNotice />
-              </div>
-
               {/* Price Details */}
               <div className="space-y-3 border-t pt-4">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Customs Fee (20%)</span>
-                  <span>{formatPrice(customsFee)}</span>
-                </div>
+                {/* Customs fee removed for EU version */}
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
                   <span className={shippingInfo.isFreeShipping ? "text-green-600 font-semibold" : ""}>
