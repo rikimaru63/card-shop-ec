@@ -42,7 +42,7 @@ export function HeroSection() {
             className="text-lg md:text-xl mb-8 text-gray-100"
             style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}
           >
-            Authentic Japanese Pokemon cards shipped directly to Europe — No customs hassle
+            Authentic Japanese Pokemon cards shipped directly to Europe
           </p>
           <div className="flex flex-wrap gap-4 items-center">
             <Link href="/products">
@@ -65,10 +65,6 @@ export function HeroSection() {
               <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
                 <Truck className="h-4 w-4 text-green-400" />
                 <span className="text-sm font-medium">Free shipping ¥50,000+</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
-                <Package className="h-4 w-4 text-blue-400" />
-                <span className="text-sm font-medium">No customs fees</span>
               </div>
             </div>
           </div>
