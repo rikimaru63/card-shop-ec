@@ -84,7 +84,7 @@ export function ShippingInfoSection() {
           <h2 className="text-2xl font-bold text-center mb-8">
             Shipping Policy
           </h2>
-          <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {/* Single Cards */}
             <div className="bg-white rounded-lg border p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
@@ -99,24 +99,6 @@ export function ShippingInfoSection() {
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Under ¥50,000: <span className="font-semibold text-foreground">¥4,500</span> shipping
-                </p>
-              </div>
-            </div>
-
-            {/* No Customs */}
-            <div className="bg-white rounded-lg border p-6 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-green-100 p-2 rounded-lg">
-                  <ShieldCheck className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="font-bold text-lg">No Customs Fees</h3>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-green-600">All customs handled</span> by us
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  No surprise fees at delivery
                 </p>
               </div>
             </div>

@@ -304,7 +304,7 @@ export default function CartPage() {
                 <p className="text-xs font-semibold">Shipping Policy</p>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   <li>• Free shipping on orders ¥50,000+</li>
-                  <li>• No customs fees — all handled by us</li>
+                  
                   <li>• Others: Shipping included</li>
                 </ul>
               </div>

@@ -204,9 +204,6 @@ export function Footer() {
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground mr-2">We accept:</span>
               <span className="text-xs font-semibold px-2 py-1 bg-secondary rounded">Wise</span>
-              <span className="text-xs font-semibold px-2 py-1 bg-secondary rounded">Visa</span>
-              <span className="text-xs font-semibold px-2 py-1 bg-secondary rounded">Mastercard</span>
-              <span className="text-xs font-semibold px-2 py-1 bg-secondary rounded">PayPal</span>
             </div>
           </div>
         </div>
