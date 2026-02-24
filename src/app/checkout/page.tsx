@@ -104,7 +104,6 @@ export default function CheckoutPage() {
     getTotalPrice,
     getCustomsFee,
     getTotalItems,
-    clearCart,
     getBoxCount,
     getShippingInfo,
     hasBoxItems,
@@ -241,8 +240,8 @@ export default function CheckoutPage() {
       if (result.success && result.orderNumber) {
         // ナビゲーション前にorderNumberを保存（ナビゲーション失敗時の復旧用）
         sessionStorage.setItem('pendingOrderNumber', result.orderNumber)
+        // カートクリアはpaymentページで注文確認後に行う（ナビゲーション失敗時のカート消失防止）
         router.push(`/checkout/payment/${result.orderNumber}`)
-        clearCart()
       } else {
         toast({
           title: "Error",
