@@ -182,7 +182,7 @@ export default function CheckoutPage() {
 
   const getSelectedAddress = (): ShippingAddress | null => {
     if (addressMode === "new") {
-      if (!newAddress.firstName || !newAddress.street1 ||
+      if (!newAddress.firstName || !newAddress.lastName || !newAddress.street1 ||
           !newAddress.city || !newAddress.state || !newAddress.postalCode || !newAddress.country) {
         return null
       }
@@ -239,15 +239,16 @@ export default function CheckoutPage() {
       })
 
       if (result.success && result.orderNumber) {
-        clearCart()
+        // ナビゲーション前にorderNumberを保存（ナビゲーション失敗時の復旧用）
+        sessionStorage.setItem('pendingOrderNumber', result.orderNumber)
         router.push(`/checkout/payment/${result.orderNumber}`)
+        clearCart()
       } else {
         toast({
           title: "Error",
           description: result.message || "Order failed",
           variant: "destructive"
         })
-        setIsSubmitting(false)
       }
     } catch (error) {
       console.error("Order error:", error)
@@ -256,6 +257,7 @@ export default function CheckoutPage() {
         description: "An error occurred. Please try again.",
         variant: "destructive"
       })
+    } finally {
       setIsSubmitting(false)
     }
   }
@@ -312,7 +314,7 @@ export default function CheckoutPage() {
 
   const isAddressValid = () => {
     if (addressMode === "new") {
-      return newAddress.firstName && newAddress.street1 &&
+      return newAddress.firstName && newAddress.lastName && newAddress.street1 &&
              newAddress.city && newAddress.state && newAddress.postalCode && newAddress.country
     }
     return selectedAddressId !== null
@@ -514,14 +516,25 @@ export default function CheckoutPage() {
                     {/* New Address Form (FedEx format) */}
                     {(addressMode === "new" || savedAddresses.length === 0) && (
                       <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="contactName">Contact Name <span className="text-red-500">*</span></Label>
-                          <Input
-                            id="contactName"
-                            value={newAddress.firstName}
-                            onChange={(e) => setNewAddress({...newAddress, firstName: e.target.value})}
-                            placeholder="John Doe"
-                          />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
+                            <Input
+                              id="firstName"
+                              value={newAddress.firstName}
+                              onChange={(e) => setNewAddress({...newAddress, firstName: e.target.value})}
+                              placeholder="John"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
+                            <Input
+                              id="lastName"
+                              value={newAddress.lastName}
+                              onChange={(e) => setNewAddress({...newAddress, lastName: e.target.value})}
+                              placeholder="Doe"
+                            />
+                          </div>
                         </div>
 
                         <div>

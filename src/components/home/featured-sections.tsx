@@ -73,6 +73,7 @@ function ProductSection({ title, icon, products, loading, bgClass = "" }: Produc
         image: product.image,
         price: product.price,
         category: product.cardSet || 'Pokemon Cards',
+        productType: product.productType,
         rarity: product.rarity || undefined,
         condition: product.condition || undefined,
         stock: product.stock
