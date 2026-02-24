@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, CheckCircle, Mail } from "lucide-react"
 
-const countries = [
+const baseCountries = [
   { code: "US", name: "United States" },
   { code: "GB", name: "United Kingdom" },
   { code: "AU", name: "Australia" },
@@ -37,6 +37,15 @@ const countries = [
   { code: "MX", name: "Mexico" },
   { code: "BR", name: "Brazil" },
 ]
+
+const euOnlyCountries = [
+  { code: "CZ", name: "Czech Republic" },
+]
+
+const region = process.env.NEXT_PUBLIC_REGION || "US"
+const countries = region === "EU"
+  ? [...baseCountries, ...euOnlyCountries].sort((a, b) => a.name.localeCompare(b.name))
+  : baseCountries
 
 export default function SignUpPage() {
   const [step, setStep] = useState(1)

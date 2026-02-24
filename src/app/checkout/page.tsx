@@ -29,7 +29,11 @@ import { createOrder, getUserAddresses } from "./actions"
 import { toast } from "@/hooks/use-toast"
 // CustomsNotice removed for EU version
 
-const countries = [
+const baseCountries = [
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "AU", name: "Australia" },
+  { code: "CA", name: "Canada" },
   { code: "DE", name: "Germany" },
   { code: "FR", name: "France" },
   { code: "IT", name: "Italy" },
@@ -61,6 +65,15 @@ const countries = [
   { code: "NO", name: "Norway" },
   { code: "CH", name: "Switzerland" },
 ]
+
+const euOnlyCountries = [
+  { code: "CZ", name: "Czech Republic" },
+]
+
+const region = process.env.NEXT_PUBLIC_REGION || "US"
+const countries = region === "EU"
+  ? [...baseCountries, ...euOnlyCountries].sort((a, b) => a.name.localeCompare(b.name))
+  : baseCountries
 
 interface SavedAddress {
   id: string

@@ -22,12 +22,15 @@ export async function POST(request: NextRequest) {
 
     const userAgent = request.headers.get("user-agent") || undefined
 
+    const site = (process.env.NEXT_PUBLIC_REGION || "US").toLowerCase()
+
     await prisma.pageView.create({
       data: {
         path,
         productId: productId || null,
         userAgent,
         ipHash,
+        site,
       },
     })
 

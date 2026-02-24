@@ -522,10 +522,12 @@ model PageView {
   productId String?  // 商品ページの場合、商品ID
   userAgent String?  // ブラウザUA
   ipHash    String?  // IPアドレスのSHA-256ハッシュ
+  site      String   @default("us") // "us" or "eu"
   createdAt DateTime @default(now())
 
   @@index([path])
   @@index([productId])
   @@index([createdAt])
+  @@index([site])
   @@index([productId, createdAt])
 }

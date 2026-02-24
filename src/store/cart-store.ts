@@ -129,9 +129,10 @@ export const useCartStore = create<CartStore>()(
           .filter((item) => item.productType === 'OTHER')
           .reduce((total, item) => total + item.price * item.quantity, 0)
 
-        // シングル + BOX の合計が¥50,000以上で送料無料
+        // シングル + BOX の合計が¥50,000以上で送料無料（BOX/SINGLEが0個の場合も送料不要）
         const singleBoxTotal = singleTotal + boxTotal
-        const isFreeShipping = singleBoxTotal >= 50000 || singleBoxTotal === 0
+        const hasSingleOrBox = items.some((item) => item.productType === 'SINGLE' || item.productType === 'BOX')
+        const isFreeShipping = singleBoxTotal >= 50000 || !hasSingleOrBox
         const shipping = isFreeShipping ? 0 : 4500
 
         return {

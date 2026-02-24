@@ -23,7 +23,8 @@ function calculateShipping(items: CartItem[]): { shipping: number; singleBoxTota
     .reduce((total, item) => total + item.price * item.quantity, 0)
 
   // シングル + BOX の合計が¥50,000以上、またはシングル/BOXが含まれない場合は送料無料
-  const isFreeShipping = singleBoxTotal >= 50000 || singleBoxTotal === 0
+  const hasSingleOrBox = items.some(item => item.productType === 'SINGLE' || item.productType === 'BOX')
+  const isFreeShipping = singleBoxTotal >= 50000 || !hasSingleOrBox
   const shipping = isFreeShipping ? 0 : 4500
 
   return { shipping, singleBoxTotal }
