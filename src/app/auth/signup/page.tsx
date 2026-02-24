@@ -16,6 +16,7 @@ const countries = [
   { code: "GB", name: "United Kingdom" },
   { code: "AU", name: "Australia" },
   { code: "CA", name: "Canada" },
+  { code: "CZ", name: "Czech Republic" },
   { code: "DE", name: "Germany" },
   { code: "FR", name: "France" },
   { code: "IT", name: "Italy" },
