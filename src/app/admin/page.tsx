@@ -54,10 +54,14 @@ export default async function AdminDashboard() {
     totalUsers,
     // Recent orders
     recentOrders,
-    // Today's page views
-    todayPageViews,
-    // Yesterday's page views
-    yesterdayPageViews,
+    // Today's page views (US)
+    todayPageViewsUS,
+    // Today's page views (EU)
+    todayPageViewsEU,
+    // Yesterday's page views (US)
+    yesterdayPageViewsUS,
+    // Yesterday's page views (EU)
+    yesterdayPageViewsEU,
     // Low stock products
     lowStockProducts
   ] = await Promise.all([
@@ -118,17 +122,32 @@ export default async function AdminDashboard() {
         }
       }
     }),
-    // Today's page views
+    // Today's page views (US)
     prisma.pageView.count({
-      where: { createdAt: { gte: startOfToday } }
+      where: { createdAt: { gte: startOfToday }, site: "us" }
     }),
-    // Yesterday's page views (for comparison)
+    // Today's page views (EU)
+    prisma.pageView.count({
+      where: { createdAt: { gte: startOfToday }, site: "eu" }
+    }),
+    // Yesterday's page views (US)
     prisma.pageView.count({
       where: {
         createdAt: {
           gte: new Date(startOfToday.getTime() - 86400000),
           lt: startOfToday
-        }
+        },
+        site: "us"
+      }
+    }),
+    // Yesterday's page views (EU)
+    prisma.pageView.count({
+      where: {
+        createdAt: {
+          gte: new Date(startOfToday.getTime() - 86400000),
+          lt: startOfToday
+        },
+        site: "eu"
       }
     }),
     // Low stock products (stock <= 3)
@@ -152,7 +171,11 @@ export default async function AdminDashboard() {
   const lastSales = lastMonthSales._sum.total?.toNumber() || 0
   const salesChange = lastSales > 0 ? ((currentSales - lastSales) / lastSales * 100).toFixed(1) : 0
   const orderChange = lastMonthOrders > 0 ? ((currentMonthOrders - lastMonthOrders) / lastMonthOrders * 100).toFixed(1) : 0
+  const todayPageViews = todayPageViewsUS + todayPageViewsEU
+  const yesterdayPageViews = yesterdayPageViewsUS + yesterdayPageViewsEU
   const pvChange = yesterdayPageViews > 0 ? ((todayPageViews - yesterdayPageViews) / yesterdayPageViews * 100).toFixed(1) : 0
+  const pvChangeUS = yesterdayPageViewsUS > 0 ? ((todayPageViewsUS - yesterdayPageViewsUS) / yesterdayPageViewsUS * 100).toFixed(1) : 0
+  const pvChangeEU = yesterdayPageViewsEU > 0 ? ((todayPageViewsEU - yesterdayPageViewsEU) / yesterdayPageViewsEU * 100).toFixed(1) : 0
 
   // Format stats for display
   const stats = [
@@ -185,11 +208,25 @@ export default async function AdminDashboard() {
       trend: "neutral"
     },
     {
-      title: "今日のアクセス数",
+      title: "今日のアクセス数（合計）",
       value: todayPageViews.toLocaleString(),
       change: `昨日比 ${Number(pvChange) >= 0 ? '+' : ''}${pvChange}%`,
       icon: Eye,
       trend: Number(pvChange) >= 0 ? "up" : "down"
+    },
+    {
+      title: "US アクセス",
+      value: todayPageViewsUS.toLocaleString(),
+      change: `昨日比 ${Number(pvChangeUS) >= 0 ? '+' : ''}${pvChangeUS}%`,
+      icon: Eye,
+      trend: Number(pvChangeUS) >= 0 ? "up" : "down"
+    },
+    {
+      title: "EU アクセス",
+      value: todayPageViewsEU.toLocaleString(),
+      change: `昨日比 ${Number(pvChangeEU) >= 0 ? '+' : ''}${pvChangeEU}%`,
+      icon: Eye,
+      trend: Number(pvChangeEU) >= 0 ? "up" : "down"
     }
   ]
 
