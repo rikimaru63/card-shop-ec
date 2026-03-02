@@ -40,6 +40,13 @@ const baseCountries = [
 
 const euOnlyCountries = [
   { code: "CZ", name: "Czech Republic" },
+  { code: "HK", name: "Hong Kong" },
+  { code: "ID", name: "Indonesia" },
+  { code: "KR", name: "South Korea" },
+  { code: "MY", name: "Malaysia" },
+  { code: "PH", name: "Philippines" },
+  { code: "SG", name: "Singapore" },
+  { code: "TH", name: "Thailand" },
 ]
 
 const region = process.env.NEXT_PUBLIC_REGION || "US"
