@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { confirmPayment, getOrderByNumber, cancelOrder } from "@/app/checkout/actions"
 import { useToast } from "@/hooks/use-toast"
+import { useCartStore } from "@/store/cart-store"
 
 const WISE_PAY_BASE_URL = "https://wise.com/pay/business/kms22"
 
@@ -33,6 +34,7 @@ export default function PaymentPage() {
   const [expired, setExpired] = useState(false)
   const [copiedAmount, setCopiedAmount] = useState(false)
   const [copiedOrder, setCopiedOrder] = useState(false)
+  const clearCart = useCartStore((state) => state.clearCart)
 
   // Fetch order details
   useEffect(() => {
@@ -55,10 +57,14 @@ export default function PaymentPage() {
 
       setOrder(orderData)
       setLoading(false)
+
+      // 注文確認後にカートをクリア（チェックアウトページではなくここで行う）
+      clearCart()
+      sessionStorage.removeItem('pendingOrderNumber')
     }
 
     fetchOrder()
-  }, [orderNumber, router])
+  }, [orderNumber, router, clearCart])
 
   // Countdown timer
   useEffect(() => {

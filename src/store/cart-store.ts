@@ -1,6 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+// DB上のデフォルトと一致させる（prisma: @default(SINGLE)）
+const getEffectiveType = (item: { productType?: ProductType }): ProductType =>
+  item.productType ?? 'SINGLE'
+
 export type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
 
 export interface CartItem {
@@ -65,8 +69,8 @@ export const useCartStore = create<CartStore>()(
           }
           
           console.log('➕ Adding new item to cart')
-          // 新しいアイテムを追加
-          const newItems = [...state.items, { ...item, quantity: qty }]
+          // 新しいアイテムを追加（productType未指定時はSINGLEをデフォルトとする）
+          const newItems = [...state.items, { ...item, quantity: qty, productType: getEffectiveType(item) }]
           console.log('✅ New cart:', newItems)
           return { items: newItems }
         })
@@ -107,31 +111,34 @@ export const useCartStore = create<CartStore>()(
 
       getBoxCount: () => {
         return get().items
-          .filter((item) => item.productType === 'BOX')
+          .filter((item) => getEffectiveType(item) === 'BOX')
           .reduce((total, item) => total + item.quantity, 0)
       },
 
       getTotalPriceByType: (type: ProductType) => {
         return get().items
-          .filter((item) => item.productType === type)
+          .filter((item) => getEffectiveType(item) === type)
           .reduce((total, item) => total + item.price * item.quantity, 0)
       },
 
       getShippingInfo: () => {
         const items = get().items
         const singleTotal = items
-          .filter((item) => item.productType === 'SINGLE')
+          .filter((item) => getEffectiveType(item) === 'SINGLE')
           .reduce((total, item) => total + item.price * item.quantity, 0)
         const boxTotal = items
-          .filter((item) => item.productType === 'BOX')
+          .filter((item) => getEffectiveType(item) === 'BOX')
           .reduce((total, item) => total + item.price * item.quantity, 0)
         const otherTotal = items
-          .filter((item) => item.productType === 'OTHER')
+          .filter((item) => getEffectiveType(item) === 'OTHER')
           .reduce((total, item) => total + item.price * item.quantity, 0)
 
         // シングル + BOX の合計が¥50,000以上で送料無料（BOX/SINGLEが0個の場合も送料不要）
         const singleBoxTotal = singleTotal + boxTotal
-        const hasSingleOrBox = items.some((item) => item.productType === 'SINGLE' || item.productType === 'BOX')
+        const hasSingleOrBox = items.some((item) => {
+          const t = getEffectiveType(item)
+          return t === 'SINGLE' || t === 'BOX'
+        })
         const isFreeShipping = singleBoxTotal >= 50000 || !hasSingleOrBox
         const shipping = isFreeShipping ? 0 : 4500
 
@@ -144,7 +151,7 @@ export const useCartStore = create<CartStore>()(
       },
 
       hasBoxItems: () => {
-        return get().items.some((item) => item.productType === 'BOX')
+        return get().items.some((item) => getEffectiveType(item) === 'BOX')
       },
 
       isBoxOrderValid: () => {
@@ -156,6 +163,18 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'cart-storage',
+      version: 1,
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as { items: CartItem[] }
+        if (version === 0 && state.items) {
+          // 旧データにproductTypeがない場合、SINGLEをデフォルトとする
+          state.items = state.items.map(item => ({
+            ...item,
+            productType: item.productType ?? 'SINGLE'
+          }))
+        }
+        return state
+      },
     }
   )
 )

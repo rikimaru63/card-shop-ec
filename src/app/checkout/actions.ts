@@ -15,15 +15,19 @@ type CartItem = {
   productType?: ProductType
 }
 
+// DB上のデフォルトと一致させる（prisma: @default(SINGLE)）
+const getEffectiveType = (item: CartItem): ProductType =>
+  item.productType ?? 'SINGLE'
+
 // Calculate shipping based on product types
 function calculateShipping(items: CartItem[]): { shipping: number; singleBoxTotal: number } {
   // シングルカードとBOXの合計金額を計算
   const singleBoxTotal = items
-    .filter(item => item.productType === 'SINGLE' || item.productType === 'BOX')
+    .filter(item => { const t = getEffectiveType(item); return t === 'SINGLE' || t === 'BOX' })
     .reduce((total, item) => total + item.price * item.quantity, 0)
 
   // シングル + BOX の合計が¥50,000以上、またはシングル/BOXが含まれない場合は送料無料
-  const hasSingleOrBox = items.some(item => item.productType === 'SINGLE' || item.productType === 'BOX')
+  const hasSingleOrBox = items.some(item => { const t = getEffectiveType(item); return t === 'SINGLE' || t === 'BOX' })
   const isFreeShipping = singleBoxTotal >= 50000 || !hasSingleOrBox
   const shipping = isFreeShipping ? 0 : 4500
 
@@ -151,6 +155,18 @@ export async function createOrder(input: CreateOrderInput): Promise<{
       return {
         success: false,
         message: `Out of stock: ${itemList}`
+      }
+    }
+
+    // BOX最低5個バリデーション
+    const boxItemCount = items
+      .filter(item => getEffectiveType(item) === 'BOX')
+      .reduce((total, item) => total + item.quantity, 0)
+
+    if (boxItemCount > 0 && boxItemCount < 5) {
+      return {
+        success: false,
+        message: `BOX products require a minimum order of 5. Current: ${boxItemCount}`
       }
     }
 

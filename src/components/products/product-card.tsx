@@ -84,6 +84,7 @@ export function ProductCard({
         image,
         price,
         category,
+        productType,
         rarity,
         condition,
         stock
