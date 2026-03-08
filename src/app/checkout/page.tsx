@@ -714,6 +714,12 @@ export default function CheckoutPage() {
                   <p className="text-sm text-green-800 mt-3">
                     After confirming your order, a QR code will be displayed for payment via Wise.
                   </p>
+                  <div className="mt-3 pt-3 border-t border-green-200">
+                    <p className="text-sm text-green-800">
+                      <strong>Payment via Wise:</strong> Please transfer the total amount to our Wise account.
+                      You will receive the account details via email after placing your order.
+                    </p>
+                  </div>
                 </div>
               </div>
 
