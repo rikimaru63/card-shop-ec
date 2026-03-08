@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
           status: true,
           paymentStatus: true,
           trackingNumber: true,
+          notes: true,
           shippingAddress: true,
           createdAt: true,
           user: {
