@@ -41,9 +41,12 @@ import {
   Clock,
   CreditCard,
   MapPin,
-  Trash2
+  Trash2,
+  Save,
+  StickyNote
 } from "lucide-react"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 export const dynamic = 'force-dynamic'
 
@@ -85,6 +88,7 @@ interface Order {
   status: string
   paymentStatus: string
   trackingNumber: string | null
+  notes: string | null
   shippingAddress: ShippingAddress | null
   createdAt: string
   user: {
@@ -287,6 +291,11 @@ export default function OrdersPage() {
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  // Tracking & notes edit state
+  const [editTrackingNumber, setEditTrackingNumber] = useState("")
+  const [editNotes, setEditNotes] = useState("")
+  const [savingField, setSavingField] = useState<string | null>(null)
+
   const fetchOrders = async () => {
     setLoading(true)
     try {
@@ -325,7 +334,39 @@ export default function OrdersPage() {
 
   const handleViewDetail = (order: Order) => {
     setSelectedOrder(order)
+    setEditTrackingNumber(order.trackingNumber || "")
+    setEditNotes(order.notes || "")
     setDetailDialogOpen(true)
+  }
+
+  const handleSaveField = async (field: 'trackingNumber' | 'notes') => {
+    if (!selectedOrder) return
+    setSavingField(field)
+    try {
+      const value = field === 'trackingNumber' ? editTrackingNumber : editNotes
+      const response = await fetch(`/api/admin/orders/${selectedOrder.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value || null })
+      })
+      if (response.ok) {
+        const updatedValue = value || null
+        setOrders(prev => prev.map(o =>
+          o.id === selectedOrder.id ? { ...o, [field]: updatedValue } : o
+        ))
+        setSelectedOrder(prev => prev ? { ...prev, [field]: updatedValue } : null)
+        toast({
+          title: "Saved",
+          description: `${field === 'trackingNumber' ? 'Tracking number' : 'Notes'} updated.`,
+        })
+      } else {
+        throw new Error('Save failed')
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to save", variant: "destructive" })
+    } finally {
+      setSavingField(null)
+    }
   }
 
   const handleDeleteClick = (order: Order) => {
@@ -461,6 +502,7 @@ export default function OrdersPage() {
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Payment</TableHead>
+              <TableHead>Tracking</TableHead>
               <TableHead>Shipping Address</TableHead>
               <TableHead>Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -469,13 +511,13 @@ export default function OrdersPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
+                <TableCell colSpan={10} className="text-center py-8">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={10} className="text-center py-8 text-gray-500">
                   No orders found
                 </TableCell>
               </TableRow>
@@ -531,6 +573,13 @@ export default function OrdersPage() {
                       colors={paymentStatusColors}
                       onUpdate={(newVal) => updateOrderStatus(order.id, 'paymentStatus', newVal)}
                     />
+                  </TableCell>
+                  <TableCell>
+                    {order.trackingNumber ? (
+                      <span className="text-xs font-mono text-blue-600">{order.trackingNumber}</span>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="max-w-[200px]">
                     <p className="text-xs text-gray-600 truncate" title={formatAddress(order.shippingAddress)}>
@@ -645,9 +694,53 @@ export default function OrdersPage() {
                   <Label className="text-sm text-gray-500">Order Date</Label>
                   <p className="font-medium">{formatDate(selectedOrder.createdAt)}</p>
                 </div>
-                <div>
-                  <Label className="text-sm text-gray-500">Tracking Number</Label>
-                  <p className="font-medium">{selectedOrder.trackingNumber || "Not set"}</p>
+              </div>
+
+              {/* Tracking Number */}
+              <div>
+                <Label className="text-sm text-gray-500 mb-1 block">
+                  <Truck className="h-4 w-4 inline mr-1" />
+                  Tracking Number
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={editTrackingNumber}
+                    onChange={(e) => setEditTrackingNumber(e.target.value)}
+                    placeholder="Enter tracking number..."
+                    className="font-mono"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => handleSaveField('trackingNumber')}
+                    disabled={savingField === 'trackingNumber'}
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {savingField === 'trackingNumber' ? 'Saving...' : 'Save'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <Label className="text-sm text-gray-500 mb-1 block">
+                  <StickyNote className="h-4 w-4 inline mr-1" />
+                  Notes
+                </Label>
+                <div className="space-y-2">
+                  <Textarea
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    placeholder="Add notes about this order..."
+                    rows={3}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => handleSaveField('notes')}
+                    disabled={savingField === 'notes'}
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {savingField === 'notes' ? 'Saving...' : 'Save'}
+                  </Button>
                 </div>
               </div>
 
