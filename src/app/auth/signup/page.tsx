@@ -24,10 +24,7 @@ const baseCountries = [
   { code: "BE", name: "Belgium" },
   { code: "CH", name: "Switzerland" },
   { code: "AT", name: "Austria" },
-  { code: "SE", name: "Sweden" },
-  { code: "NO", name: "Norway" },
   { code: "DK", name: "Denmark" },
-  { code: "FI", name: "Finland" },
   { code: "JP", name: "Japan" },
   { code: "SG", name: "Singapore" },
   { code: "HK", name: "Hong Kong" },
@@ -35,7 +32,6 @@ const baseCountries = [
   { code: "KR", name: "South Korea" },
   { code: "NZ", name: "New Zealand" },
   { code: "MX", name: "Mexico" },
-  { code: "BR", name: "Brazil" },
 ]
 
 const euOnlyCountries = [

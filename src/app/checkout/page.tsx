@@ -41,9 +41,7 @@ const baseCountries = [
   { code: "NL", name: "Netherlands" },
   { code: "BE", name: "Belgium" },
   { code: "AT", name: "Austria" },
-  { code: "SE", name: "Sweden" },
   { code: "DK", name: "Denmark" },
-  { code: "FI", name: "Finland" },
   { code: "PT", name: "Portugal" },
   { code: "IE", name: "Ireland" },
   { code: "PL", name: "Poland" },
@@ -62,7 +60,6 @@ const baseCountries = [
   { code: "MT", name: "Malta" },
   { code: "CY", name: "Cyprus" },
   { code: "GB", name: "United Kingdom" },
-  { code: "NO", name: "Norway" },
   { code: "CH", name: "Switzerland" },
 ]
 
