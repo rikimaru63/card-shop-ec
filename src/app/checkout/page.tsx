@@ -258,10 +258,18 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       console.error("Order error:", error)
+      // Server Action cache mismatch (e.g. after container restart) typically
+      // surfaces as TypeError or failed fetch. Prompt user to reload.
+      const isServerActionError =
+        error instanceof TypeError ||
+        (error instanceof Error && /fetch|network|server action/i.test(error.message))
       toast({
-        title: "Error",
-        description: "An error occurred. Please try again.",
-        variant: "destructive"
+        title: isServerActionError ? "Connection Error" : "Error",
+        description: isServerActionError
+          ? "The server connection was lost. Please reload the page and try again."
+          : "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+        duration: 8000,
       })
     } finally {
       setIsSubmitting(false)
