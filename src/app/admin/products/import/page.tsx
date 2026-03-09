@@ -3,47 +3,124 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, FileDown } from "lucide-react"
+import { ArrowLeft, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, FileDown, Eye, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+
+type PreviewChange = {
+  row: number
+  name: string
+  currentPrice: number | null
+  newPrice: number
+  diff: number | null
+  currentStock: number | null
+  newStock: number
+  action: 'UPDATE' | 'CREATE'
+}
+
+type PreviewResult = {
+  mode: 'preview'
+  changes: PreviewChange[]
+  summary: {
+    total: number
+    updates: number
+    creates: number
+    noChange: number
+  }
+  errors: string[]
+}
+
+type ApplyResult = {
+  mode: 'apply'
+  success: number
+  failed: number
+  errors: string[]
+  created: number
+  updated: number
+  message: string
+}
 
 export default function ImportProductsPage() {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
+  const [applying, setApplying] = useState(false)
   const [exporting, setExporting] = useState(false)
-  const [result, setResult] = useState<{success: number, failed: number, errors: string[], created?: number, updated?: number, message?: string} | null>(null)
+  const [preview, setPreview] = useState<PreviewResult | null>(null)
+  const [result, setResult] = useState<ApplyResult | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0])
+      setPreview(null)
       setResult(null)
     }
   }
 
-  const handleImport = async () => {
+  const handlePreview = async () => {
     if (!file) return
 
     setLoading(true)
+    setPreview(null)
+    setResult(null)
     const formData = new FormData()
     formData.append('file', file)
 
     try {
-      const response = await fetch('/api/admin/products/import', {
+      const response = await fetch('/api/admin/products/import?mode=preview', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+      if (data.mode === 'preview') {
+        setPreview(data)
+      }
+    } catch (error) {
+      setPreview({
+        mode: 'preview',
+        changes: [],
+        summary: { total: 0, updates: 0, creates: 0, noChange: 0 },
+        errors: ['プレビューの取得に失敗しました']
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleApply = async () => {
+    if (!file) return
+
+    setApplying(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await fetch('/api/admin/products/import?mode=apply', {
         method: 'POST',
         body: formData,
       })
 
       const data = await response.json()
       setResult(data)
+      setPreview(null)
     } catch (error) {
       setResult({
+        mode: 'apply',
         success: 0,
         failed: 1,
-        errors: ['アップロードに失敗しました']
+        errors: ['インポートに失敗しました'],
+        created: 0,
+        updated: 0,
+        message: ''
       })
     } finally {
-      setLoading(false)
+      setApplying(false)
     }
+  }
+
+  const handleCancel = () => {
+    setPreview(null)
+    setFile(null)
   }
 
   const downloadTemplate = () => {
@@ -79,6 +156,8 @@ export default function ImportProductsPage() {
     }
   }
 
+  const formatPrice = (price: number) => `¥${price.toLocaleString()}`
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
@@ -100,7 +179,7 @@ export default function ImportProductsPage() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
           {/* 現在の商品をエクスポート */}
           <div className="bg-white rounded-lg border p-6">
             <div className="flex items-start gap-4">
@@ -196,55 +275,189 @@ export default function ImportProductsPage() {
           </div>
 
           {/* ファイルアップロード */}
-          <div className="bg-white rounded-lg border p-6">
-            <h2 className="text-lg font-semibold mb-4">CSVファイルをアップロード</h2>
-            
-            <div className="border-2 border-dashed rounded-lg p-8 text-center">
-              <input
-                type="file"
-                id="file-upload"
-                accept=".csv"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer flex flex-col items-center gap-4"
-              >
-                <div className="p-4 bg-gray-50 rounded-full">
-                  <Upload className="h-8 w-8 text-gray-400" />
-                </div>
-                <div>
-                  <p className="font-medium mb-1">
-                    クリックしてファイルを選択
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    または、ファイルをドラッグ＆ドロップ
-                  </p>
-                </div>
-              </label>
+          {!preview && !result && (
+            <div className="bg-white rounded-lg border p-6">
+              <h2 className="text-lg font-semibold mb-4">CSVファイルをアップロード</h2>
               
-              {file && (
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg inline-flex items-center gap-2">
-                  <FileSpreadsheet className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm font-medium">{file.name}</span>
+              <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                <input
+                  type="file"
+                  id="file-upload"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="cursor-pointer flex flex-col items-center gap-4"
+                >
+                  <div className="p-4 bg-gray-50 rounded-full">
+                    <Upload className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium mb-1">
+                      クリックしてファイルを選択
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      または、ファイルをドラッグ＆ドロップ
+                    </p>
+                  </div>
+                </label>
+                
+                {file && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg inline-flex items-center gap-2">
+                    <FileSpreadsheet className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm font-medium">{file.name}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 flex gap-3">
+                <Button
+                  onClick={handlePreview}
+                  disabled={!file || loading}
+                  className="flex-1"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  {loading ? '解析中...' : 'プレビュー（変更内容を確認）'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* プレビュー結果 */}
+          {preview && (
+            <div className="bg-white rounded-lg border p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Eye className="h-5 w-5 text-blue-600" />
+                <h2 className="text-lg font-semibold">変更プレビュー</h2>
+              </div>
+
+              {/* サマリー */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div className="bg-gray-50 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold">{preview.summary.total}</p>
+                  <p className="text-xs text-muted-foreground">合計</p>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-blue-600">{preview.summary.creates}</p>
+                  <p className="text-xs text-blue-600">新規作成</p>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-orange-600">{preview.summary.updates}</p>
+                  <p className="text-xs text-orange-600">更新</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-gray-400">{preview.summary.noChange}</p>
+                  <p className="text-xs text-muted-foreground">変更なし</p>
+                </div>
+              </div>
+
+              {/* エラー表示 */}
+              {preview.errors.length > 0 && (
+                <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <h3 className="font-medium text-sm text-red-700">エラー ({preview.errors.length}件)</h3>
+                  </div>
+                  <div className="max-h-40 overflow-y-auto">
+                    {preview.errors.map((error, i) => (
+                      <p key={i} className="text-sm text-red-700">{error}</p>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
 
-            <div className="mt-4 flex gap-3">
-              <Button
-                onClick={handleImport}
-                disabled={!file || loading}
-                className="flex-1"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {loading ? 'インポート中...' : 'インポート開始'}
-              </Button>
-            </div>
-          </div>
+              {/* 変更一覧テーブル */}
+              {preview.changes.length > 0 && (
+                <div className="overflow-x-auto mb-6">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border px-3 py-2 text-left">行</th>
+                        <th className="border px-3 py-2 text-left">商品名</th>
+                        <th className="border px-3 py-2 text-left">操作</th>
+                        <th className="border px-3 py-2 text-right">現在価格</th>
+                        <th className="border px-3 py-2 text-right">新価格</th>
+                        <th className="border px-3 py-2 text-right">差額</th>
+                        <th className="border px-3 py-2 text-right">在庫変更</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preview.changes.map((change, i) => (
+                        <tr key={i} className="hover:bg-gray-50">
+                          <td className="border px-3 py-2 text-gray-500">{change.row}</td>
+                          <td className="border px-3 py-2 font-medium">{change.name}</td>
+                          <td className="border px-3 py-2">
+                            {change.action === 'CREATE' ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                新規
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                更新
+                              </span>
+                            )}
+                          </td>
+                          <td className="border px-3 py-2 text-right">
+                            {change.currentPrice !== null ? formatPrice(change.currentPrice) : '—'}
+                          </td>
+                          <td className="border px-3 py-2 text-right font-medium">
+                            {formatPrice(change.newPrice)}
+                          </td>
+                          <td className={`border px-3 py-2 text-right font-medium ${
+                            change.diff === null ? 'text-gray-400' :
+                            change.diff > 0 ? 'text-green-600' :
+                            change.diff < 0 ? 'text-red-600' : 'text-gray-400'
+                          }`}>
+                            {change.diff === null ? '—' :
+                             change.diff > 0 ? `+${formatPrice(change.diff)}` :
+                             change.diff < 0 ? `${formatPrice(change.diff)}` : '±0'}
+                          </td>
+                          <td className="border px-3 py-2 text-right text-sm">
+                            {change.action === 'CREATE' ? (
+                              <span className="text-blue-600">{change.newStock}</span>
+                            ) : (
+                              <span>
+                                {change.currentStock} → {change.newStock}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-          {/* 結果表示 */}
+              {preview.changes.length === 0 && preview.errors.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">
+                  変更対象の商品はありません。すべて現在のデータと同じです。
+                </p>
+              )}
+
+              {/* アクションボタン */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  onClick={handleApply}
+                  disabled={applying || (preview.changes.length === 0 && preview.errors.length === 0)}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  {applying ? '反映中...' : `反映する（${preview.changes.length}件）`}
+                </Button>
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
+                  disabled={applying}
+                >
+                  キャンセル
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* 反映結果 */}
           {result && (
             <div className="bg-white rounded-lg border p-6">
               <h2 className="text-lg font-semibold mb-4">インポート結果</h2>
@@ -260,10 +473,10 @@ export default function ImportProductsPage() {
                     <CheckCircle2 className="h-5 w-5" />
                     <span className="font-medium">成功: {result.success}件</span>
                   </div>
-                  {result.created !== undefined && result.created > 0 && (
+                  {result.created > 0 && (
                     <span className="text-sm text-blue-600">（新規: {result.created}件）</span>
                   )}
-                  {result.updated !== undefined && result.updated > 0 && (
+                  {result.updated > 0 && (
                     <span className="text-sm text-orange-600">（更新: {result.updated}件）</span>
                   )}
                   {result.failed > 0 && (
@@ -293,6 +506,7 @@ export default function ImportProductsPage() {
                     variant="outline"
                     onClick={() => {
                       setFile(null)
+                      setPreview(null)
                       setResult(null)
                     }}
                   >
