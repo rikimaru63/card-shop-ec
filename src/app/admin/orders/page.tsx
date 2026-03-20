@@ -285,6 +285,9 @@ export default function OrdersPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
 
+  // Sort state
+  const [sortBy, setSortBy] = useState<string>("date")
+
   // Dialog states
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
@@ -432,6 +435,29 @@ export default function OrdersPage() {
     }
   }
 
+  // Condition sort priority (lower = higher priority)
+  const conditionPriority: Record<string, number> = {
+    PSA: 1,
+    SEALED: 2,
+    GRADE_A: 3,
+    GRADE_B: 4,
+    GRADE_C: 5,
+  }
+
+  const getOrderConditionPriority = (order: Order): number => {
+    if (!order.items.length) return 99
+    // Use the highest-priority condition among all items
+    return Math.min(
+      ...order.items.map(item =>
+        item.product.condition ? (conditionPriority[item.product.condition] ?? 50) : 99
+      )
+    )
+  }
+
+  const sortedOrders = sortBy === "condition"
+    ? [...orders].sort((a, b) => getOrderConditionPriority(a) - getOrderConditionPriority(b))
+    : orders // default: date order from API
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -490,6 +516,16 @@ export default function OrdersPage() {
             <SelectItem value="REFUNDED">Refunded</SelectItem>
           </SelectContent>
         </Select>
+
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date">Sort: Date</SelectItem>
+            <SelectItem value="condition">Sort: Condition</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Orders Table */}
@@ -523,7 +559,7 @@ export default function OrdersPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              orders.map((order) => (
+              sortedOrders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-mono text-sm">
                     #{order.orderNumber.slice(-8)}
