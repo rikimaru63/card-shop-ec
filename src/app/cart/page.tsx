@@ -260,7 +260,7 @@ export default function CartPage() {
                   <span>{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Customs Fee (20%)</span>
+                  <span>Customs Fee (13%)</span>
                   <span>{formatPrice(customsFee)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
