@@ -25,6 +25,7 @@ const baseCountries = [
   { code: "CH", name: "Switzerland" },
   { code: "AT", name: "Austria" },
   { code: "DK", name: "Denmark" },
+  { code: "PT", name: "Portugal" },
   { code: "JP", name: "Japan" },
   { code: "SG", name: "Singapore" },
   { code: "HK", name: "Hong Kong" },
