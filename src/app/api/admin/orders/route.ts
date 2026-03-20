@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
                 select: {
                   id: true,
                   name: true,
+                  condition: true,
                   images: {
                     take: 1
                   }

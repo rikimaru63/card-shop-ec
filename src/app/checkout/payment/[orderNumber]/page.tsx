@@ -246,6 +246,24 @@ export default function PaymentPage() {
                 Scan with your phone to pay via Wise
               </p>
             </div>
+
+            {/* Alternative Payment Notice */}
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
+              <p className="text-sm text-amber-800 font-medium">
+                💳 Prefer to pay without Wise?
+              </p>
+              <p className="text-sm text-amber-700 mt-1">
+                DM us on Instagram for alternative payment options →{" "}
+                <a
+                  href="https://www.instagram.com/samurai_card_hub/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline font-semibold"
+                >
+                  @samurai_card_hub
+                </a>
+              </p>
+            </div>
           </div>
 
           {/* Payment Details */}
@@ -359,7 +377,7 @@ export default function PaymentPage() {
                 <span>¥{Number(order.subtotal).toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Customs Fee (20%)</span>
+                <span className="text-gray-600">Customs Fee (13%)</span>
                 <span>¥{Number(order.customsFee || 0).toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm">

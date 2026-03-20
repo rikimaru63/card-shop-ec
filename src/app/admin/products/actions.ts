@@ -8,8 +8,8 @@ import { revalidatePath } from 'next/cache';
 
 const prisma = new PrismaClient();
 
-// 関税率（20%）
-const DUTY_RATE = 1.2;
+// 関税率（13%）
+const DUTY_RATE = 1.13;
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),

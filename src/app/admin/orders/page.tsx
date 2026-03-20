@@ -76,6 +76,7 @@ interface OrderItem {
   product: {
     id: string
     name: string
+    condition: string | null
     images: { url: string }[]
   }
 }
@@ -797,6 +798,11 @@ export default function OrdersPage() {
                       )}
                       <div className="flex-1">
                         <p className="font-medium">{item.product.name}</p>
+                        {item.product.condition && (
+                          <span className="inline-block text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">
+                            {item.product.condition.replace('GRADE_', 'Grade ').replace('SEALED', 'New/Sealed')}
+                          </span>
+                        )}
                         <p className="text-sm text-gray-500">
                           ¥{Number(item.price).toLocaleString()} × {item.quantity}
                         </p>
