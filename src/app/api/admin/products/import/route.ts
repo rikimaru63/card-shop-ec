@@ -260,17 +260,17 @@ async function handlePreview(
       })
 
       if (existingProduct) {
-        const priceChanged = existingProduct.price !== row.price
-        const stockChanged = existingProduct.stock !== row.stock
+        const priceChanged = Number(existingProduct.price) !== row.price
+        const stockChanged = Number(existingProduct.stock) !== row.stock
 
         if (priceChanged || stockChanged) {
           changes.push({
             row: i + 1,
             name: row.name,
-            currentPrice: existingProduct.price,
+            currentPrice: Number(existingProduct.price),
             newPrice: row.price,
-            diff: row.price - existingProduct.price,
-            currentStock: existingProduct.stock,
+            diff: row.price - Number(existingProduct.price),
+            currentStock: Number(existingProduct.stock),
             newStock: row.stock,
             action: 'UPDATE'
           })
