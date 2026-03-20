@@ -255,12 +255,12 @@ export default function PaymentPage() {
               <p className="text-sm text-amber-700 mt-1">
                 DM us on Instagram for alternative payment options →{" "}
                 <a
-                  href="https://www.instagram.com/samurai_card_hub/"
+                  href="https://www.instagram.com/samuraicardhub_official?igsh=djBlZWtvaXRsYmww&utm_source=qr"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline font-semibold"
                 >
-                  @samurai_card_hub
+                  @samuraicardhub_official
                 </a>
               </p>
             </div>
