@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { isAdminAuthorized } from '@/lib/admin-auth'
 
 export async function GET() {
   try {
@@ -15,6 +16,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const isAuthorized = await isAdminAuthorized(request)
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { customerName, content, imageUrl, rating, isVisible, displayOrder } = body
 

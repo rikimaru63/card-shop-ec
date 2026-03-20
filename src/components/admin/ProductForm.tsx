@@ -12,9 +12,7 @@ import { createProduct, updateProduct } from '@/app/admin/products/actions';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Product, ProductImage } from '@prisma/client';
-
-// 関税率（13%）
-const DUTY_RATE = 1.13;
+import { DUTY_MULTIPLIER } from '@/lib/constants';
 
 interface ProductFormProps {
   initialData?: (Product & { images: ProductImage[] }) | null;
@@ -38,7 +36,7 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
 
   // 編集時は、DBに保存されている販売価格から原価を逆算
   const initialBasePrice = initialData?.price
-    ? (Number(initialData.price) / DUTY_RATE).toFixed(2)
+    ? (Number(initialData.price) / DUTY_MULTIPLIER).toFixed(2)
     : '';
 
   const [basePrice, setBasePrice] = useState(initialBasePrice);
@@ -49,7 +47,7 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
   const sellingPrice = useMemo(() => {
     const price = parseFloat(basePrice);
     if (isNaN(price) || price <= 0) return null;
-    return (price * DUTY_RATE).toFixed(2);
+    return (price * DUTY_MULTIPLIER).toFixed(2);
   }, [basePrice]);
 
   const handleSubmit = async (formData: FormData) => {

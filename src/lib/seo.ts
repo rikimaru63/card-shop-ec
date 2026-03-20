@@ -17,9 +17,9 @@ export function generateSEO({
   url = "",
   type = "website"
 }: SEOProps): Metadata {
-  const siteName = "CardShop - Premium Trading Cards"
+  const siteName = "Samurai Card Hub - Premium Trading Cards"
   const fullTitle = title ? `${title} | ${siteName}` : siteName
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://card-shop.vercel.app"
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://samuraicardhub.com"
   const fullUrl = url ? `${baseUrl}${url}` : baseUrl
   const fullImage = image.startsWith("http") ? image : `${baseUrl}${image}`
 
@@ -46,9 +46,9 @@ export function generateSEO({
     title: fullTitle,
     description,
     keywords: allKeywords.join(", "),
-    authors: [{ name: "CardShop" }],
-    creator: "CardShop",
-    publisher: "CardShop",
+    authors: [{ name: "Samurai Card Hub" }],
+    creator: "Samurai Card Hub",
+    publisher: "Samurai Card Hub",
     robots: {
       index: true,
       follow: true,
@@ -81,7 +81,7 @@ export function generateSEO({
       title: fullTitle,
       description,
       images: [fullImage],
-      creator: "@cardshop",
+      creator: "@samuraicardhub_official",
     },
     alternates: {
       canonical: fullUrl,
@@ -125,24 +125,16 @@ export function generateProductSchema(product: {
 
 // Organization Schema.org structured data
 export function generateOrganizationSchema() {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://samuraicardhub.com"
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "CardShop",
-    url: process.env.NEXT_PUBLIC_BASE_URL || "https://card-shop.vercel.app",
-    logo: `${process.env.NEXT_PUBLIC_BASE_URL || "https://card-shop.vercel.app"}/logo.png`,
+    name: "Samurai Card Hub",
+    url: baseUrl,
+    logo: `${baseUrl}/logo.png`,
     description: "Your premier destination for trading cards in the USA",
-    contactPoint: {
-      "@type": "ContactPoint",
-      telephone: "+1-234-567-890",
-      contactType: "Customer Service",
-      email: "support@cardshop.com",
-      availableLanguage: ["English"],
-    },
     sameAs: [
-      "https://facebook.com/cardshop",
-      "https://twitter.com/cardshop",
-      "https://instagram.com/cardshop",
+      "https://www.instagram.com/samuraicardhub_official",
     ],
   }
 }

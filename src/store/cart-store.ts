@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { CUSTOMS_RATE } from '@/lib/constants'
 
 // DB上のデフォルトと一致させる（prisma: @default(SINGLE)）
 const getEffectiveType = (item: { productType?: ProductType }): ProductType =>
@@ -106,7 +107,7 @@ export const useCartStore = create<CartStore>()(
 
       getCustomsFee: () => {
         const subtotal = get().getTotalPrice()
-        return Math.floor(subtotal * 0.13)
+        return Math.floor(subtotal * CUSTOMS_RATE)
       },
 
       getBoxCount: () => {

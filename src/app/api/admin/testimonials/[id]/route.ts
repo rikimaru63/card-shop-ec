@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { isAdminAuthorized } from '@/lib/admin-auth'
+import { Prisma } from '@prisma/client'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const isAuthorized = await isAdminAuthorized(request)
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { customerName, content, imageUrl, rating, isVisible, displayOrder } = body
 
-    const data: any = {}
+    const data: Prisma.TestimonialUpdateInput = {}
     if (customerName !== undefined) data.customerName = customerName
     if (content !== undefined) data.content = content
     if (imageUrl !== undefined) data.imageUrl = imageUrl || null
@@ -34,6 +41,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const isAuthorized = await isAdminAuthorized(request)
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     await prisma.testimonial.delete({
       where: { id: params.id },
     })

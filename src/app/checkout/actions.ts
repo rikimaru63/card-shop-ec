@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { sendInvoiceEmail } from "@/lib/email"
+import { CUSTOMS_RATE } from "@/lib/constants"
 
 type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
 
@@ -172,7 +173,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{
 
     // Calculate totals (JPY)
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-    const customsFee = Math.floor(subtotal * 0.13)
+    const customsFee = Math.floor(subtotal * CUSTOMS_RATE)
     const { shipping } = calculateShipping(items)
     const tax = 0
     const total = subtotal + customsFee + shipping + tax
