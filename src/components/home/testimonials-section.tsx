@@ -103,7 +103,7 @@ export function TestimonialsSection() {
     <section className="py-10 bg-gradient-to-b from-blue-50/50 to-white">
       <div className="container mx-auto px-4">
         {/* セクションヘッダー */}
-        <div className="mb-8 text-center">
+        <div className="mb-8 text-center animate-fade-in">
           <div className="inline-flex items-center gap-2 mb-2">
             <MessageCircle className="h-5 w-5 text-pink-500" />
             <h2 className="text-xl font-bold text-gray-900">Customer Reviews</h2>

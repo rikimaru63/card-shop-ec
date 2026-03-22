@@ -11,6 +11,7 @@ import {
   Plane
 } from "lucide-react"
 import { businessConfig } from "@/lib/config/business"
+import { AnimatedSection, StaggerContainer, StaggerItem } from "@/components/motion/animated-section"
 
 export function ShippingInfoSection() {
   return (
@@ -18,9 +19,11 @@ export function ShippingInfoSection() {
       <div className="container mx-auto px-4">
         {/* Purchase Flow */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-center mb-8">
-            How to Order
-          </h2>
+          <AnimatedSection>
+            <h2 className="text-2xl font-bold text-center mb-8">
+              How to Order
+            </h2>
+          </AnimatedSection>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {/* Step 1 */}
             <div className="relative bg-white rounded-lg border p-4 md:p-6 text-center shadow-sm">
