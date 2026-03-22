@@ -21,6 +21,7 @@ import { useCartStore } from "@/store/cart-store"
 import { formatPrice } from "@/lib/utils"
 import { formatCategoryName, formatConditionLabel } from "@/lib/filter-config"
 import { CustomsNotice } from "@/components/CustomsNotice"
+import { businessConfig } from "@/lib/config/business"
 
 export default function CartPage() {
   const {
@@ -47,7 +48,7 @@ export default function CartPage() {
   const boxCount = getBoxCount()
   const hasBox = hasBoxItems()
   const boxOrderValid = isBoxOrderValid()
-  const boxNeeded = hasBox && !boxOrderValid ? 5 - boxCount : 0
+  const boxNeeded = hasBox && !boxOrderValid ? businessConfig.box.minimumQuantity - boxCount : 0
 
   if (items.length === 0) {
     return (
@@ -238,7 +239,7 @@ export default function CartPage() {
                     <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-orange-800">
-                        Minimum 5 BOX required per order
+                        Minimum {businessConfig.box.minimumQuantity} BOX required per order
                       </p>
                       <p className="text-sm text-orange-600 mt-1">
                         Current: {boxCount} BOX ({boxNeeded} more needed)
@@ -271,7 +272,7 @@ export default function CartPage() {
                 </div>
                 {!shippingInfo.isFreeShipping && shippingInfo.singleBoxTotal > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    * Add ¥{(50000 - shippingInfo.singleBoxTotal).toLocaleString()} more for free shipping
+                    * Add ¥{(businessConfig.shipping.freeThreshold - shippingInfo.singleBoxTotal).toLocaleString()} more for free shipping
                   </p>
                 )}
                 <div className="flex justify-between font-bold text-lg border-t pt-3">
@@ -311,8 +312,8 @@ export default function CartPage() {
               <div className="mt-6 p-4 bg-secondary/50 rounded-lg space-y-2">
                 <p className="text-xs font-semibold">Shipping Policy</p>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• Singles/BOX: Free shipping on ¥50,000+</li>
-                  <li>• BOX: Minimum 5 units per order</li>
+                  <li>• Singles/BOX: Free shipping on ¥{businessConfig.shipping.freeThreshold.toLocaleString()}+</li>
+                  <li>• BOX: Minimum {businessConfig.box.minimumQuantity} units per order</li>
                   <li>• Others: Shipping included</li>
                 </ul>
               </div>

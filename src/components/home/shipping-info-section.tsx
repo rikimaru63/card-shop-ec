@@ -10,6 +10,7 @@ import {
   Gift,
   Plane
 } from "lucide-react"
+import { businessConfig } from "@/lib/config/business"
 
 export function ShippingInfoSection() {
   return (
@@ -95,10 +96,10 @@ export function ShippingInfoSection() {
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">Free shipping</span> on orders ¥50,000+
+                  <span className="font-semibold text-foreground">Free shipping</span> on orders {businessConfig.currency.symbol}{businessConfig.shipping.freeThreshold.toLocaleString()}+
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Under ¥50,000: <span className="font-semibold text-foreground">¥4,500</span> shipping
+                  Under {businessConfig.currency.symbol}{businessConfig.shipping.freeThreshold.toLocaleString()}: <span className="font-semibold text-foreground">{businessConfig.currency.symbol}{businessConfig.shipping.baseCost.toLocaleString()}</span> shipping
                 </p>
               </div>
             </div>
@@ -113,10 +114,10 @@ export function ShippingInfoSection() {
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">Minimum 5 BOX</span> per order
+                  <span className="font-semibold text-foreground">Minimum {businessConfig.box.minimumQuantity} BOX</span> per order
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Free shipping on orders ¥50,000+
+                  Free shipping on orders {businessConfig.currency.symbol}{businessConfig.shipping.freeThreshold.toLocaleString()}+
                 </p>
                 <p className="text-xs text-orange-600 mt-2">
                   *Any combination of BOX types
@@ -163,7 +164,7 @@ export function ShippingInfoSection() {
 
           {/* Note */}
           <p className="text-center text-sm text-muted-foreground mt-6">
-            * Free shipping applies when Single Cards + BOX total is ¥50,000 or more
+            * Free shipping applies when Single Cards + BOX total is {businessConfig.currency.symbol}{businessConfig.shipping.freeThreshold.toLocaleString()} or more
           </p>
         </div>
       </div>

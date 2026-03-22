@@ -4,6 +4,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { Truck, Package, Box } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { siteConfig } from "@/lib/config/site"
+import { businessConfig } from "@/lib/config/business"
 
 export function HeroSection() {
   return (
@@ -12,7 +14,7 @@ export function HeroSection() {
       <div className="absolute inset-0">
         <Image
           src="/hero-bg-2.png"
-          alt="Pokemon Trading Cards"
+          alt={siteConfig.name}
           fill
           priority
           className="object-cover"
@@ -30,13 +32,13 @@ export function HeroSection() {
       <div className="relative z-10 h-full container mx-auto px-4 flex items-center">
         <div className="max-w-2xl text-white">
           <p className="text-primary text-sm font-semibold mb-2 uppercase tracking-wider drop-shadow-lg">
-            Premium Pokemon Cards
+            {siteConfig.name}
           </p>
           <h1
             className="text-4xl md:text-6xl font-bold mb-4 leading-tight"
             style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}
           >
-            Pokemon Trading Cards
+            {siteConfig.name}
           </h1>
           <p
             className="text-lg md:text-xl mb-8 text-gray-100"
@@ -64,11 +66,11 @@ export function HeroSection() {
             <div className="flex flex-wrap gap-3 ml-0 md:ml-4 mt-4 md:mt-0">
               <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
                 <Truck className="h-4 w-4 text-green-400" />
-                <span className="text-sm font-medium">Free shipping ¥50,000+</span>
+                <span className="text-sm font-medium">Free shipping {businessConfig.currency.symbol}{businessConfig.shipping.freeThreshold.toLocaleString()}+</span>
               </div>
               <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
                 <Box className="h-4 w-4 text-orange-400" />
-                <span className="text-sm font-medium">BOX: Min 5 units</span>
+                <span className="text-sm font-medium">BOX: Min {businessConfig.box.minimumQuantity} units</span>
               </div>
               <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
                 <Package className="h-4 w-4 text-blue-400" />
