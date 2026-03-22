@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { createHash } from "crypto"
 
 function hashIP(ip: string): string {
-  return createHash("sha256").update(ip + (process.env.IP_HASH_SALT || "samurai-card-hub")).digest("hex")
+  return createHash("sha256").update(ip + (process.env.IP_HASH_SALT || "card-shop-default")).digest("hex")
 }
 
 export async function POST(request: NextRequest) {
