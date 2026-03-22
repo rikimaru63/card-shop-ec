@@ -28,6 +28,8 @@ import { useCartStore } from "@/store/cart-store"
 import { createOrder, getUserAddresses } from "./actions"
 import { toast } from "@/hooks/use-toast"
 import { CustomsNotice } from "@/components/CustomsNotice"
+import { siteConfig } from "@/lib/config/site"
+import { businessConfig } from "@/lib/config/business"
 
 const baseCountries = [
   { code: "US", name: "United States" },
@@ -277,7 +279,9 @@ export default function CheckoutPage() {
   }
 
   const handleInstagramInquiry = () => {
-    window.open("https://ig.me/m/cardshop_official", "_blank")
+    if (siteConfig.social.instagram) {
+      window.open(siteConfig.social.instagram, "_blank")
+    }
   }
 
   // Loading state
@@ -324,7 +328,7 @@ export default function CheckoutPage() {
   const boxCount = getBoxCount()
   const hasBox = hasBoxItems()
   const boxOrderValid = isBoxOrderValid()
-  const boxNeeded = hasBox && !boxOrderValid ? 5 - boxCount : 0
+  const boxNeeded = hasBox && !boxOrderValid ? businessConfig.box.minimumQuantity - boxCount : 0
 
   const isAddressValid = () => {
     if (addressMode === "new") {
@@ -414,7 +418,7 @@ export default function CheckoutPage() {
                   </div>
                   {!shippingInfo.isFreeShipping && shippingInfo.singleBoxTotal > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      * Add ¥{(50000 - shippingInfo.singleBoxTotal).toLocaleString()} more for free shipping
+                      * Add ¥{(businessConfig.shipping.freeThreshold - shippingInfo.singleBoxTotal).toLocaleString()} more for free shipping
                     </p>
                   )}
                   <div className="flex justify-between font-bold text-lg pt-2 border-t">
@@ -773,15 +777,17 @@ export default function CheckoutPage() {
                 )}
 
                 {/* Secondary CTA */}
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleInstagramInquiry}
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Contact via Instagram
-                  <ExternalLink className="h-3 w-3 ml-2" />
-                </Button>
+                {siteConfig.social.instagram && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleInstagramInquiry}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Contact via Instagram
+                    <ExternalLink className="h-3 w-3 ml-2" />
+                  </Button>
+                )}
 
                 {/* Trust badges */}
                 <div className="mt-6 pt-6 border-t space-y-3">

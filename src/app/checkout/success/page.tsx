@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { siteConfig } from "@/lib/config/site"
 
 interface Order {
   id: string
@@ -102,12 +103,14 @@ function CheckoutSuccessContent() {
           </Link>
 
           {/* Support */}
-          <p className="mt-8 text-sm text-muted-foreground">
-            Questions? Contact us at{" "}
-            <a href="mailto:support@samuraicardhub.com" className="text-primary underline">
-              support@samuraicardhub.com
-            </a>
-          </p>
+          {siteConfig.contact.email && (
+            <p className="mt-8 text-sm text-muted-foreground">
+              Questions? Contact us at{" "}
+              <a href={`mailto:${siteConfig.contact.email}`} className="text-primary underline">
+                {siteConfig.contact.email}
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </div>
