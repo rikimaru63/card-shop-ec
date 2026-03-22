@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { CUSTOMS_RATE } from '@/lib/constants'
+import { businessConfig } from '@/lib/config/business'
 
 // DB上のデフォルトと一致させる（prisma: @default(SINGLE)）
 const getEffectiveType = (item: { productType?: ProductType }): ProductType =>
@@ -140,8 +141,8 @@ export const useCartStore = create<CartStore>()(
           const t = getEffectiveType(item)
           return t === 'SINGLE' || t === 'BOX'
         })
-        const isFreeShipping = singleBoxTotal >= 50000 || !hasSingleOrBox
-        const shipping = isFreeShipping ? 0 : 4500
+        const isFreeShipping = singleBoxTotal >= businessConfig.shipping.freeThreshold || !hasSingleOrBox
+        const shipping = isFreeShipping ? 0 : businessConfig.shipping.baseCost
 
         return {
           shipping,
@@ -159,7 +160,7 @@ export const useCartStore = create<CartStore>()(
         const boxCount = get().getBoxCount()
         // BOX商品がない場合は有効（制限なし）
         // BOX商品がある場合は5個以上必要
-        return boxCount === 0 || boxCount >= 5
+        return boxCount === 0 || boxCount >= businessConfig.box.minimumQuantity
       },
     }),
     {
