@@ -52,7 +52,7 @@ function generateInvoiceHTML(data: InvoiceEmailData): string {
   <p style="text-align: right; font-size: 20px;"><strong>Total: ${formatPrice(data.total, data.currency)}</strong></p>
   <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
     <h3>Payment Instructions (Wise)</h3>
-    <p>Account Holder: ${process.env.WISE_ACCOUNT_HOLDER || 'SAMURAI CARD HUB'}</p>
+    <p>Account Holder: ${process.env.WISE_ACCOUNT_HOLDER || siteConfig.name}</p>
     <p>IBAN: ${process.env.WISE_IBAN || 'Your IBAN'}</p>
     <p>Reference: #${data.orderNumber}</p>
   </div>
