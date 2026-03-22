@@ -10,6 +10,7 @@ import {
   CreditCard,
   Shield
 } from "lucide-react"
+import { siteConfig, getCopyright, getActiveSocialLinks } from "@/lib/config/site"
 
 const footerLinks = {
   shop: [
@@ -42,14 +43,15 @@ const footerLinks = {
   ]
 }
 
-const socialLinks = [
-  { name: "Facebook", icon: Facebook, href: "#" },
-  { name: "Twitter", icon: Twitter, href: "#" },
-  { name: "Instagram", icon: Instagram, href: "#" },
-  { name: "YouTube", icon: Youtube, href: "#" }
-]
+const socialIconMap: Record<string, typeof Facebook> = {
+  instagram: Instagram,
+  twitter: Twitter,
+  facebook: Facebook,
+  youtube: Youtube,
+}
 
 export function Footer() {
+  const activeSocialLinks = getActiveSocialLinks()
   return (
     <footer className="bg-secondary/50 border-t">
       {/* 特徴バー */}
@@ -87,31 +89,36 @@ export function Footer() {
               <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-lg">C</span>
               </div>
-              <span className="font-bold text-xl">CardShop</span>
+              <span className="font-bold text-xl">{siteConfig.name}</span>
             </Link>
             <p className="text-muted-foreground mb-4">
-              Your premier destination for trading cards. We offer authentic cards, 
-              competitive prices, and worldwide shipping.
+              {siteConfig.description}
             </p>
             
             {/* 連絡先情報 */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <a href="mailto:support@cardshop.com" className="hover:text-primary">
-                  support@cardshop.com
-                </a>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <a href="tel:+1234567890" className="hover:text-primary">
-                  +1 (234) 567-890
-                </a>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>Los Angeles, CA, USA</span>
-              </div>
+              {siteConfig.contact.email && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <a href={`mailto:${siteConfig.contact.email}`} className="hover:text-primary">
+                    {siteConfig.contact.email}
+                  </a>
+                </div>
+              )}
+              {siteConfig.contact.phone && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <a href={`tel:${siteConfig.contact.phone.replace(/[\s()-]/g, '')}`} className="hover:text-primary">
+                    {siteConfig.contact.phone}
+                  </a>
+                </div>
+              )}
+              {siteConfig.contact.address && (
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span>{siteConfig.contact.address}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -187,33 +194,35 @@ export function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             {/* 著作権 */}
             <p className="text-sm text-muted-foreground">
-              © 2024 CardShop. All rights reserved.
+              {getCopyright()}
             </p>
 
             {/* ソーシャルリンク */}
-            <div className="flex items-center gap-4">
-              {socialLinks.map((social) => {
-                const Icon = social.icon
-                return (
-                  <a
-                    key={social.name}
-                    href={social.href}
-                    className="p-2 bg-secondary rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
-                    aria-label={social.name}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </a>
-                )
-              })}
-            </div>
+            {activeSocialLinks.length > 0 && (
+              <div className="flex items-center gap-4">
+                {activeSocialLinks.map((social) => {
+                  const Icon = socialIconMap[social.key]
+                  if (!Icon) return null
+                  return (
+                    <a
+                      key={social.name}
+                      href={social.url}
+                      className="p-2 bg-secondary rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                      aria-label={social.name}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </a>
+                  )
+                })}
+              </div>
+            )}
 
             {/* 決済方法 */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground mr-2">We accept:</span>
-              <span className="text-xs font-semibold px-2 py-1 bg-secondary rounded">Wise</span>
-              <span className="text-xs font-semibold px-2 py-1 bg-secondary rounded">Visa</span>
-              <span className="text-xs font-semibold px-2 py-1 bg-secondary rounded">Mastercard</span>
-              <span className="text-xs font-semibold px-2 py-1 bg-secondary rounded">PayPal</span>
+              {siteConfig.paymentMethods.map((method) => (
+                <span key={method} className="text-xs font-semibold px-2 py-1 bg-secondary rounded">{method}</span>
+              ))}
             </div>
           </div>
         </div>
