@@ -30,6 +30,7 @@ import { toast } from "@/hooks/use-toast"
 import { CustomsNotice } from "@/components/CustomsNotice"
 import { siteConfig } from "@/lib/config/site"
 import { businessConfig } from "@/lib/config/business"
+import { CUSTOMS_RATE } from "@/lib/constants"
 
 const baseCountries = [
   { code: "US", name: "United States" },
@@ -391,7 +392,7 @@ export default function CheckoutPage() {
                       <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-semibold text-orange-800 text-sm">
-                          Minimum 5 BOX required per order
+                          Minimum {businessConfig.box.minimumQuantity} BOX required per order
                         </p>
                         <p className="text-xs text-orange-600 mt-1">
                           Current: {boxCount} BOX ({boxNeeded} more needed)
@@ -407,7 +408,7 @@ export default function CheckoutPage() {
                     <span>¥{subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Customs Fee (13%)</span>
+                    <span>Customs Fee ({Math.round(CUSTOMS_RATE * 100)}%)</span>
                     <span>¥{customsFee.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -734,7 +735,7 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-orange-500 flex-shrink-0" />
                       <p className="text-sm text-orange-800">
-                        Minimum 5 BOX required
+                        Minimum {businessConfig.box.minimumQuantity} BOX required
                       </p>
                     </div>
                   </div>
@@ -761,7 +762,7 @@ export default function CheckoutPage() {
                       Processing...
                     </>
                   ) : !boxOrderValid ? (
-                    "Add 5+ BOX to continue"
+                    `Add ${businessConfig.box.minimumQuantity}+ BOX to continue`
                   ) : (
                     <>
                       <CheckCircle className="h-4 w-4 mr-2" />

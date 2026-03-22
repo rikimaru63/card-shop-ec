@@ -1,4 +1,4 @@
-import { Metadata } from "next"
+import type { Metadata } from "next"
 import { siteConfig, getActiveSocialLinks } from "@/lib/config/site"
 
 interface SEOProps {
@@ -14,7 +14,7 @@ export function generateSEO({
   title,
   description,
   keywords = [],
-  image = "/og-image.jpg",
+  image = siteConfig.seo.ogImage,
   url = "",
   type = "website"
 }: SEOProps): Metadata {
@@ -63,7 +63,7 @@ export function generateSEO({
     },
     openGraph: {
       type,
-      locale: "en_US",
+      locale: siteConfig.seo.locale,
       url: fullUrl,
       siteName,
       title: fullTitle,

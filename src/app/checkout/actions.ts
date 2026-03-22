@@ -182,8 +182,8 @@ export async function createOrder(input: CreateOrderInput): Promise<{
     // Generate unique order number
     const orderNumber = generateOrderNumber()
 
-    // 在庫予約の期限（30分後）
-    const reservationExpiresAt = new Date(Date.now() + 30 * 60 * 1000)
+    // 在庫予約の期限
+    const reservationExpiresAt = new Date(Date.now() + businessConfig.reservation.expiryMinutes * 60 * 1000)
 
     // Use transaction to create order AND stock reservations atomically
     const order = await prisma.$transaction(async (tx) => {

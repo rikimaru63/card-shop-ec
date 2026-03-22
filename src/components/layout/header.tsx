@@ -70,7 +70,7 @@ export function Header() {
           </Link>
 
           <nav className="hidden lg:flex items-center">
-            {siteConfig.categories.map((category, index) => (
+            {siteConfig.categories.map((category) => (
               <div
                 key={category.name}
                 className="relative flex-shrink-0"

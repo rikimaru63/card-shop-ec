@@ -22,6 +22,7 @@ import { formatPrice } from "@/lib/utils"
 import { formatCategoryName, formatConditionLabel } from "@/lib/filter-config"
 import { CustomsNotice } from "@/components/CustomsNotice"
 import { businessConfig } from "@/lib/config/business"
+import { CUSTOMS_RATE } from "@/lib/constants"
 
 export default function CartPage() {
   const {
@@ -261,7 +262,7 @@ export default function CartPage() {
                   <span>{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Customs Fee (13%)</span>
+                  <span>Customs Fee ({Math.round(CUSTOMS_RATE * 100)}%)</span>
                   <span>{formatPrice(customsFee)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -288,7 +289,7 @@ export default function CartPage() {
                   size="lg"
                   disabled={!boxOrderValid}
                 >
-                  {boxOrderValid ? "Proceed to Checkout" : "Add 5+ BOX to continue"}
+                  {boxOrderValid ? "Proceed to Checkout" : `Add ${businessConfig.box.minimumQuantity}+ BOX to continue`}
                 </Button>
               </Link>
 

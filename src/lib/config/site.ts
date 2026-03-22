@@ -79,7 +79,7 @@ export function getCopyright(): string {
   return `© ${new Date().getFullYear()} ${siteConfig.name}. All rights reserved.`
 }
 
-export function getActiveSocialLinks() {
+export function getActiveSocialLinks(): Array<{ name: string; key: "instagram" | "twitter" | "facebook" | "youtube"; url: string }> {
   const { social } = siteConfig
   const links = [
     { name: "Instagram", key: "instagram" as const, url: social.instagram },
