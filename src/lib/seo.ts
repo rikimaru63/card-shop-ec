@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { siteConfig, getActiveSocialLinks } from "@/lib/config/site"
 
 interface SEOProps {
   title: string
@@ -17,9 +18,9 @@ export function generateSEO({
   url = "",
   type = "website"
 }: SEOProps): Metadata {
-  const siteName = "Samurai Card Hub - Premium Trading Cards"
+  const siteName = siteConfig.name
   const fullTitle = title ? `${title} | ${siteName}` : siteName
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://samuraicardhub.com"
+  const baseUrl = siteConfig.url
   const fullUrl = url ? `${baseUrl}${url}` : baseUrl
   const fullImage = image.startsWith("http") ? image : `${baseUrl}${image}`
 
@@ -46,9 +47,9 @@ export function generateSEO({
     title: fullTitle,
     description,
     keywords: allKeywords.join(", "),
-    authors: [{ name: "Samurai Card Hub" }],
-    creator: "Samurai Card Hub",
-    publisher: "Samurai Card Hub",
+    authors: [{ name: siteConfig.name }],
+    creator: siteConfig.name,
+    publisher: siteConfig.name,
     robots: {
       index: true,
       follow: true,
@@ -81,7 +82,7 @@ export function generateSEO({
       title: fullTitle,
       description,
       images: [fullImage],
-      creator: "@samuraicardhub_official",
+      creator: siteConfig.social.twitterHandle,
     },
     alternates: {
       canonical: fullUrl,
@@ -125,17 +126,15 @@ export function generateProductSchema(product: {
 
 // Organization Schema.org structured data
 export function generateOrganizationSchema() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://samuraicardhub.com"
+  const baseUrl = siteConfig.url
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Samurai Card Hub",
+    name: siteConfig.name,
     url: baseUrl,
     logo: `${baseUrl}/logo.png`,
-    description: "Your premier destination for trading cards in the USA",
-    sameAs: [
-      "https://www.instagram.com/samuraicardhub_official",
-    ],
+    description: siteConfig.description,
+    sameAs: getActiveSocialLinks().map(l => l.url),
   }
 }
 
