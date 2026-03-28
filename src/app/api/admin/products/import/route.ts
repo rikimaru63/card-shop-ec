@@ -260,7 +260,7 @@ async function handlePreview(
       })
 
       if (existingProduct) {
-        const priceChanged = existingProduct.price !== row.price
+        const priceChanged = Number(existingProduct.price) !== row.price
         const stockChanged = existingProduct.stock !== row.stock
 
         if (priceChanged || stockChanged) {
