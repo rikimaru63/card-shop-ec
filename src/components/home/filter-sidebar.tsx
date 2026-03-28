@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
+import { ConditionGuideLink } from "@/components/condition-guide-modal"
 import {
   CARD_SETS,
   CARD_GAMES,
@@ -350,7 +351,10 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
 
         {/* Condition */}
         <div>
-          <h3 className="font-medium text-sm mb-3">Condition</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium text-sm">Condition</h3>
+            <ConditionGuideLink />
+          </div>
           <div className="space-y-2">
             {conditions.map((condition) => (
               <label
