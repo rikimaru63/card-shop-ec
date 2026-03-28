@@ -267,9 +267,9 @@ async function handlePreview(
           changes.push({
             row: i + 1,
             name: row.name,
-            currentPrice: existingProduct.price,
+            currentPrice: Number(existingProduct.price),
             newPrice: row.price,
-            diff: row.price - existingProduct.price,
+            diff: row.price - Number(existingProduct.price),
             currentStock: existingProduct.stock,
             newStock: row.stock,
             action: 'UPDATE'
