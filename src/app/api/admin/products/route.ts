@@ -43,12 +43,15 @@ export async function GET(request: NextRequest) {
 
     // Search filter (name, cardNumber, sku)
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { nameJa: { contains: search, mode: 'insensitive' } },
-        { cardNumber: { contains: search, mode: 'insensitive' } },
-        { sku: { contains: search, mode: 'insensitive' } }
-      ]
+      if (!where.AND) where.AND = []
+      ;(where.AND as Prisma.ProductWhereInput[]).push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { nameJa: { contains: search, mode: 'insensitive' } },
+          { cardNumber: { contains: search, mode: 'insensitive' } },
+          { sku: { contains: search, mode: 'insensitive' } }
+        ]
+      })
     }
 
     // Published filter
@@ -143,6 +146,9 @@ export async function GET(request: NextRequest) {
         break
       case 'stock-desc':
         orderBy = [{ stock: 'desc' }]
+        break
+      case 'updatedAt':
+        orderBy = [{ updatedAt: 'desc' }]
         break
       // default 'sortOrder' keeps the manual drag order
     }

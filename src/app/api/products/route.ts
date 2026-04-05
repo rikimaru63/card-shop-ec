@@ -104,11 +104,14 @@ export async function GET(request: NextRequest) {
 
     // Search filter (name or description)
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' as const } },
-        { nameJa: { contains: search, mode: 'insensitive' as const } },
-        { description: { contains: search, mode: 'insensitive' as const } }
-      ]
+      if (!where.AND) where.AND = []
+      ;(where.AND as Prisma.ProductWhereInput[]).push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' as const } },
+          { nameJa: { contains: search, mode: 'insensitive' as const } },
+          { description: { contains: search, mode: 'insensitive' as const } }
+        ]
+      })
     }
 
     // Price range filter
