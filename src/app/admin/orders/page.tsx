@@ -43,10 +43,12 @@ import {
   MapPin,
   Trash2,
   Save,
-  StickyNote
+  StickyNote,
+  PackageOpen
 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { releaseOrderStock } from "@/app/admin/actions"
 
 export const dynamic = 'force-dynamic'
 
@@ -295,6 +297,11 @@ export default function OrdersPage() {
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  // Release stock state
+  const [releaseDialogOpen, setReleaseDialogOpen] = useState(false)
+  const [orderToRelease, setOrderToRelease] = useState<Order | null>(null)
+  const [releasing, setReleasing] = useState(false)
+
   // Tracking & notes edit state
   const [editTrackingNumber, setEditTrackingNumber] = useState("")
   const [editNotes, setEditNotes] = useState("")
@@ -397,6 +404,37 @@ export default function OrdersPage() {
       toast({ title: "Error", description: "Failed to delete order", variant: "destructive" })
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleReleaseStock = async () => {
+    if (!orderToRelease) return
+    setReleasing(true)
+    try {
+      const result = await releaseOrderStock(orderToRelease.orderNumber)
+      if (result.success) {
+        toast({
+          title: "Stock Released",
+          description: result.message,
+        })
+        fetchOrders()
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to release stock",
+        variant: "destructive",
+      })
+    } finally {
+      setReleasing(false)
+      setReleaseDialogOpen(false)
+      setOrderToRelease(null)
     }
   }
 
@@ -634,6 +672,21 @@ export default function OrdersPage() {
                     {formatDate(order.createdAt)}
                   </TableCell>
                   <TableCell className="text-right space-x-1">
+                    {order.paymentStatus === "PROCESSING" && order.status !== "CANCELLED" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs text-orange-600 border-orange-300 hover:bg-orange-50"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOrderToRelease(order)
+                          setReleaseDialogOpen(true)
+                        }}
+                      >
+                        <PackageOpen className="h-3.5 w-3.5 mr-1" />
+                        Release Stock
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -702,6 +755,50 @@ export default function OrdersPage() {
             </Button>
             <Button variant="destructive" onClick={handleDeleteConfirm} disabled={deleting}>
               {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Release Stock Dialog */}
+      <Dialog open={releaseDialogOpen} onOpenChange={setReleaseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Release Stock</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to release stock for order{" "}
+              <strong>#{orderToRelease?.orderNumber.slice(-8)}</strong>?
+              This will restore all items to inventory and cancel the order.
+            </DialogDescription>
+          </DialogHeader>
+          {orderToRelease && (
+            <div className="py-2">
+              <p className="text-sm text-gray-600 mb-2">Items to be restored:</p>
+              <ul className="text-sm space-y-1">
+                {orderToRelease.items.map((item) => (
+                  <li key={item.id} className="flex justify-between">
+                    <span>{item.product.name}</span>
+                    <span className="text-gray-500">x{item.quantity}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReleaseDialogOpen(false)}
+              disabled={releasing}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="default"
+              className="bg-orange-600 hover:bg-orange-700"
+              onClick={handleReleaseStock}
+              disabled={releasing}
+            >
+              {releasing ? "Releasing..." : "Release Stock"}
             </Button>
           </DialogFooter>
         </DialogContent>
