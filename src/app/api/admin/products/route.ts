@@ -155,19 +155,73 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-        include: {
-          category: true,
-          images: { take: 1, orderBy: { order: 'asc' } }
+    // If where already has a stock filter (from inStock=true), skip two-phase split
+    const useStockSort = !where.stock
+
+    let products: any[]
+    let total: number
+
+    const includeClause = {
+      category: true,
+      images: { take: 1, orderBy: { order: 'asc' as const } }
+    }
+
+    if (useStockSort) {
+      const inStockWhere: Prisma.ProductWhereInput = { ...where, stock: { gt: 0 } }
+      const outOfStockWhere: Prisma.ProductWhereInput = { ...where, stock: { equals: 0 } }
+
+      const [inStockCount, outOfStockCount] = await Promise.all([
+        prisma.product.count({ where: inStockWhere }),
+        prisma.product.count({ where: outOfStockWhere })
+      ])
+
+      total = inStockCount + outOfStockCount
+      products = []
+
+      if (skip < inStockCount) {
+        const inStockTake = Math.min(limit, inStockCount - skip)
+        const inStockProducts = await prisma.product.findMany({
+          where: inStockWhere,
+          orderBy,
+          skip,
+          take: inStockTake,
+          include: includeClause
+        })
+        products = [...inStockProducts]
+
+        const remaining = limit - inStockTake
+        if (remaining > 0) {
+          const outOfStockProducts = await prisma.product.findMany({
+            where: outOfStockWhere,
+            orderBy,
+            skip: 0,
+            take: remaining,
+            include: includeClause
+          })
+          products = [...products, ...outOfStockProducts]
         }
-      }),
-      prisma.product.count({ where })
-    ])
+      } else {
+        const outOfStockSkip = skip - inStockCount
+        products = await prisma.product.findMany({
+          where: outOfStockWhere,
+          orderBy,
+          skip: outOfStockSkip,
+          take: limit,
+          include: includeClause
+        })
+      }
+    } else {
+      ;[products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+          include: includeClause
+        }),
+        prisma.product.count({ where })
+      ])
+    }
 
     return NextResponse.json({
       products,
