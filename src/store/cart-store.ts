@@ -45,37 +45,78 @@ interface CartStore {
   isBoxOrderValid: () => boolean
 }
 
+// Cart notification events
+type CartNotificationHandler = (event: {
+  type: 'item-added'
+  singleBoxTotal: number
+  previousSingleBoxTotal: number
+  isFreeShipping: boolean
+  wasFreeShipping: boolean
+  freeThreshold: number
+}) => void
+
+const cartNotificationListeners: CartNotificationHandler[] = []
+
+export function onCartNotification(handler: CartNotificationHandler) {
+  cartNotificationListeners.push(handler)
+  return () => {
+    const index = cartNotificationListeners.indexOf(handler)
+    if (index > -1) cartNotificationListeners.splice(index, 1)
+  }
+}
+
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
       
       addItem: (item, quantity = 1) => {
-        console.log('🏪 Cart Store: addItem called with:', item, 'qty:', quantity)
         const qty = Math.max(1, Math.min(quantity, item.stock))
-        
+
+        // Capture previous state for notification
+        const prevItems = get().items
+        const prevSingleBoxTotal = prevItems
+          .filter(i => { const t = getEffectiveType(i); return t === 'SINGLE' || t === 'BOX' })
+          .reduce((sum, i) => sum + i.price * i.quantity, 0)
+        const wasFreeShipping = prevSingleBoxTotal >= businessConfig.shipping.freeThreshold
+
         set((state) => {
-          console.log('📊 Current cart state:', state.items)
           const existingItem = state.items.find((i) => i.id === item.id)
-          
+
           if (existingItem) {
-            console.log('🔄 Item exists, incrementing quantity by', qty)
-            // アイテムが既に存在する場合、数量を増やす
-            const newItems = state.items.map((i) =>
-              i.id === item.id
-                ? { ...i, quantity: Math.min(i.quantity + qty, i.stock) }
-                : i
-            )
-            console.log('✅ Updated cart:', newItems)
-            return { items: newItems }
+            return {
+              items: state.items.map((i) =>
+                i.id === item.id
+                  ? { ...i, quantity: Math.min(i.quantity + qty, i.stock) }
+                  : i
+              )
+            }
           }
-          
-          console.log('➕ Adding new item to cart')
-          // 新しいアイテムを追加（productType未指定時はSINGLEをデフォルトとする）
-          const newItems = [...state.items, { ...item, quantity: qty, productType: getEffectiveType(item) }]
-          console.log('✅ New cart:', newItems)
-          return { items: newItems }
+
+          return {
+            items: [...state.items, { ...item, quantity: qty, productType: getEffectiveType(item) }]
+          }
         })
+
+        // Emit notification after state update
+        const newItems = get().items
+        const newSingleBoxTotal = newItems
+          .filter(i => { const t = getEffectiveType(i); return t === 'SINGLE' || t === 'BOX' })
+          .reduce((sum, i) => sum + i.price * i.quantity, 0)
+        const isFreeShipping = newSingleBoxTotal >= businessConfig.shipping.freeThreshold
+
+        // Only notify if the item is SINGLE or BOX (OTHER is always free shipping)
+        const itemType = getEffectiveType(item)
+        if (itemType === 'SINGLE' || itemType === 'BOX') {
+          cartNotificationListeners.forEach(handler => handler({
+            type: 'item-added',
+            singleBoxTotal: newSingleBoxTotal,
+            previousSingleBoxTotal: prevSingleBoxTotal,
+            isFreeShipping,
+            wasFreeShipping,
+            freeThreshold: businessConfig.shipping.freeThreshold
+          }))
+        }
       },
       
       removeItem: (id) => {
