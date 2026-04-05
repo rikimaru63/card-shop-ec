@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { generateSKU, generateUniqueSlug } from '@/lib/utils/sku'
-import { Prisma } from '@prisma/client'
+import { Prisma, Product, Category, ProductImage } from '@prisma/client'
 import { isAdminAuthorized } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
+
+// Type for products with category and images includes
+type ProductWithRelations = Product & {
+  category: Category | null
+  images: ProductImage[]
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -158,7 +164,7 @@ export async function GET(request: NextRequest) {
     // If where already has a stock filter (from inStock=true), skip two-phase split
     const useStockSort = !where.stock
 
-    let products: any[]
+    let products: ProductWithRelations[]
     let total: number
 
     const includeClause = {

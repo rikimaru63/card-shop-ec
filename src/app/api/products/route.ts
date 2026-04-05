@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Prisma, Condition, ProductType } from '@prisma/client'
+import { Prisma, Condition, ProductType, Product, Category, ProductImage } from '@prisma/client'
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
+
+// Type for products with category and images includes
+type ProductWithRelations = Product & {
+  category: Pick<Category, 'id' | 'name' | 'slug'> | null
+  images: ProductImage[]
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -146,7 +152,7 @@ export async function GET(request: NextRequest) {
     // If where already has a stock filter (from inStock=true), skip two-phase split
     const useStockSort = !where.stock
 
-    let products: any[]
+    let products: ProductWithRelations[]
     let total: number
 
     if (useStockSort) {
