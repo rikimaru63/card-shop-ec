@@ -8,7 +8,8 @@ import {
   Tags,
   Gift,
   Plane,
-  ShieldCheck
+  ShieldCheck,
+  Box
 } from "lucide-react"
 import { businessConfig } from "@/lib/config/business"
 import { AnimatedSection, StaggerContainer, StaggerItem } from "@/components/motion/animated-section"
