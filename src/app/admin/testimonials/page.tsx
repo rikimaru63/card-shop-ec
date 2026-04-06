@@ -332,7 +332,7 @@ export default function TestimonialsPage() {
             </div>
             <div>
               <Label>Image URL (optional)</Label>
-              <Input value={formImageUrl} onChange={(e) => setFormImageUrl(e.target.value)} placeholder="https://res.cloudinary.com/..." />
+              <Input value={formImageUrl} onChange={(e) => setFormImageUrl(e.target.value)} placeholder="https://images.samuraicardhub.com/..." />
             </div>
             <div>
               <Label>Rating</Label>
