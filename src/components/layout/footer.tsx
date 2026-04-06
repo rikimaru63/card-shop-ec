@@ -7,7 +7,8 @@ import {
   Mail,
   MapPin,
   CreditCard,
-  Shield
+  Shield,
+  Phone
 } from "lucide-react"
 import { siteConfig, getCopyright, getActiveSocialLinks } from "@/lib/config/site"
 
