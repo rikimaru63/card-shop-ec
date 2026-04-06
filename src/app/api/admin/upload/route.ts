@@ -1,58 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadImage } from '@/lib/cloudinary'
+import { isAdminAuthorized } from '@/lib/admin-auth'
+import { randomUUID } from 'crypto'
 
-export const dynamic = 'force-dynamic'
+const IMAGE_SERVER_DIR = process.env.IMAGE_SERVER_PATH || '/root/image-server/images'
+const IMAGE_SERVER_URL = process.env.IMAGE_SERVER_URL || 'https://images.samuraicardhub.com'
 
 export async function POST(request: NextRequest) {
   try {
+    const isAuthorized = await isAdminAuthorized(request)
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const formData = await request.formData()
-    const file = formData.get('file') as File
+    const file = formData.get('file') as File | null
     const folder = (formData.get('folder') as string) || 'products'
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'ファイルが選択されていません' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-    if (!validTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: '対応していないファイル形式です。JPEG, PNG, WebP, GIFのみ対応しています。' },
-        { status: 400 }
-      )
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 400 })
     }
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: 'ファイルサイズが大きすぎます。10MB以下にしてください。' },
-        { status: 400 }
-      )
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
     }
 
-    // Convert to buffer
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+    const ext = file.name.split('.').pop() || 'jpg'
+    const filename = `${randomUUID()}.${ext}`
+    const relativePath = `${folder}/${filename}`
 
-    // Upload to Cloudinary
-    const result = await uploadImage(buffer, folder)
+    const { writeFile, mkdir } = await import('fs/promises')
+    const path = await import('path')
+    const saveDir = path.join(IMAGE_SERVER_DIR, folder)
+    await mkdir(saveDir, { recursive: true })
+
+    const buffer = Buffer.from(await file.arrayBuffer())
+    await writeFile(path.join(saveDir, filename), buffer)
+
+    const url = `${IMAGE_SERVER_URL}/${relativePath}`
 
     return NextResponse.json({
-      success: true,
-      url: result.url,
-      publicId: result.publicId,
-      width: result.width,
-      height: result.height,
+      url,
+      publicId: relativePath,
+      width: 0,
+      height: 0,
     })
   } catch (error) {
     console.error('Upload error:', error)
-    return NextResponse.json(
-      { error: 'アップロードに失敗しました' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
   }
 }
