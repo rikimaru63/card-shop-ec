@@ -12,8 +12,9 @@ export function CustomsNotice() {
             About Customs &amp; Import Fees
           </p>
           <p className="text-sm text-blue-800 mt-1">
-            Customs and import fees (20% of product price) for international shipping are covered by us.
+            Customs and import fees (13% of product price) for international shipping are covered by us.
             You won&apos;t be charged any additional customs fees.
+            Shipping is handled via FedEx or EMS. In some cases, DHL may also be used.
           </p>
         </div>
       </div>

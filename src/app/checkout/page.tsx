@@ -27,7 +27,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCartStore } from "@/store/cart-store"
 import { createOrder, getUserAddresses } from "./actions"
 import { toast } from "@/hooks/use-toast"
-// CustomsNotice removed for EU version
+import { CustomsNotice } from "@/components/CustomsNotice"
+import { siteConfig } from "@/lib/config/site"
+import { businessConfig } from "@/lib/config/business"
+import { CUSTOMS_RATE } from "@/lib/constants"
 
 const baseCountries = [
   { code: "US", name: "United States" },
@@ -284,7 +287,9 @@ export default function CheckoutPage() {
   }
 
   const handleInstagramInquiry = () => {
-    window.open("https://ig.me/m/cardshop_official", "_blank")
+    if (siteConfig.social.instagram) {
+      window.open(siteConfig.social.instagram, "_blank")
+    }
   }
 
   // Loading state
@@ -331,7 +336,7 @@ export default function CheckoutPage() {
   const boxCount = getBoxCount()
   const hasBox = hasBoxItems()
   const boxOrderValid = isBoxOrderValid()
-  const boxNeeded = hasBox && !boxOrderValid ? 5 - boxCount : 0
+  const boxNeeded = hasBox && !boxOrderValid ? businessConfig.box.minimumQuantity - boxCount : 0
 
   const isAddressValid = () => {
     if (addressMode === "new") {
@@ -394,7 +399,7 @@ export default function CheckoutPage() {
                       <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-semibold text-orange-800 text-sm">
-                          Minimum 5 BOX required per order
+                          Minimum {businessConfig.box.minimumQuantity} BOX required per order
                         </p>
                         <p className="text-xs text-orange-600 mt-1">
                           Current: {boxCount} BOX ({boxNeeded} more needed)
@@ -409,7 +414,10 @@ export default function CheckoutPage() {
                     <span>Subtotal ({getTotalItems()} items)</span>
                     <span>¥{subtotal.toLocaleString()}</span>
                   </div>
-                  {/* Customs fee removed for EU version */}
+                  <div className="flex justify-between text-sm">
+                    <span>Customs Fee ({Math.round(CUSTOMS_RATE * 100)}%)</span>
+                    <span>¥{customsFee.toLocaleString()}</span>
+                  </div>
                   <div className="flex justify-between text-sm">
                     <span>Shipping</span>
                     <span className={shippingInfo.isFreeShipping ? "text-green-600 font-semibold" : ""}>
@@ -418,7 +426,7 @@ export default function CheckoutPage() {
                   </div>
                   {!shippingInfo.isFreeShipping && shippingInfo.singleBoxTotal > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      * Add ¥{(50000 - shippingInfo.singleBoxTotal).toLocaleString()} more for free shipping
+                      * Add ¥{(businessConfig.shipping.freeThreshold - shippingInfo.singleBoxTotal).toLocaleString()} more for free shipping
                     </p>
                   )}
                   <div className="flex justify-between font-bold text-lg pt-2 border-t">
@@ -737,7 +745,7 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-orange-500 flex-shrink-0" />
                       <p className="text-sm text-orange-800">
-                        Minimum 5 BOX required
+                        Minimum {businessConfig.box.minimumQuantity} BOX required
                       </p>
                     </div>
                   </div>
@@ -764,7 +772,7 @@ export default function CheckoutPage() {
                       Processing...
                     </>
                   ) : !boxOrderValid ? (
-                    "Add 5+ BOX to continue"
+                    `Add ${businessConfig.box.minimumQuantity}+ BOX to continue`
                   ) : (
                     <>
                       <CheckCircle className="h-4 w-4 mr-2" />
@@ -780,15 +788,17 @@ export default function CheckoutPage() {
                 )}
 
                 {/* Secondary CTA */}
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleInstagramInquiry}
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Contact via Instagram
-                  <ExternalLink className="h-3 w-3 ml-2" />
-                </Button>
+                {siteConfig.social.instagram && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleInstagramInquiry}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Contact via Instagram
+                    <ExternalLink className="h-3 w-3 ml-2" />
+                  </Button>
+                )}
 
                 {/* Trust badges */}
                 <div className="mt-6 pt-6 border-t space-y-3">

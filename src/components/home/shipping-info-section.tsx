@@ -10,6 +10,8 @@ import {
   Plane,
   ShieldCheck
 } from "lucide-react"
+import { businessConfig } from "@/lib/config/business"
+import { AnimatedSection, StaggerContainer, StaggerItem } from "@/components/motion/animated-section"
 
 export function ShippingInfoSection() {
   return (
@@ -17,9 +19,11 @@ export function ShippingInfoSection() {
       <div className="container mx-auto px-4">
         {/* Purchase Flow */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-center mb-8">
-            How to Order
-          </h2>
+          <AnimatedSection>
+            <h2 className="text-2xl font-bold text-center mb-8">
+              How to Order
+            </h2>
+          </AnimatedSection>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {/* Step 1 */}
             <div className="relative bg-white rounded-lg border p-4 md:p-6 text-center shadow-sm">
@@ -95,10 +99,31 @@ export function ShippingInfoSection() {
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">Free shipping</span> on orders ¥50,000+
+                  <span className="font-semibold text-foreground">Free shipping</span> on orders {businessConfig.currency.symbol}{businessConfig.shipping.freeThreshold.toLocaleString()}+
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Under ¥50,000: <span className="font-semibold text-foreground">¥4,500</span> shipping
+                  Under {businessConfig.currency.symbol}{businessConfig.shipping.freeThreshold.toLocaleString()}: <span className="font-semibold text-foreground">{businessConfig.currency.symbol}{businessConfig.shipping.baseCost.toLocaleString()}</span> shipping
+                </p>
+              </div>
+            </div>
+
+            {/* BOX */}
+            <div className="bg-white rounded-lg border p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-orange-100 p-2 rounded-lg">
+                  <Box className="h-6 w-6 text-orange-600" />
+                </div>
+                <h3 className="font-bold text-lg">Sealed BOX & Packs</h3>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">Minimum {businessConfig.box.minimumQuantity} BOX</span> per order
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Free shipping on orders {businessConfig.currency.symbol}{businessConfig.shipping.freeThreshold.toLocaleString()}+
+                </p>
+                <p className="text-xs text-orange-600 mt-2">
+                  *Any combination of BOX types
                 </p>
               </div>
             </div>
@@ -142,7 +167,7 @@ export function ShippingInfoSection() {
 
           {/* Note */}
           <p className="text-center text-sm text-muted-foreground mt-6">
-            * Free shipping applies when Single Cards total is ¥50,000 or more
+            * Free shipping applies when Single Cards + BOX total is {businessConfig.currency.symbol}{businessConfig.shipping.freeThreshold.toLocaleString()} or more
           </p>
         </div>
       </div>

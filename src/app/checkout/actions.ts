@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { sendInvoiceEmail } from "@/lib/email"
+import { CUSTOMS_RATE } from "@/lib/constants"
+import { businessConfig } from "@/lib/config/business"
 
 type ProductType = 'SINGLE' | 'BOX' | 'OTHER'
 
@@ -28,8 +30,8 @@ function calculateShipping(items: CartItem[]): { shipping: number; singleBoxTota
 
   // シングル + BOX の合計が¥50,000以上、またはシングル/BOXが含まれない場合は送料無料
   const hasSingleOrBox = items.some(item => { const t = getEffectiveType(item); return t === 'SINGLE' || t === 'BOX' })
-  const isFreeShipping = singleBoxTotal >= 50000 || !hasSingleOrBox
-  const shipping = isFreeShipping ? 0 : 4500
+  const isFreeShipping = singleBoxTotal >= businessConfig.shipping.freeThreshold || !hasSingleOrBox
+  const shipping = isFreeShipping ? 0 : businessConfig.shipping.baseCost
 
   return { shipping, singleBoxTotal }
 }
@@ -163,16 +165,16 @@ export async function createOrder(input: CreateOrderInput): Promise<{
       .filter(item => getEffectiveType(item) === 'BOX')
       .reduce((total, item) => total + item.quantity, 0)
 
-    if (boxItemCount > 0 && boxItemCount < 5) {
+    if (boxItemCount > 0 && boxItemCount < businessConfig.box.minimumQuantity) {
       return {
         success: false,
-        message: `BOX products require a minimum order of 5. Current: ${boxItemCount}`
+        message: `BOX products require a minimum order of ${businessConfig.box.minimumQuantity}. Current: ${boxItemCount}`
       }
     }
 
     // Calculate totals (JPY)
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-    const customsFee = 0 // EU version: no customs fee
+    const customsFee = Math.floor(subtotal * CUSTOMS_RATE)
     const { shipping } = calculateShipping(items)
     const tax = 0
     const total = subtotal + customsFee + shipping + tax
@@ -180,8 +182,8 @@ export async function createOrder(input: CreateOrderInput): Promise<{
     // Generate unique order number
     const orderNumber = generateOrderNumber()
 
-    // 在庫予約の期限（30分後）
-    const reservationExpiresAt = new Date(Date.now() + 30 * 60 * 1000)
+    // 在庫予約の期限
+    const reservationExpiresAt = new Date(Date.now() + businessConfig.reservation.expiryMinutes * 60 * 1000)
 
     // Use transaction to create order AND stock reservations atomically
     const order = await prisma.$transaction(async (tx) => {

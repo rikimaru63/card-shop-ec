@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['localhost', 'cloudinary.com', 'res.cloudinary.com', 'images.unsplash.com'],
+    domains: ['localhost', 'cloudinary.com', 'res.cloudinary.com', 'images.unsplash.com', 'images.samuraicardhub.com'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -15,6 +15,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.samuraicardhub.com',
       },
     ],
     dangerouslyAllowSVG: true,

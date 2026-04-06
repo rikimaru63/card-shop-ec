@@ -12,9 +12,7 @@ import { createProduct, updateProduct } from '@/app/admin/products/actions';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Product, ProductImage } from '@prisma/client';
-
-// 関税率（20%）
-const DUTY_RATE = 1.2;
+import { DUTY_MULTIPLIER } from '@/lib/constants';
 
 interface ProductFormProps {
   initialData?: (Product & { images: ProductImage[] }) | null;
@@ -38,7 +36,7 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
 
   // 編集時は、DBに保存されている販売価格から原価を逆算
   const initialBasePrice = initialData?.price
-    ? (Number(initialData.price) / DUTY_RATE).toFixed(2)
+    ? (Number(initialData.price) / DUTY_MULTIPLIER).toFixed(2)
     : '';
 
   const [basePrice, setBasePrice] = useState(initialBasePrice);
@@ -49,7 +47,7 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
   const sellingPrice = useMemo(() => {
     const price = parseFloat(basePrice);
     if (isNaN(price) || price <= 0) return null;
-    return (price * DUTY_RATE).toFixed(2);
+    return (price * DUTY_MULTIPLIER).toFixed(2);
   }, [basePrice]);
 
   const handleSubmit = async (formData: FormData) => {
@@ -124,13 +122,13 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
           {sellingPrice && (
             <div className="bg-green-50 border border-green-200 rounded-md px-3 py-2">
               <p className="text-sm text-green-800">
-                <span className="font-medium">販売価格（関税20%込）:</span>{' '}
+                <span className="font-medium">販売価格（関税13%込）:</span>{' '}
                 <span className="font-bold">¥{sellingPrice}</span>
               </p>
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            原価を入力してください。販売価格は自動的に20%の関税が加算されます。
+            原価を入力してください。販売価格は自動的に13%の関税が加算されます。
           </p>
         </div>
         {errors.basePrice && <p className="col-span-4 text-right text-red-500 text-sm">{errors.basePrice[0]}</p>}

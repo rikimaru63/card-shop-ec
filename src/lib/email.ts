@@ -1,4 +1,5 @@
 // Resend is imported dynamically to avoid build-time errors
+import { siteConfig } from '@/lib/config/site'
 
 export type OrderItem = {
   name: string
@@ -39,7 +40,7 @@ function generateInvoiceHTML(data: InvoiceEmailData): string {
 <html>
 <head><meta charset="utf-8"><title>Invoice #${data.orderNumber}</title></head>
 <body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h1>SAMURAI CARD HUB - Invoice</h1>
+  <h1>${siteConfig.name} - Invoice</h1>
   <p>Order #${data.orderNumber}</p>
   <p>Bill To: ${data.customerName} (${data.to})</p>
   <table style="width: 100%; border-collapse: collapse;">
@@ -51,11 +52,11 @@ function generateInvoiceHTML(data: InvoiceEmailData): string {
   <p style="text-align: right; font-size: 20px;"><strong>Total: ${formatPrice(data.total, data.currency)}</strong></p>
   <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
     <h3>Payment Instructions (Wise)</h3>
-    <p>Account Holder: ${process.env.WISE_ACCOUNT_HOLDER || 'SAMURAI CARD HUB'}</p>
+    <p>Account Holder: ${process.env.WISE_ACCOUNT_HOLDER || siteConfig.name}</p>
     <p>IBAN: ${process.env.WISE_IBAN || 'Your IBAN'}</p>
     <p>Reference: #${data.orderNumber}</p>
   </div>
-  <p style="font-size: 12px; color: #999;">If you have any questions, please contact us at support@samuraicardhub.com</p>
+  <p style="font-size: 12px; color: #999;">If you have any questions, please contact us at ${siteConfig.contact.email || 'support@example.com'}</p>
 </body>
 </html>`
 }
@@ -69,12 +70,12 @@ export async function sendInvoiceEmail(data: InvoiceEmailData): Promise<{ succes
   try {
     const { Resend } = await import('resend')
     const resend = new Resend(resendApiKey)
-    const fromEmail = process.env.EMAIL_FROM || 'noreply@samuraicardhub.com'
-    const fromName = process.env.EMAIL_FROM_NAME || 'SAMURAI CARD HUB'
+    const fromEmail = process.env.EMAIL_FROM || 'noreply@example.com'
+    const fromName = process.env.EMAIL_FROM_NAME || siteConfig.name
     await resend.emails.send({
       from: `${fromName} <${fromEmail}>`,
       to: data.to,
-      subject: `Your Invoice for Order #${data.orderNumber} - SAMURAI CARD HUB`,
+      subject: `Your Invoice for Order #${data.orderNumber} - ${siteConfig.name}`,
       html: generateInvoiceHTML(data),
     })
     return { success: true }
@@ -98,12 +99,12 @@ function generateVerificationEmailHTML(data: VerificationEmailData): string {
 <head><meta charset="utf-8"><title>Verify Your Email Address</title></head>
 <body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-    <h1 style="color: white; margin: 0;">SAMURAI CARD HUB</h1>
+    <h1 style="color: white; margin: 0;">${siteConfig.name}</h1>
     <p style="color: rgba(255,255,255,0.9);">Email Verification</p>
   </div>
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
     <p>Hi ${data.name},</p>
-    <p>Thank you for signing up with SAMURAI CARD HUB! Please click the button below to verify your email address.</p>
+    <p>Thank you for signing up with ${siteConfig.name}! Please click the button below to verify your email address.</p>
     <div style="text-align: center; margin: 30px 0;">
       <a href="${data.verificationUrl}" style="display: inline-block; background: #667eea; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold;">
         Verify Email Address
@@ -127,12 +128,12 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
   try {
     const { Resend } = await import('resend')
     const resend = new Resend(resendApiKey)
-    const fromEmail = process.env.EMAIL_FROM || 'noreply@samuraicardhub.com'
-    const fromName = process.env.EMAIL_FROM_NAME || 'SAMURAI CARD HUB'
+    const fromEmail = process.env.EMAIL_FROM || 'noreply@example.com'
+    const fromName = process.env.EMAIL_FROM_NAME || siteConfig.name
     await resend.emails.send({
       from: `${fromName} <${fromEmail}>`,
       to: data.to,
-      subject: 'Verify Your Email - SAMURAI CARD HUB',
+      subject: `Verify Your Email - ${siteConfig.name}`,
       html: generateVerificationEmailHTML(data),
     })
     return { success: true }

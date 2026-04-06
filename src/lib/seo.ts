@@ -1,4 +1,5 @@
-import { Metadata } from "next"
+import type { Metadata } from "next"
+import { siteConfig, getActiveSocialLinks } from "@/lib/config/site"
 
 interface SEOProps {
   title: string
@@ -13,13 +14,13 @@ export function generateSEO({
   title,
   description,
   keywords = [],
-  image = "/og-image.jpg",
+  image = siteConfig.seo.ogImage,
   url = "",
   type = "website"
 }: SEOProps): Metadata {
-  const siteName = "CardShop - Premium Trading Cards"
+  const siteName = siteConfig.name
   const fullTitle = title ? `${title} | ${siteName}` : siteName
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://card-shop.vercel.app"
+  const baseUrl = siteConfig.url
   const fullUrl = url ? `${baseUrl}${url}` : baseUrl
   const fullImage = image.startsWith("http") ? image : `${baseUrl}${image}`
 
@@ -46,9 +47,9 @@ export function generateSEO({
     title: fullTitle,
     description,
     keywords: allKeywords.join(", "),
-    authors: [{ name: "CardShop" }],
-    creator: "CardShop",
-    publisher: "CardShop",
+    authors: [{ name: siteConfig.name }],
+    creator: siteConfig.name,
+    publisher: siteConfig.name,
     robots: {
       index: true,
       follow: true,
@@ -62,7 +63,7 @@ export function generateSEO({
     },
     openGraph: {
       type,
-      locale: "en_US",
+      locale: siteConfig.seo.locale,
       url: fullUrl,
       siteName,
       title: fullTitle,
@@ -81,7 +82,7 @@ export function generateSEO({
       title: fullTitle,
       description,
       images: [fullImage],
-      creator: "@cardshop",
+      creator: siteConfig.social.twitterHandle,
     },
     alternates: {
       canonical: fullUrl,
@@ -125,25 +126,15 @@ export function generateProductSchema(product: {
 
 // Organization Schema.org structured data
 export function generateOrganizationSchema() {
+  const baseUrl = siteConfig.url
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "CardShop",
-    url: process.env.NEXT_PUBLIC_BASE_URL || "https://card-shop.vercel.app",
-    logo: `${process.env.NEXT_PUBLIC_BASE_URL || "https://card-shop.vercel.app"}/logo.png`,
-    description: "Your premier destination for trading cards in the USA",
-    contactPoint: {
-      "@type": "ContactPoint",
-      telephone: "+1-234-567-890",
-      contactType: "Customer Service",
-      email: "support@cardshop.com",
-      availableLanguage: ["English"],
-    },
-    sameAs: [
-      "https://facebook.com/cardshop",
-      "https://twitter.com/cardshop",
-      "https://instagram.com/cardshop",
-    ],
+    name: siteConfig.name,
+    url: baseUrl,
+    logo: `${baseUrl}/logo.png`,
+    description: siteConfig.description,
+    sameAs: getActiveSocialLinks().map(l => l.url),
   }
 }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ShoppingCart, Heart, Loader2, TrendingUp, TrendingDown, Sparkles, Clock } from "lucide-react"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useCartStore } from "@/store/cart-store"
@@ -139,12 +140,17 @@ function ProductSection({ title, icon, products, loading, bgClass = "" }: Produc
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {products.slice(0, 5).map((product) => {
+          {products.slice(0, 5).map((product, index) => {
             const priceChange = getPriceChange(product)
             return (
-              <div
+              <motion.div
                 key={product.id}
-                className="group bg-white rounded-lg border overflow-hidden hover:shadow-lg transition-shadow"
+                className="group bg-white rounded-lg border overflow-hidden"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-30px" }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
+                whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,0,0,0.1)" }}
               >
                 {/* Product Image */}
                 <div className="relative aspect-[3/4] bg-gray-100">
@@ -236,7 +242,7 @@ function ProductSection({ title, icon, products, loading, bgClass = "" }: Produc
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )
           })}
         </div>

@@ -43,10 +43,12 @@ import {
   MapPin,
   Trash2,
   Save,
-  StickyNote
+  StickyNote,
+  PackageOpen
 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { releaseOrderStock } from "@/app/admin/actions"
 
 export const dynamic = 'force-dynamic'
 
@@ -76,6 +78,7 @@ interface OrderItem {
   product: {
     id: string
     name: string
+    condition: string | null
     images: { url: string }[]
   }
 }
@@ -284,12 +287,20 @@ export default function OrdersPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
 
+  // Sort state
+  const [sortBy, setSortBy] = useState<string>("date")
+
   // Dialog states
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // Release stock state
+  const [releaseDialogOpen, setReleaseDialogOpen] = useState(false)
+  const [orderToRelease, setOrderToRelease] = useState<Order | null>(null)
+  const [releasing, setReleasing] = useState(false)
 
   // Tracking & notes edit state
   const [editTrackingNumber, setEditTrackingNumber] = useState("")
@@ -396,6 +407,37 @@ export default function OrdersPage() {
     }
   }
 
+  const handleReleaseStock = async () => {
+    if (!orderToRelease) return
+    setReleasing(true)
+    try {
+      const result = await releaseOrderStock(orderToRelease.orderNumber)
+      if (result.success) {
+        toast({
+          title: "Stock Released",
+          description: result.message,
+        })
+        fetchOrders()
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to release stock",
+        variant: "destructive",
+      })
+    } finally {
+      setReleasing(false)
+      setReleaseDialogOpen(false)
+      setOrderToRelease(null)
+    }
+  }
+
   // Inline status update
   const updateOrderStatus = async (orderId: string, field: 'status' | 'paymentStatus', newValue: string) => {
     try {
@@ -430,6 +472,29 @@ export default function OrdersPage() {
       throw error
     }
   }
+
+  // Condition sort priority (lower = higher priority)
+  const conditionPriority: Record<string, number> = {
+    PSA: 1,
+    SEALED: 2,
+    GRADE_A: 3,
+    GRADE_B: 4,
+    GRADE_C: 5,
+  }
+
+  const getOrderConditionPriority = (order: Order): number => {
+    if (!order.items.length) return 99
+    // Use the highest-priority condition among all items
+    return Math.min(
+      ...order.items.map(item =>
+        item.product.condition ? (conditionPriority[item.product.condition] ?? 50) : 99
+      )
+    )
+  }
+
+  const sortedOrders = sortBy === "condition"
+    ? [...orders].sort((a, b) => getOrderConditionPriority(a) - getOrderConditionPriority(b))
+    : orders // default: date order from API
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -489,6 +554,16 @@ export default function OrdersPage() {
             <SelectItem value="REFUNDED">Refunded</SelectItem>
           </SelectContent>
         </Select>
+
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date">Sort: Date</SelectItem>
+            <SelectItem value="condition">Sort: Condition</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Orders Table */}
@@ -522,7 +597,7 @@ export default function OrdersPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              orders.map((order) => (
+              sortedOrders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-mono text-sm">
                     #{order.orderNumber.slice(-8)}
@@ -597,6 +672,21 @@ export default function OrdersPage() {
                     {formatDate(order.createdAt)}
                   </TableCell>
                   <TableCell className="text-right space-x-1">
+                    {order.paymentStatus === "PROCESSING" && order.status !== "CANCELLED" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs text-orange-600 border-orange-300 hover:bg-orange-50"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOrderToRelease(order)
+                          setReleaseDialogOpen(true)
+                        }}
+                      >
+                        <PackageOpen className="h-3.5 w-3.5 mr-1" />
+                        Release Stock
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -665,6 +755,50 @@ export default function OrdersPage() {
             </Button>
             <Button variant="destructive" onClick={handleDeleteConfirm} disabled={deleting}>
               {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Release Stock Dialog */}
+      <Dialog open={releaseDialogOpen} onOpenChange={setReleaseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Release Stock</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to release stock for order{" "}
+              <strong>#{orderToRelease?.orderNumber.slice(-8)}</strong>?
+              This will restore all items to inventory and cancel the order.
+            </DialogDescription>
+          </DialogHeader>
+          {orderToRelease && (
+            <div className="py-2">
+              <p className="text-sm text-gray-600 mb-2">Items to be restored:</p>
+              <ul className="text-sm space-y-1">
+                {orderToRelease.items.map((item) => (
+                  <li key={item.id} className="flex justify-between">
+                    <span>{item.product.name}</span>
+                    <span className="text-gray-500">x{item.quantity}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReleaseDialogOpen(false)}
+              disabled={releasing}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="default"
+              className="bg-orange-600 hover:bg-orange-700"
+              onClick={handleReleaseStock}
+              disabled={releasing}
+            >
+              {releasing ? "Releasing..." : "Release Stock"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -797,6 +931,11 @@ export default function OrdersPage() {
                       )}
                       <div className="flex-1">
                         <p className="font-medium">{item.product.name}</p>
+                        {item.product.condition && (
+                          <span className="inline-block text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">
+                            {item.product.condition.replace('GRADE_', 'Grade ').replace('SEALED', 'New/Sealed')}
+                          </span>
+                        )}
                         <p className="text-sm text-gray-500">
                           ¥{Number(item.price).toLocaleString()} × {item.quantity}
                         </p>

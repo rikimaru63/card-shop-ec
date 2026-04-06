@@ -9,18 +9,18 @@ const conditionExamples = {
     label: "Grade A",
     description: "Near mint condition. No visible damage, scratches, or whitening.",
     images: [
-      { src: "https://res.cloudinary.com/djuthqgt4/image/upload/v1774707514/condition-examples/n1s2sxmvpnrebsh1vhn6.jpg", alt: "Grade A - Front" },
-      { src: "https://res.cloudinary.com/djuthqgt4/image/upload/v1774707517/condition-examples/ioopnlamaiu00ejgvc2k.jpg", alt: "Grade A - Back" },
+      { src: "https://images.samuraicardhub.com/condition-examples/n1s2sxmvpnrebsh1vhn6.jpg", alt: "Grade A - Front" },
+      { src: "https://images.samuraicardhub.com/condition-examples/ioopnlamaiu00ejgvc2k.jpg", alt: "Grade A - Back" },
     ],
   },
   gradeB: {
     label: "Grade B",
     description: "Lightly played. Minor whitening on edges or light scratches may be present.",
     images: [
-      { src: "https://res.cloudinary.com/djuthqgt4/image/upload/v1774707519/condition-examples/ngvsq4yaj2887mf0brno.jpg", alt: "Grade B - Front" },
-      { src: "https://res.cloudinary.com/djuthqgt4/image/upload/v1774707522/condition-examples/lq0sdydinuxfcwpfym4y.jpg", alt: "Grade B - Front Close-up" },
-      { src: "https://res.cloudinary.com/djuthqgt4/image/upload/v1774707525/condition-examples/plcngccdwpn1rh1zuj6e.jpg", alt: "Grade B - Back" },
-      { src: "https://res.cloudinary.com/djuthqgt4/image/upload/v1774707527/condition-examples/xh0dffizio13qdsoosqz.jpg", alt: "Grade B - Back Close-up" },
+      { src: "https://images.samuraicardhub.com/condition-examples/ngvsq4yaj2887mf0brno.jpg", alt: "Grade B - Front" },
+      { src: "https://images.samuraicardhub.com/condition-examples/lq0sdydinuxfcwpfym4y.jpg", alt: "Grade B - Front Close-up" },
+      { src: "https://images.samuraicardhub.com/condition-examples/plcngccdwpn1rh1zuj6e.jpg", alt: "Grade B - Back" },
+      { src: "https://images.samuraicardhub.com/condition-examples/xh0dffizio13qdsoosqz.jpg", alt: "Grade B - Back Close-up" },
     ],
   },
 }

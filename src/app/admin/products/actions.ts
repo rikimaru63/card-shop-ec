@@ -5,11 +5,9 @@
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import { DUTY_MULTIPLIER } from '@/lib/constants';
 
 const prisma = new PrismaClient();
-
-// 関税率（20%）
-const DUTY_RATE = 1.2;
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -46,8 +44,8 @@ export async function createProduct(formData: FormData) {
 
     const { name, basePrice, stock, imageUrl, isNewArrival, isRecommended } = validatedFields.data;
 
-    // 原価に関税20%を上乗せして販売価格を算出
-    const sellingPrice = basePrice * DUTY_RATE;
+    // 原価に関税13%を上乗せして販売価格を算出
+    const sellingPrice = basePrice * DUTY_MULTIPLIER;
 
     // For simplicity, we'll assign to the existing 'Pokemon Cards' category
     // In a real app, you'd likely have a selection for categories
@@ -111,8 +109,8 @@ export async function updateProduct(id: string, formData: FormData) {
 
     const { name, basePrice, stock, imageUrl, isNewArrival, isRecommended } = validatedFields.data;
 
-    // 原価に関税20%を上乗せして販売価格を算出
-    const newSellingPrice = basePrice * DUTY_RATE;
+    // 原価に関税13%を上乗せして販売価格を算出
+    const newSellingPrice = basePrice * DUTY_MULTIPLIER;
 
     // 現在の商品情報を取得（価格変動チェック用）
     const existingProduct = await prisma.product.findUnique({

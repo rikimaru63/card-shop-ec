@@ -514,6 +514,23 @@ model ConditionOption {
   @@index([order])
 }
 
+// ==================== Testimonials (Customer Reviews) ====================
+
+model Testimonial {
+  id            String   @id @default(cuid())
+  customerName  String
+  content       String   @db.Text
+  imageUrl      String?  // Cloudinary URL for screenshot
+  rating        Int      @default(5) // 1-5
+  isVisible     Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isVisible])
+  @@index([displayOrder])
+}
+
 // ==================== Page Views (Access Counter) ====================
 
 model PageView {

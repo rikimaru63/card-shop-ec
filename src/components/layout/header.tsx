@@ -20,38 +20,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useCartStore } from "@/store/cart-store"
 import { useWishlistStore } from "@/store/wishlist-store"
-
-const categories = [
-  {
-    name: "Pokemon Cards",
-    href: "/?game=pokemon",
-    subcategories: [
-      { name: "Single Cards", href: "/?game=pokemon&productType=SINGLE" },
-      { name: "Booster Box & Packs", href: "/?game=pokemon&productType=BOX" },
-      { name: "PSA Graded", href: "/?game=pokemon&condition=PSA" },
-      { name: "All Pokemon", href: "/?game=pokemon" },
-    ]
-  },
-  {
-    name: "One Piece Cards",
-    href: "/?game=onepiece",
-    subcategories: [
-      { name: "Single Cards", href: "/?game=onepiece&productType=SINGLE" },
-      { name: "Booster Box & Packs", href: "/?game=onepiece&productType=BOX" },
-      { name: "PSA Graded", href: "/?game=onepiece&condition=PSA" },
-      { name: "All One Piece", href: "/?game=onepiece" },
-    ]
-  },
-  {
-    name: "Other",
-    href: "/?game=other",
-    subcategories: [
-      { name: "Single Cards", href: "/?game=other&productType=SINGLE" },
-      { name: "Box & Packs", href: "/?game=other&productType=BOX" },
-      { name: "All Other", href: "/?game=other" },
-    ]
-  }
-]
+import { siteConfig } from "@/lib/config/site"
 
 export function Header() {
   const router = useRouter()
@@ -94,14 +63,14 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center group">
             <img
-              src="/logo.jpg"
-              alt="SAMURAI CARD HUB"
+              src={siteConfig.logo.src}
+              alt={siteConfig.logo.alt}
               className="h-12 w-auto object-contain group-hover:opacity-90 transition-opacity"
             />
           </Link>
 
           <nav className="hidden lg:flex items-center">
-            {categories.map((category, index) => (
+            {siteConfig.categories.map((category) => (
               <div
                 key={category.name}
                 className="relative flex-shrink-0"
@@ -327,7 +296,7 @@ export function Header() {
       {isMenuOpen && (
         <div className="lg:hidden border-t bg-white">
           <nav className="container mx-auto px-4 py-4">
-            {categories.map((category) => (
+            {siteConfig.categories.map((category) => (
               <div key={category.name} className="py-2">
                 <Link
                   href={category.href}

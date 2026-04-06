@@ -18,6 +18,9 @@ import { Button } from "@/components/ui/button"
 import { confirmPayment, getOrderByNumber, cancelOrder } from "@/app/checkout/actions"
 import { useToast } from "@/hooks/use-toast"
 import { useCartStore } from "@/store/cart-store"
+import { siteConfig } from "@/lib/config/site"
+import { businessConfig } from "@/lib/config/business"
+import { CUSTOMS_RATE } from "@/lib/constants"
 
 const WISE_PAY_BASE_URL = "https://wise.com/pay/business/kms22"
 
@@ -159,6 +162,12 @@ export default function PaymentPage() {
     return null
   }
 
+  function getTimerStyle(): string {
+    if (timeRemaining <= 300) return "bg-red-100 text-red-800"
+    if (timeRemaining <= 600) return "bg-yellow-100 text-yellow-800"
+    return "bg-blue-100 text-blue-800"
+  }
+
   const wiseUrl = `${WISE_PAY_BASE_URL}?amount=${order.total}&currency=JPY&description=${encodeURIComponent(`Order: ${orderNumber}`)}`
 
   // Expired state
@@ -197,13 +206,7 @@ export default function PaymentPage() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-background">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         {/* Timer Warning */}
-        <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-          timeRemaining <= 300
-            ? "bg-red-100 text-red-800"
-            : timeRemaining <= 600
-            ? "bg-yellow-100 text-yellow-800"
-            : "bg-blue-100 text-blue-800"
-        }`}>
+        <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${getTimerStyle()}`}>
           {timeRemaining <= 300 ? (
             <AlertTriangle className="h-5 w-5 flex-shrink-0" />
           ) : (
@@ -216,7 +219,7 @@ export default function PaymentPage() {
             <p className="text-sm opacity-80">
               {timeRemaining <= 300
                 ? "Please complete payment before time runs out!"
-                : "Complete payment via Wise and click \"Payment Complete\" within 30 minutes"}
+                : `Complete payment via Wise and click "Payment Complete" within ${businessConfig.reservation.expiryMinutes} minutes`}
             </p>
           </div>
         </div>
@@ -246,6 +249,29 @@ export default function PaymentPage() {
                 Scan with your phone to pay via Wise
               </p>
             </div>
+
+            {/* Alternative Payment Notice */}
+            {siteConfig.social.instagram && (
+              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
+                <p className="text-sm text-amber-800 font-medium">
+                  Prefer to pay without Wise?
+                </p>
+                <p className="text-sm text-amber-700 mt-1">
+                  DM us on Instagram for alternative payment options →{" "}
+                  <a
+                    href={siteConfig.social.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline font-semibold"
+                  >
+                    {(() => {
+                      const match = siteConfig.social.instagram.match(/instagram\.com\/([^/?]+)/)
+                      return match ? `@${match[1]}` : "Instagram"
+                    })()}
+                  </a>
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Payment Details */}
@@ -359,7 +385,7 @@ export default function PaymentPage() {
                 <span>¥{Number(order.subtotal).toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Customs Fee (20%)</span>
+                <span className="text-gray-600">Customs Fee ({Math.round(CUSTOMS_RATE * 100)}%)</span>
                 <span>¥{Number(order.customsFee || 0).toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm">

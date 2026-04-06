@@ -1,4 +1,5 @@
 import { HeroSection } from "@/components/home/hero-section"
+import { TestimonialsSection } from "@/components/home/testimonials-section"
 import { FeaturedSections } from "@/components/home/featured-sections"
 import { ShippingInfoSection } from "@/components/home/shipping-info-section"
 import { ProductGrid } from "@/components/home/product-grid"
@@ -14,6 +15,9 @@ export default function Home() {
       </div>
 
       <HeroSection />
+
+      {/* Customer Testimonials */}
+      <TestimonialsSection />
 
       {/* Featured Sections (Recommended + New Arrivals) */}
       <FeaturedSections />

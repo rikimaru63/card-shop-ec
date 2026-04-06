@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Prisma, Condition, ProductType } from '@prisma/client'
+import { Prisma, Condition, ProductType, Product, Category, ProductImage } from '@prisma/client'
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
+
+// Type for products with category and images includes
+type ProductWithRelations = Product & {
+  category: Pick<Category, 'id' | 'name' | 'slug'> | null
+  images: ProductImage[]
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -104,11 +110,14 @@ export async function GET(request: NextRequest) {
 
     // Search filter (name or description)
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' as const } },
-        { nameJa: { contains: search, mode: 'insensitive' as const } },
-        { description: { contains: search, mode: 'insensitive' as const } }
-      ]
+      if (!where.AND) where.AND = []
+      ;(where.AND as Prisma.ProductWhereInput[]).push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' as const } },
+          { nameJa: { contains: search, mode: 'insensitive' as const } },
+          { description: { contains: search, mode: 'insensitive' as const } }
+        ]
+      })
     }
 
     // Price range filter
@@ -140,29 +149,81 @@ export async function GET(request: NextRequest) {
     // Calculate pagination
     const skip = (page - 1) * limit
 
-    // Execute queries in parallel
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-        include: {
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true
-            }
-          },
-          images: {
-            take: 1,
-            orderBy: { order: 'asc' }
-          }
+    // If where already has a stock filter (from inStock=true), skip two-phase split
+    const useStockSort = !where.stock
+
+    let products: ProductWithRelations[]
+    let total: number
+
+    if (useStockSort) {
+      // Two-phase query: in-stock first, then out-of-stock
+      const inStockWhere: Prisma.ProductWhereInput = { ...where, stock: { gt: 0 } }
+      const outOfStockWhere: Prisma.ProductWhereInput = { ...where, stock: { equals: 0 } }
+
+      const [inStockCount, outOfStockCount] = await Promise.all([
+        prisma.product.count({ where: inStockWhere }),
+        prisma.product.count({ where: outOfStockWhere })
+      ])
+
+      total = inStockCount + outOfStockCount
+      products = []
+
+      const includeClause = {
+        category: { select: { id: true, name: true, slug: true } },
+        images: { take: 1, orderBy: { order: 'asc' as const } }
+      }
+
+      if (skip < inStockCount) {
+        // Page overlaps with in-stock group
+        const inStockTake = Math.min(limit, inStockCount - skip)
+        const inStockProducts = await prisma.product.findMany({
+          where: inStockWhere,
+          orderBy,
+          skip,
+          take: inStockTake,
+          include: includeClause
+        })
+        products = [...inStockProducts]
+
+        // If page needs more items, fetch from out-of-stock group
+        const remaining = limit - inStockTake
+        if (remaining > 0) {
+          const outOfStockProducts = await prisma.product.findMany({
+            where: outOfStockWhere,
+            orderBy,
+            skip: 0,
+            take: remaining,
+            include: includeClause
+          })
+          products = [...products, ...outOfStockProducts]
         }
-      }),
-      prisma.product.count({ where })
-    ])
+      } else {
+        // Page is entirely in the out-of-stock group
+        const outOfStockSkip = skip - inStockCount
+        products = await prisma.product.findMany({
+          where: outOfStockWhere,
+          orderBy,
+          skip: outOfStockSkip,
+          take: limit,
+          include: includeClause
+        })
+      }
+    } else {
+      // inStock filter active — single query (all results are in-stock)
+      ;[products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+          include: {
+            category: { select: { id: true, name: true, slug: true } },
+            images: { take: 1, orderBy: { order: 'asc' as const } }
+          }
+        }),
+        prisma.product.count({ where })
+      ])
+    }
 
     // Format response
     const formattedProducts = products.map(product => ({

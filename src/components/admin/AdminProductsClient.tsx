@@ -66,7 +66,8 @@ export function AdminProductsClient({ initialProducts }: AdminProductsClientProp
 
     try {
       const params = new URLSearchParams()
-      params.set("limit", "500") // Fetch all matching for client-side reorder
+      params.set("limit", "50")
+      params.set("page", "1")
 
       if (f.search) params.set("search", f.search)
       if (f.game) params.set("game", f.game)
