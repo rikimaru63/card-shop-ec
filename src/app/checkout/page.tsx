@@ -721,9 +721,11 @@ export default function CheckoutPage() {
               </div>
 
               {/* Customs Notice */}
-              <div className="bg-white rounded-lg border shadow-sm p-6">
-                <CustomsNotice />
-              </div>
+              {CUSTOMS_RATE > 0 && (
+                <div className="bg-white rounded-lg border shadow-sm p-6">
+                  <CustomsNotice />
+                </div>
+              )}
             </div>
 
             {/* Sidebar */}

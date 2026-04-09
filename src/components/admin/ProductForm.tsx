@@ -12,7 +12,7 @@ import { createProduct, updateProduct } from '@/app/admin/products/actions';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Product, ProductImage } from '@prisma/client';
-import { DUTY_MULTIPLIER } from '@/lib/constants';
+import { DUTY_MULTIPLIER, CUSTOMS_RATE } from '@/lib/constants';
 
 interface ProductFormProps {
   initialData?: (Product & { images: ProductImage[] }) | null;
@@ -122,13 +122,13 @@ export function ProductForm({ initialData, productId, onSuccess }: ProductFormPr
           {sellingPrice && (
             <div className="bg-green-50 border border-green-200 rounded-md px-3 py-2">
               <p className="text-sm text-green-800">
-                <span className="font-medium">販売価格（関税13%込）:</span>{' '}
+                <span className="font-medium">販売価格{CUSTOMS_RATE > 0 ? `（関税${Math.round(CUSTOMS_RATE * 100)}%込）` : ''}:</span>{' '}
                 <span className="font-bold">¥{sellingPrice}</span>
               </p>
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            原価を入力してください。販売価格は自動的に13%の関税が加算されます。
+            原価を入力してください。{CUSTOMS_RATE > 0 ? `販売価格は自動的に${Math.round(CUSTOMS_RATE * 100)}%の関税が加算されます。` : '販売価格 = 原価となります。'}
           </p>
         </div>
         {errors.basePrice && <p className="col-span-4 text-right text-red-500 text-sm">{errors.basePrice[0]}</p>}

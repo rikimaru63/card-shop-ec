@@ -251,9 +251,11 @@ export default function CartPage() {
               )}
 
               {/* Customs Notice */}
-              <div className="mb-4">
-                <CustomsNotice />
-              </div>
+              {CUSTOMS_RATE > 0 && (
+                <div className="mb-4">
+                  <CustomsNotice />
+                </div>
+              )}
 
               {/* Price Details */}
               <div className="space-y-3 border-t pt-4">
