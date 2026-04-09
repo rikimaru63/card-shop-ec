@@ -414,10 +414,12 @@ export default function CheckoutPage() {
                     <span>Subtotal ({getTotalItems()} items)</span>
                     <span>¥{subtotal.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Customs Fee ({Math.round(CUSTOMS_RATE * 100)}%)</span>
-                    <span>¥{customsFee.toLocaleString()}</span>
-                  </div>
+                  {CUSTOMS_RATE > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>Customs Fee ({Math.round(CUSTOMS_RATE * 100)}%)</span>
+                      <span>¥{customsFee.toLocaleString()}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span>Shipping</span>
                     <span className={shippingInfo.isFreeShipping ? "text-green-600 font-semibold" : ""}>
