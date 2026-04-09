@@ -261,10 +261,12 @@ export default function CartPage() {
                   <span>Subtotal</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Customs Fee ({Math.round(CUSTOMS_RATE * 100)}%)</span>
-                  <span>{formatPrice(customsFee)}</span>
-                </div>
+                {CUSTOMS_RATE > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Customs Fee ({Math.round(CUSTOMS_RATE * 100)}%)</span>
+                    <span>{formatPrice(customsFee)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
                   <span className={shippingInfo.isFreeShipping ? "text-green-600 font-semibold" : ""}>

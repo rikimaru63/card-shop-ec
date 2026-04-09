@@ -384,10 +384,12 @@ export default function PaymentPage() {
                 <span className="text-gray-600">Subtotal</span>
                 <span>¥{Number(order.subtotal).toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Customs Fee ({Math.round(CUSTOMS_RATE * 100)}%)</span>
-                <span>¥{Number(order.customsFee || 0).toLocaleString()}</span>
-              </div>
+              {CUSTOMS_RATE > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Customs Fee ({Math.round(CUSTOMS_RATE * 100)}%)</span>
+                  <span>¥{Number(order.customsFee || 0).toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Shipping</span>
                 <span>
