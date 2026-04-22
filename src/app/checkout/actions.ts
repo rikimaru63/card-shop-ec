@@ -177,19 +177,30 @@ export async function createOrder(input: CreateOrderInput): Promise<{
     // Use transaction to create order AND stock reservations atomically
     const order = await prisma.$transaction(async (tx) => {
       // 1. 在庫予約を確定済みで作成し、実在庫を即時減算する
+      //    レースコンディション対策として、条件付きupdateManyでDB側でatomicに
+      //    「十分な在庫があるときだけ減算」する。updated.count===0 なら在庫不足。
       for (const item of items) {
         const product = await tx.product.findUnique({
           where: { id: item.productId },
-          select: { trackStock: true, stock: true }
+          select: { trackStock: true }
         })
 
         if (product?.trackStock) {
-          // Double-check available stock in transaction（stock は即時減算済みの実在庫）
-          if (product.stock < item.quantity) {
+          // 条件付きatomic減算: stock >= quantity のときだけ decrement
+          const updated = await tx.product.updateMany({
+            where: {
+              id: item.productId,
+              stock: { gte: item.quantity }
+            },
+            data: { stock: { decrement: item.quantity } }
+          })
+
+          if (updated.count === 0) {
+            // 同時注文により在庫が奪われた or 在庫不足
             throw new Error(`Out of stock: ${item.name}`)
           }
 
-          // 1. 在庫予約を"確定済"で作成（QR時点で減算したことを記録）
+          // 在庫予約を"確定済"で作成（QR時点で減算したことを記録）
           await tx.stockReservation.create({
             data: {
               productId: item.productId,
@@ -198,12 +209,6 @@ export async function createOrder(input: CreateOrderInput): Promise<{
               expiresAt: reservationExpiresAt,
               confirmed: true
             }
-          })
-
-          // 2. 実在庫を即時減算
-          await tx.product.update({
-            where: { id: item.productId },
-            data: { stock: { decrement: item.quantity } }
           })
         }
       }
