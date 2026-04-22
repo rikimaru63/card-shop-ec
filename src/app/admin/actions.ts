@@ -27,7 +27,7 @@ export async function releaseOrderStock(orderNumber: string): Promise<{
       return { success: false, message: "Cannot release stock for shipped/delivered orders" }
     }
 
-    if (order.status === "CANCELLED") {
+    if (order.status === "CANCELLED" || order.paymentStatus === "CANCELLED") {
       return { success: false, message: "This order is already cancelled" }
     }
 
