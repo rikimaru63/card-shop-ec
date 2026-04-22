@@ -87,7 +87,13 @@ interface Order {
   id: string
   orderNumber: string
   email: string
+  subtotal: number
+  customsFee: number
+  tax: number
+  shipping: number
+  discount: number
   total: number
+  currency: string
   status: string
   paymentStatus: string
   trackingNumber: string | null
@@ -948,11 +954,43 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-4 border-t">
-                <span className="text-lg font-semibold">Total</span>
-                <span className="text-xl font-bold">
-                  ¥{Number(selectedOrder.total).toLocaleString()}
-                </span>
+              {/* 金額内訳 */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <h3 className="font-semibold text-sm mb-2">金額内訳 (Breakdown)</h3>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">小計 Subtotal（商品合計）</span>
+                  <span>¥{Number(selectedOrder.subtotal).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">送料 Shipping</span>
+                  <span>¥{Number(selectedOrder.shipping).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">関税 Customs Fee</span>
+                  <span>¥{Number(selectedOrder.customsFee).toLocaleString()}</span>
+                </div>
+                {Number(selectedOrder.tax) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">税金 Tax</span>
+                    <span>¥{Number(selectedOrder.tax).toLocaleString()}</span>
+                  </div>
+                )}
+                {Number(selectedOrder.discount) > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>割引 Discount</span>
+                    <span>-¥{Number(selectedOrder.discount).toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm pt-2 border-t">
+                  <span className="text-gray-600">合計個数 Total Items</span>
+                  <span>{selectedOrder.items.reduce((sum, i) => sum + i.quantity, 0)} 点</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-lg font-semibold">合計 Total</span>
+                  <span className="text-xl font-bold">
+                    ¥{Number(selectedOrder.total).toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
           )}
