@@ -168,18 +168,27 @@ export async function DELETE(
       )
     }
 
-    // 注文削除時の在庫復元ルール:
-    //  - PENDING / PROCESSING (未発送): 在庫を復元する（商品はまだ倉庫にある）
-    //  - SHIPPED / DELIVERED (発送・配送済): 復元しない（商品は既に顧客の手元）
-    //  - CANCELLED: 既に別プロセスで復元済なのでスキップ
-    //  - REFUNDED: 返金処理済。物理的な商品の所在は個別判断のため自動復元せず、
-    //    在庫調整は必要なら管理画面から手動で実施する運用とする
+    // 注文削除時の在庫復元ルール（order.status と paymentStatus 両方がホワイトリスト内のときのみ復元）:
     //
-    // いずれのケースでも stockReservation は掃除する（孤立レコード防止）。
-    const restockableStatuses: string[] = ['PENDING', 'PROCESSING']
+    //  Order Status:
+    //    - PENDING / PROCESSING (未発送): 倉庫にある可能性が高いので復元対象
+    //    - SHIPPED / DELIVERED    : 復元しない（既に顧客の手元）
+    //    - CANCELLED              : 復元しない（別プロセスが復元済み）
+    //    - REFUNDED               : 復元しない（返金処理済、物理所在は個別判断）
+    //
+    //  Payment Status (どちらも満たす必要):
+    //    - PENDING / PROCESSING / FAILED : 決済未完了 → 復元対象
+    //    - COMPLETED : 決済完了済。発送前の例外削除の場合でも手動判断に委ねる
+    //    - REFUNDED  : 返金済。物理所在は個別判断のため自動復元しない
+    //    - CANCELLED : 復元しない
+    //
+    // 物理在庫の不整合が疑わしいケースは管理画面から手動調整する運用とする。
+    // いずれのケースでも stockReservation は必ず掃除する（孤立レコード防止）。
+    const restockableOrderStatuses: string[] = ['PENDING', 'PROCESSING']
+    const restockablePaymentStatuses: string[] = ['PENDING', 'PROCESSING', 'FAILED']
     const shouldRestock =
-      restockableStatuses.includes(order.status) &&
-      order.paymentStatus !== 'CANCELLED'
+      restockableOrderStatuses.includes(order.status) &&
+      restockablePaymentStatuses.includes(order.paymentStatus)
 
     await prisma.$transaction(async (tx) => {
       if (shouldRestock) {
