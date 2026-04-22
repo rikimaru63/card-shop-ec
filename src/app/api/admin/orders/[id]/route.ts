@@ -155,13 +155,14 @@ export async function DELETE(
       )
     }
 
-    // 注文を取得して状態を確認
-    const order = await prisma.order.findUnique({
+    // 事前存在チェックのみ（UI向け404判定用）。
+    // 在庫復元要否はtransaction内で最新状態を読んで判定する（TOCTOU対策）。
+    const existing = await prisma.order.findUnique({
       where: { id: params.id },
-      select: { id: true, orderNumber: true, status: true, paymentStatus: true }
+      select: { id: true }
     })
 
-    if (!order) {
+    if (!existing) {
       return NextResponse.json(
         { error: '注文が見つかりません' },
         { status: 404 }
@@ -186,15 +187,31 @@ export async function DELETE(
     // いずれのケースでも stockReservation は必ず掃除する（孤立レコード防止）。
     const restockableOrderStatuses: string[] = ['PENDING', 'PROCESSING']
     const restockablePaymentStatuses: string[] = ['PENDING', 'PROCESSING', 'FAILED']
-    const shouldRestock =
-      restockableOrderStatuses.includes(order.status) &&
-      restockablePaymentStatuses.includes(order.paymentStatus)
 
     await prisma.$transaction(async (tx) => {
+      // TOCTOU対策: SELECT ... FOR UPDATE で Order 行ロックを取得し、
+      // 他 tx が status/paymentStatus を UPDATE するのをブロックする。
+      // その上で最新の status/paymentStatus を読み直して復元判定する。
+      await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${params.id} FOR UPDATE`
+
+      const freshOrder = await tx.order.findUnique({
+        where: { id: params.id },
+        select: { orderNumber: true, status: true, paymentStatus: true }
+      })
+
+      if (!freshOrder) {
+        // 他 tx が先に削除した場合。冪等性のため正常終了扱いにする。
+        return
+      }
+
+      const shouldRestock =
+        restockableOrderStatuses.includes(freshOrder.status) &&
+        restockablePaymentStatuses.includes(freshOrder.paymentStatus)
+
       if (shouldRestock) {
         // 確定済み予約（在庫が実際に減算されたもの）を atomic に復元
         const confirmedReservations = await tx.stockReservation.findMany({
-          where: { orderNumber: order.orderNumber, confirmed: true }
+          where: { orderNumber: freshOrder.orderNumber, confirmed: true }
         })
 
         for (const reservation of confirmedReservations) {
@@ -213,7 +230,7 @@ export async function DELETE(
 
       // どのstatusでも、予約レコードは必ず全削除（orphan防止）
       await tx.stockReservation.deleteMany({
-        where: { orderNumber: order.orderNumber }
+        where: { orderNumber: freshOrder.orderNumber }
       })
 
       // 関連レコードを削除してから注文を削除
