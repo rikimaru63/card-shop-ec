@@ -168,21 +168,28 @@ export async function DELETE(
       )
     }
 
-    // 注文削除時に在庫を復元してから削除する。
-    // cancelOrder と同じパターンで在庫を atomic に復元する。
-    // ただし既にCANCELLED済みの注文は他プロセスが在庫復元済みのためスキップ。
-    await prisma.$transaction(async (tx) => {
-      const alreadyCancelled =
-        order.status === 'CANCELLED' || order.paymentStatus === 'CANCELLED'
+    // 注文削除時の在庫復元ルール:
+    //  - PENDING / PROCESSING (未発送): 在庫を復元する（商品はまだ倉庫にある）
+    //  - SHIPPED / DELIVERED (発送・配送済): 復元しない（商品は既に顧客の手元）
+    //  - CANCELLED: 既に別プロセスで復元済なのでスキップ
+    //  - REFUNDED: 返金処理済。物理的な商品の所在は個別判断のため自動復元せず、
+    //    在庫調整は必要なら管理画面から手動で実施する運用とする
+    //
+    // いずれのケースでも stockReservation は掃除する（孤立レコード防止）。
+    const restockableStatuses: string[] = ['PENDING', 'PROCESSING']
+    const shouldRestock =
+      restockableStatuses.includes(order.status) &&
+      order.paymentStatus !== 'CANCELLED'
 
-      if (!alreadyCancelled) {
-        // 確定済み予約（在庫が実際に減算されたもの）を復元する
+    await prisma.$transaction(async (tx) => {
+      if (shouldRestock) {
+        // 確定済み予約（在庫が実際に減算されたもの）を atomic に復元
         const confirmedReservations = await tx.stockReservation.findMany({
           where: { orderNumber: order.orderNumber, confirmed: true }
         })
 
-        // ID指定 atomic delete に成功した予約のみ在庫をincrement（二重復元防止）
         for (const reservation of confirmedReservations) {
+          // ID指定 atomic delete に成功した予約のみ在庫をincrement（二重復元防止）
           const delResult = await tx.stockReservation.deleteMany({
             where: { id: reservation.id }
           })
@@ -193,17 +200,12 @@ export async function DELETE(
             })
           }
         }
-
-        // 未確認の予約も削除（在庫は減っていないので復元不要）
-        await tx.stockReservation.deleteMany({
-          where: { orderNumber: order.orderNumber, confirmed: false }
-        })
-      } else {
-        // CANCELLED済みのケース: 予約レコードが残っていれば掃除するのみ（在庫復元はしない）
-        await tx.stockReservation.deleteMany({
-          where: { orderNumber: order.orderNumber }
-        })
       }
+
+      // どのstatusでも、予約レコードは必ず全削除（orphan防止）
+      await tx.stockReservation.deleteMany({
+        where: { orderNumber: order.orderNumber }
+      })
 
       // 関連レコードを削除してから注文を削除
       await tx.orderItem.deleteMany({ where: { orderId: params.id } })
