@@ -61,7 +61,7 @@ function generateOrderNumber(): string {
   return `CS-${timestamp}-${random}`
 }
 
-// Get available stock (actual stock minus active reservations)
+// Get available stock (stock は createOrder 時点で即時減算されるため、DB値がそのまま利用可能在庫)
 async function getAvailableStock(productId: string): Promise<number> {
   const product = await prisma.product.findUnique({
     where: { id: productId },
@@ -72,18 +72,7 @@ async function getAvailableStock(productId: string): Promise<number> {
     return Infinity // No stock tracking
   }
 
-  // Get total reserved quantity (not expired, not confirmed)
-  const reservations = await prisma.stockReservation.aggregate({
-    where: {
-      productId,
-      confirmed: false,
-      expiresAt: { gt: new Date() }
-    },
-    _sum: { quantity: true }
-  })
-
-  const reservedQuantity = reservations._sum.quantity || 0
-  return product.stock - reservedQuantity
+  return product.stock
 }
 
 // Check stock availability for all items (considering reservations)
@@ -187,7 +176,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{
 
     // Use transaction to create order AND stock reservations atomically
     const order = await prisma.$transaction(async (tx) => {
-      // 1. Create stock reservations for each item (NOT reducing actual stock yet)
+      // 1. 在庫予約を確定済みで作成し、実在庫を即時減算する
       for (const item of items) {
         const product = await tx.product.findUnique({
           where: { id: item.productId },
@@ -195,32 +184,26 @@ export async function createOrder(input: CreateOrderInput): Promise<{
         })
 
         if (product?.trackStock) {
-          // Get current reservations for this product
-          const existingReservations = await tx.stockReservation.aggregate({
-            where: {
-              productId: item.productId,
-              confirmed: false,
-              expiresAt: { gt: new Date() }
-            },
-            _sum: { quantity: true }
-          })
-          const reservedQty = existingReservations._sum.quantity || 0
-          const availableStock = product.stock - reservedQty
-
-          // Double-check available stock in transaction
-          if (availableStock < item.quantity) {
+          // Double-check available stock in transaction（stock は即時減算済みの実在庫）
+          if (product.stock < item.quantity) {
             throw new Error(`Out of stock: ${item.name}`)
           }
 
-          // Create reservation (stock is held but not decremented)
+          // 1. 在庫予約を"確定済"で作成（QR時点で減算したことを記録）
           await tx.stockReservation.create({
             data: {
               productId: item.productId,
               quantity: item.quantity,
               orderNumber,
               expiresAt: reservationExpiresAt,
-              confirmed: false
+              confirmed: true
             }
+          })
+
+          // 2. 実在庫を即時減算
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { decrement: item.quantity } }
           })
         }
       }
