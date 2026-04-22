@@ -71,68 +71,132 @@ export async function PATCH(
     const body = await request.json()
     const { status, paymentStatus, trackingNumber, notes } = body
 
-    const updateData: any = {}
+    // CANCELLED遷移時に在庫を復元するためのホワイトリスト（DELETE ハンドラと同一定義）
+    // SHIPPED/DELIVERED → CANCELLED は「現在の status が restockable 外」で弾かれる
+    const restockableOrderStatuses: string[] = ['PENDING', 'PROCESSING']
+    const restockablePaymentStatuses: string[] = ['PENDING', 'PROCESSING', 'FAILED']
 
-    if (status) {
-      updateData.status = status
-      if (status === 'SHIPPED') {
-        updateData.shippedAt = new Date()
-      }
-      if (status === 'DELIVERED') {
-        updateData.deliveredAt = new Date()
-      }
-    }
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      // TOCTOU対策: SELECT ... FOR UPDATE で Order 行ロックを取得
+      await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${params.id} FOR UPDATE`
 
-    if (paymentStatus) {
-      updateData.paymentStatus = paymentStatus
-      // Also update payment record if exists
-      const order = await prisma.order.findUnique({
+      const currentOrder = await tx.order.findUnique({
         where: { id: params.id },
-        include: { payment: true }
+        select: {
+          id: true,
+          orderNumber: true,
+          status: true,
+          paymentStatus: true,
+          payment: true,
+        }
       })
-      if (order?.payment) {
-        await prisma.payment.update({
-          where: { id: order.payment.id },
-          data: { status: paymentStatus }
-        })
+
+      if (!currentOrder) {
+        throw new Error('ORDER_NOT_FOUND')
       }
-    }
 
-    if (trackingNumber !== undefined) {
-      updateData.trackingNumber = trackingNumber
-    }
+      // CANCELLED への遷移かつ現在の状態が在庫復元対象の場合のみ在庫を復元する
+      const isCancellingStatus = status === 'CANCELLED'
+      const isCancellingPayment = paymentStatus === 'CANCELLED'
+      const isTransitioningToCancel = isCancellingStatus || isCancellingPayment
 
-    if (notes !== undefined) {
-      updateData.notes = notes
-    }
+      if (isTransitioningToCancel) {
+        const shouldRestock =
+          restockableOrderStatuses.includes(currentOrder.status) &&
+          restockablePaymentStatuses.includes(currentOrder.paymentStatus)
 
-    const updatedOrder = await prisma.order.update({
-      where: { id: params.id },
-      data: updateData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          }
-        },
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-              }
+        if (shouldRestock) {
+          // 確定済み予約（在庫が実際に減算されたもの）を atomic に復元
+          const confirmedReservations = await tx.stockReservation.findMany({
+            where: { orderNumber: currentOrder.orderNumber, confirmed: true }
+          })
+
+          for (const reservation of confirmedReservations) {
+            // ID指定 atomic delete に成功した予約のみ在庫をincrement（二重復元防止）
+            const delResult = await tx.stockReservation.deleteMany({
+              where: { id: reservation.id }
+            })
+            if (delResult.count === 1) {
+              await tx.product.update({
+                where: { id: reservation.productId },
+                data: { stock: { increment: reservation.quantity } }
+              })
             }
           }
-        },
-        payment: true
+        }
+
+        // どのstatusでも、予約レコードは必ず全削除（orphan防止）
+        await tx.stockReservation.deleteMany({
+          where: { orderNumber: currentOrder.orderNumber }
+        })
       }
+
+      // order.update に渡す更新データを構築
+      const updateData: Record<string, unknown> = {}
+
+      if (status) {
+        updateData.status = status
+        if (status === 'SHIPPED') {
+          updateData.shippedAt = new Date()
+        }
+        if (status === 'DELIVERED') {
+          updateData.deliveredAt = new Date()
+        }
+      }
+
+      if (paymentStatus) {
+        updateData.paymentStatus = paymentStatus
+        // Payment record も更新
+        if (currentOrder.payment) {
+          await tx.payment.update({
+            where: { id: currentOrder.payment.id },
+            data: { status: paymentStatus }
+          })
+        }
+      }
+
+      if (trackingNumber !== undefined) {
+        updateData.trackingNumber = trackingNumber
+      }
+
+      if (notes !== undefined) {
+        updateData.notes = notes
+      }
+
+      return tx.order.update({
+        where: { id: params.id },
+        data: updateData,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            }
+          },
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                }
+              }
+            }
+          },
+          payment: true
+        }
+      })
     })
 
     return NextResponse.json(updatedOrder)
   } catch (error) {
+    if (error instanceof Error && error.message === 'ORDER_NOT_FOUND') {
+      return NextResponse.json(
+        { error: '注文が見つかりません' },
+        { status: 404 }
+      )
+    }
     console.error('Error updating order:', error)
     return NextResponse.json(
       { error: '注文の更新に失敗しました' },
