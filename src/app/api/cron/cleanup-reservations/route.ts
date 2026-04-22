@@ -68,73 +68,71 @@ export async function POST(request: Request) {
 async function cleanupExpiredReservations() {
   const now = new Date()
 
-  // Find all expired, unconfirmed reservations
-  const expiredReservations = await prisma.stockReservation.findMany({
+  // 24h経過した未決済注文を取得（二重処理防止のためCANCELLED/REFUNDEDは除外）
+  const expiredOrders = await prisma.order.findMany({
     where: {
-      expiresAt: { lt: now },
-      confirmed: false
+      paymentStatus: { in: ["PENDING", "PROCESSING"] },
+      status: { notIn: ["CANCELLED", "REFUNDED"] },
+      reservationExpiresAt: { lt: now }
     },
-    select: {
-      id: true,
-      orderNumber: true,
-      productId: true,
-      quantity: true
+    include: {
+      items: {
+        include: {
+          product: { select: { name: true } }
+        }
+      }
     }
   })
 
-  if (expiredReservations.length === 0) {
+  if (expiredOrders.length === 0) {
     return {
-      message: "No expired reservations found",
+      message: "No expired orders found",
       cancelledOrders: 0,
       releasedReservations: 0
     }
   }
 
-  // Get unique order numbers from expired reservations
-  const orderNumbersSet = new Set<string>()
-  for (const r of expiredReservations) {
-    if (r.orderNumber) {
-      orderNumbersSet.add(r.orderNumber)
-    }
-  }
-  const orderNumbers = Array.from(orderNumbersSet)
-
   let cancelledOrders = 0
   let releasedReservations = 0
 
-  // Process in transaction
-  await prisma.$transaction(async (tx) => {
-    // 1. Cancel orders with expired reservations
-    for (const orderNumber of orderNumbers) {
-      const order = await tx.order.findUnique({
-        where: { orderNumber },
-        select: { status: true, paymentStatus: true }
+  for (const order of expiredOrders) {
+    await prisma.$transaction(async (tx) => {
+      // 確定済み予約を取得（在庫が実際に減算されたもの）
+      const confirmedReservations = await tx.stockReservation.findMany({
+        where: { orderNumber: order.orderNumber, confirmed: true }
       })
 
-      // Only cancel if order is still pending
-      if (order && order.status === "PENDING" && order.paymentStatus === "PENDING") {
-        await tx.order.update({
-          where: { orderNumber },
-          data: {
-            status: "CANCELLED",
-            paymentStatus: "CANCELLED",
-            reservationExpiresAt: null,
-            notes: "Auto-cancelled: Payment not completed within 30 minutes"
-          }
+      // 在庫復元
+      for (const r of confirmedReservations) {
+        await tx.product.update({
+          where: { id: r.productId },
+          data: { stock: { increment: r.quantity } }
         })
-        cancelledOrders++
       }
-    }
 
-    // 2. Delete all expired unconfirmed reservations
-    const deleteResult = await tx.stockReservation.deleteMany({
-      where: {
-        expiresAt: { lt: now },
-        confirmed: false
-      }
+      // 予約削除（確認済み・未確認を問わず）
+      const deleteResult = await tx.stockReservation.deleteMany({
+        where: { orderNumber: order.orderNumber }
+      })
+      releasedReservations += deleteResult.count
+
+      // 注文を自動キャンセル
+      await tx.order.update({
+        where: { id: order.id },
+        data: {
+          status: "CANCELLED",
+          paymentStatus: "CANCELLED",
+          reservationExpiresAt: null,
+          notes: [
+            order.notes,
+            `Auto-cancelled after 24h unpaid at ${now.toISOString()}`
+          ].filter(Boolean).join("\n")
+        }
+      })
+
+      cancelledOrders++
     })
-    releasedReservations = deleteResult.count
-  })
+  }
 
   // Revalidate affected pages
   revalidatePath("/account/orders")
