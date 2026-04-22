@@ -9,22 +9,21 @@ import { revalidatePath } from "next/cache"
 
 export async function GET(request: Request) {
   try {
-    // Optional: Verify cron secret for security
+    // CRON_SECRET は必須。未設定の場合は 500 で処理拒否（認証バイパス防止）
     const authHeader = request.headers.get("authorization")
     const cronSecret = process.env.CRON_SECRET
 
-    // CRON_SECRET が未設定の場合は警告を出す（認証バイパスになるため）
-    // .env に CRON_SECRET を必ず設定すること
     if (!cronSecret) {
-      console.warn(
-        "[cleanup-reservations] WARNING: CRON_SECRET is not set. " +
-        "This endpoint is accessible without authentication. " +
-        "Set CRON_SECRET in your environment variables."
+      console.error(
+        "[cleanup-reservations] CRON_SECRET is not set. Refusing to run cleanup for security."
+      )
+      return NextResponse.json(
+        { error: "Server misconfiguration: CRON_SECRET not set" },
+        { status: 500 }
       )
     }
 
-    // If CRON_SECRET is set, require authorization
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -49,11 +48,21 @@ export async function GET(request: Request) {
 // POST method for manual triggers
 export async function POST(request: Request) {
   try {
-    // Verify admin authorization for manual triggers
+    // ADMIN_API_KEY または CRON_SECRET は必須。未設定の場合は 500 で処理拒否（認証バイパス防止）
     const authHeader = request.headers.get("authorization")
     const adminSecret = process.env.ADMIN_API_KEY || process.env.CRON_SECRET
 
-    if (adminSecret && authHeader !== `Bearer ${adminSecret}`) {
+    if (!adminSecret) {
+      console.error(
+        "[cleanup-reservations] ADMIN_API_KEY or CRON_SECRET must be set. Refusing to run cleanup for security."
+      )
+      return NextResponse.json(
+        { error: "Server misconfiguration: admin secret not set" },
+        { status: 500 }
+      )
+    }
+
+    if (authHeader !== `Bearer ${adminSecret}`) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
