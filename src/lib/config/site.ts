@@ -2,6 +2,8 @@
 
 // リージョン別のMeta Pixel IDを解決する
 // 優先度: REGION別env(_US/_EU) > 共通env(NEXT_PUBLIC_META_PIXEL_ID)
+// 現状 US / EU の2リージョンのみ対応。他の値（"JP" 等）は US版 env にフォールバックする。
+// 将来リージョンを追加する際は、以下の regionSpecificPixelId の分岐に明示的に追加すること。
 const region = process.env.NEXT_PUBLIC_REGION || "US"
 const regionSpecificPixelId =
   region === "EU"
