@@ -1,5 +1,13 @@
 // src/lib/config/site.ts
 
+// リージョン別のMeta Pixel IDを解決する
+// 優先度: REGION別env(_US/_EU) > 共通env(NEXT_PUBLIC_META_PIXEL_ID)
+const region = process.env.NEXT_PUBLIC_REGION || "US"
+const regionSpecificPixelId =
+  region === "EU"
+    ? process.env.NEXT_PUBLIC_META_PIXEL_ID_EU
+    : process.env.NEXT_PUBLIC_META_PIXEL_ID_US
+
 export const siteConfig = {
   name: process.env.NEXT_PUBLIC_SITE_NAME || "Card Shop",
   description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || "Your premier destination for trading cards",
@@ -27,7 +35,10 @@ export const siteConfig = {
 
   tracking: {
     gaId: process.env.NEXT_PUBLIC_GA_ID || "",
-    metaPixelId: process.env.NEXT_PUBLIC_META_PIXEL_ID || "",
+    metaPixelId:
+      regionSpecificPixelId ||
+      process.env.NEXT_PUBLIC_META_PIXEL_ID ||
+      "",
   },
 
   paymentMethods: ["Wise"],
