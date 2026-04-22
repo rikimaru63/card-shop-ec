@@ -461,20 +461,27 @@ export async function confirmPayment(orderNumber: string): Promise<{
       return { success: false, message: "This order has already been processed" }
     }
 
-    // Check if reservation has expired
+    // Check if reservation has expired (early UI feedback - not the atomic guard)
     if (order.reservationExpiresAt && new Date() > order.reservationExpiresAt) {
       return { success: false, message: "Stock reservation has expired. Please place a new order." }
     }
 
     // 注: createOrder 時点で実在庫は既に atomic に減算され、予約も confirmed=true で
     // 作成されている。ここでは paymentStatus を atomic に PROCESSING 化するだけ。
-    // 条件付き updateMany で、他プロセス(cancelOrder/Cron)が先にキャンセル or
-    // 既に処理した場合は count===0 となり早期return。
+    //
+    // TOCTOU対策: where 句に reservationExpiresAt の判定も含めることで、
+    // findUnique で取得した直後に期限が切れたケースも atomic に拒否する。
+    // null (既に processing 済) or 未来時刻 の行だけマッチする。
+    const now = new Date()
     const updateResult = await prisma.order.updateMany({
       where: {
         orderNumber,
         status: { notIn: ["CANCELLED", "SHIPPED", "DELIVERED"] },
-        paymentStatus: "PENDING"
+        paymentStatus: "PENDING",
+        OR: [
+          { reservationExpiresAt: null },
+          { reservationExpiresAt: { gte: now } }
+        ]
       },
       data: {
         paymentStatus: "PROCESSING",
@@ -483,7 +490,10 @@ export async function confirmPayment(orderNumber: string): Promise<{
     })
 
     if (updateResult.count === 0) {
-      return { success: false, message: "Order state changed. Please reload and try again." }
+      return {
+        success: false,
+        message: "Order state changed or reservation expired. Please reload and try again."
+      }
     }
 
     revalidatePath("/account/orders")
