@@ -379,16 +379,40 @@ export async function cancelOrder(orderNumber: string): Promise<{
       return { success: false, message: "Shipped orders cannot be cancelled" }
     }
 
-    // Use transaction to update order status AND handle stock
+    // TOCTOU対策: transaction内で条件付きupdateManyによりatomicにCANCELLED化し、
+    // 個別ID指定のdeleteManyで予約削除に成功した分だけstockをincrementする。
+    // Cron/releaseOrderStock/cancelOrder のいずれかが並行実行されても
+    // 在庫の二重復元を防ぐ。
     await prisma.$transaction(async (tx) => {
-      // Check if reservations were confirmed (stock was actually decremented)
+      const cancelResult = await tx.order.updateMany({
+        where: {
+          orderNumber,
+          status: { notIn: ["CANCELLED", "SHIPPED", "DELIVERED"] },
+          paymentStatus: { notIn: ["CANCELLED"] }
+        },
+        data: {
+          status: "CANCELLED",
+          paymentStatus: "CANCELLED",
+          reservationExpiresAt: null
+        }
+      })
+
+      if (cancelResult.count === 0) {
+        // 他プロセス(Cron/admin)が先にキャンセル or 出荷済みに変更
+        return
+      }
+
+      // 確定済み予約を取得
       const confirmedReservations = await tx.stockReservation.findMany({
         where: { orderNumber, confirmed: true }
       })
 
-      if (confirmedReservations.length > 0) {
-        // Stock was decremented, need to restore it
-        for (const reservation of confirmedReservations) {
+      // ID指定atomic deleteに成功した予約のみ在庫復元
+      for (const reservation of confirmedReservations) {
+        const delResult = await tx.stockReservation.deleteMany({
+          where: { id: reservation.id }
+        })
+        if (delResult.count === 1) {
           await tx.product.update({
             where: { id: reservation.productId },
             data: { stock: { increment: reservation.quantity } }
@@ -396,19 +420,9 @@ export async function cancelOrder(orderNumber: string): Promise<{
         }
       }
 
-      // Delete all reservations for this order
+      // 未確認の予約を削除
       await tx.stockReservation.deleteMany({
-        where: { orderNumber }
-      })
-
-      // Update order status
-      await tx.order.update({
-        where: { orderNumber },
-        data: {
-          status: "CANCELLED",
-          paymentStatus: "CANCELLED",
-          reservationExpiresAt: null
-        }
+        where: { orderNumber, confirmed: false }
       })
     })
 
@@ -452,49 +466,25 @@ export async function confirmPayment(orderNumber: string): Promise<{
       return { success: false, message: "Stock reservation has expired. Please place a new order." }
     }
 
-    // Use transaction to confirm reservations and decrement stock
-    await prisma.$transaction(async (tx) => {
-      // 1. Get all reservations for this order
-      const reservations = await tx.stockReservation.findMany({
-        where: { orderNumber, confirmed: false }
-      })
-
-      // 2. Decrement actual stock and mark reservations as confirmed
-      for (const reservation of reservations) {
-        const product = await tx.product.findUnique({
-          where: { id: reservation.productId },
-          select: { stock: true, trackStock: true }
-        })
-
-        if (product?.trackStock) {
-          // Verify stock is still available
-          if (product.stock < reservation.quantity) {
-            throw new Error("Insufficient stock")
-          }
-
-          // Actually decrement the stock now
-          await tx.product.update({
-            where: { id: reservation.productId },
-            data: { stock: { decrement: reservation.quantity } }
-          })
-        }
-
-        // Mark reservation as confirmed
-        await tx.stockReservation.update({
-          where: { id: reservation.id },
-          data: { confirmed: true }
-        })
+    // 注: createOrder 時点で実在庫は既に atomic に減算され、予約も confirmed=true で
+    // 作成されている。ここでは paymentStatus を atomic に PROCESSING 化するだけ。
+    // 条件付き updateMany で、他プロセス(cancelOrder/Cron)が先にキャンセル or
+    // 既に処理した場合は count===0 となり早期return。
+    const updateResult = await prisma.order.updateMany({
+      where: {
+        orderNumber,
+        status: { notIn: ["CANCELLED", "SHIPPED", "DELIVERED"] },
+        paymentStatus: "PENDING"
+      },
+      data: {
+        paymentStatus: "PROCESSING",
+        reservationExpiresAt: null
       }
-
-      // 3. Update order payment status to PROCESSING (waiting for admin to verify Wise payment)
-      await tx.order.update({
-        where: { orderNumber },
-        data: {
-          paymentStatus: "PROCESSING",
-          reservationExpiresAt: null // Clear expiry since payment is confirmed
-        }
-      })
     })
+
+    if (updateResult.count === 0) {
+      return { success: false, message: "Order state changed. Please reload and try again." }
+    }
 
     revalidatePath("/account/orders")
     revalidatePath("/admin/orders")
