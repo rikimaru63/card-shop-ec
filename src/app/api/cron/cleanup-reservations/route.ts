@@ -13,6 +13,16 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get("authorization")
     const cronSecret = process.env.CRON_SECRET
 
+    // CRON_SECRET が未設定の場合は警告を出す（認証バイパスになるため）
+    // .env に CRON_SECRET を必ず設定すること
+    if (!cronSecret) {
+      console.warn(
+        "[cleanup-reservations] WARNING: CRON_SECRET is not set. " +
+        "This endpoint is accessible without authentication. " +
+        "Set CRON_SECRET in your environment variables."
+      )
+    }
+
     // If CRON_SECRET is set, require authorization
     if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json(
@@ -69,9 +79,13 @@ async function cleanupExpiredReservations() {
   const now = new Date()
 
   // 24h経過した未決済注文を取得（二重処理防止のためCANCELLED/REFUNDEDは除外）
+  // PROCESSING は顧客が決済完了ボタンを押した状態のため Cron キャンセル対象外。
+  // confirmPayment が reservationExpiresAt を null にするため、
+  // PROCESSING かつ reservationExpiresAt が残っている注文は不整合状態だが
+  // 安全側に倒して Cron では触らない。
   const expiredOrders = await prisma.order.findMany({
     where: {
-      paymentStatus: { in: ["PENDING", "PROCESSING"] },
+      paymentStatus: "PENDING",
       status: { notIn: ["CANCELLED", "REFUNDED"] },
       reservationExpiresAt: { lt: now }
     },
@@ -104,7 +118,7 @@ async function cleanupExpiredReservations() {
       const cancelResult = await tx.order.updateMany({
         where: {
           id: order.id,
-          paymentStatus: { in: ["PENDING", "PROCESSING"] },
+          paymentStatus: "PENDING",
           status: { notIn: ["CANCELLED", "REFUNDED"] },
           reservationExpiresAt: { lt: now }
         },
