@@ -33,11 +33,11 @@ export async function releaseOrderStock(orderNumber: string): Promise<{
 
     const releasedItems: { name: string; quantity: number }[] = []
 
-    await prisma.$transaction(async (tx) => {
-      // TOCTOU対策: transaction内で条件付きupdateManyを使い、
-      // 「まだキャンセル可能な状態」のときだけatomicにCANCELLED化する。
-      // 外側のチェック後に他プロセス(Cron等)がキャンセル or 出荷した場合は
-      // count===0となり、在庫復元もスキップされる。
+    // TOCTOU対策: transaction内で条件付きupdateManyを使い、
+    // 「まだキャンセル可能な状態」のときだけatomicにCANCELLED化する。
+    // 外側のチェック後に他プロセス(Cron等)がキャンセル or 出荷した場合は
+    // count===0となり、在庫復元もスキップされる。
+    const released = await prisma.$transaction(async (tx) => {
       const cancelResult = await tx.order.updateMany({
         where: {
           orderNumber,
@@ -53,7 +53,7 @@ export async function releaseOrderStock(orderNumber: string): Promise<{
 
       if (cancelResult.count === 0) {
         // 他プロセスが先に状態を変えている
-        return
+        return false
       }
 
       // 確認済みの予約（在庫が減算されたもの）を取得
@@ -95,7 +95,13 @@ export async function releaseOrderStock(orderNumber: string): Promise<{
           ].filter(Boolean).join("\n")
         }
       })
+
+      return true
     })
+
+    if (!released) {
+      return { success: false, message: "この注文は既にキャンセル済みか、処理中です" }
+    }
 
     revalidatePath("/admin/orders")
     revalidatePath("/admin/products")

@@ -383,7 +383,7 @@ export async function cancelOrder(orderNumber: string): Promise<{
     // 個別ID指定のdeleteManyで予約削除に成功した分だけstockをincrementする。
     // Cron/releaseOrderStock/cancelOrder のいずれかが並行実行されても
     // 在庫の二重復元を防ぐ。
-    await prisma.$transaction(async (tx) => {
+    const cancelled = await prisma.$transaction(async (tx) => {
       const cancelResult = await tx.order.updateMany({
         where: {
           orderNumber,
@@ -399,7 +399,7 @@ export async function cancelOrder(orderNumber: string): Promise<{
 
       if (cancelResult.count === 0) {
         // 他プロセス(Cron/admin)が先にキャンセル or 出荷済みに変更
-        return
+        return false
       }
 
       // 確定済み予約を取得
@@ -424,7 +424,13 @@ export async function cancelOrder(orderNumber: string): Promise<{
       await tx.stockReservation.deleteMany({
         where: { orderNumber, confirmed: false }
       })
+
+      return true
     })
+
+    if (!cancelled) {
+      return { success: false, message: "この注文は既にキャンセル済みです" }
+    }
 
     revalidatePath("/account/orders")
     revalidatePath("/admin/orders")
