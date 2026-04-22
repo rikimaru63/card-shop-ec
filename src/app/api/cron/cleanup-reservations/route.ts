@@ -97,6 +97,29 @@ async function cleanupExpiredReservations() {
 
   for (const order of expiredOrders) {
     await prisma.$transaction(async (tx) => {
+      // TOCTOU対策: transaction内で条件付きupdateManyを使い、
+      // 「まだ未決済かつキャンセルされていない」状態のときだけキャンセル処理する。
+      // findMany取得時点からの間に顧客が決済完了 or 他プロセスが先にキャンセルした場合は
+      // count===0 となり、在庫復元もスキップされる。
+      const cancelResult = await tx.order.updateMany({
+        where: {
+          id: order.id,
+          paymentStatus: { in: ["PENDING", "PROCESSING"] },
+          status: { notIn: ["CANCELLED", "REFUNDED"] },
+          reservationExpiresAt: { lt: now }
+        },
+        data: {
+          status: "CANCELLED",
+          paymentStatus: "CANCELLED",
+          reservationExpiresAt: null
+        }
+      })
+
+      if (cancelResult.count === 0) {
+        // 既に他プロセスで状態が変わっている（決済完了 or 先行キャンセル等）
+        return
+      }
+
       // 確定済み予約を取得（在庫が実際に減算されたもの）
       const confirmedReservations = await tx.stockReservation.findMany({
         where: { orderNumber: order.orderNumber, confirmed: true }
@@ -116,13 +139,10 @@ async function cleanupExpiredReservations() {
       })
       releasedReservations += deleteResult.count
 
-      // 注文を自動キャンセル
+      // キャンセル理由をnotesに追記（取得時点のnotesに新しいメッセージを append）
       await tx.order.update({
         where: { id: order.id },
         data: {
-          status: "CANCELLED",
-          paymentStatus: "CANCELLED",
-          reservationExpiresAt: null,
           notes: [
             order.notes,
             `Auto-cancelled after 24h unpaid at ${now.toISOString()}`
