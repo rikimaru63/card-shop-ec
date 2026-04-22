@@ -155,8 +155,57 @@ export async function DELETE(
       )
     }
 
-    // Delete related records first, then order
+    // 注文を取得して状態を確認
+    const order = await prisma.order.findUnique({
+      where: { id: params.id },
+      select: { id: true, orderNumber: true, status: true, paymentStatus: true }
+    })
+
+    if (!order) {
+      return NextResponse.json(
+        { error: '注文が見つかりません' },
+        { status: 404 }
+      )
+    }
+
+    // 注文削除時に在庫を復元してから削除する。
+    // cancelOrder と同じパターンで在庫を atomic に復元する。
+    // ただし既にCANCELLED済みの注文は他プロセスが在庫復元済みのためスキップ。
     await prisma.$transaction(async (tx) => {
+      const alreadyCancelled =
+        order.status === 'CANCELLED' || order.paymentStatus === 'CANCELLED'
+
+      if (!alreadyCancelled) {
+        // 確定済み予約（在庫が実際に減算されたもの）を復元する
+        const confirmedReservations = await tx.stockReservation.findMany({
+          where: { orderNumber: order.orderNumber, confirmed: true }
+        })
+
+        // ID指定 atomic delete に成功した予約のみ在庫をincrement（二重復元防止）
+        for (const reservation of confirmedReservations) {
+          const delResult = await tx.stockReservation.deleteMany({
+            where: { id: reservation.id }
+          })
+          if (delResult.count === 1) {
+            await tx.product.update({
+              where: { id: reservation.productId },
+              data: { stock: { increment: reservation.quantity } }
+            })
+          }
+        }
+
+        // 未確認の予約も削除（在庫は減っていないので復元不要）
+        await tx.stockReservation.deleteMany({
+          where: { orderNumber: order.orderNumber, confirmed: false }
+        })
+      } else {
+        // CANCELLED済みのケース: 予約レコードが残っていれば掃除するのみ（在庫復元はしない）
+        await tx.stockReservation.deleteMany({
+          where: { orderNumber: order.orderNumber }
+        })
+      }
+
+      // 関連レコードを削除してから注文を削除
       await tx.orderItem.deleteMany({ where: { orderId: params.id } })
       await tx.payment.deleteMany({ where: { orderId: params.id } })
       await tx.order.delete({ where: { id: params.id } })
