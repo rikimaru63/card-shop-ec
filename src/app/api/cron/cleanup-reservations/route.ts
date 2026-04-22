@@ -125,19 +125,27 @@ async function cleanupExpiredReservations() {
         where: { orderNumber: order.orderNumber, confirmed: true }
       })
 
-      // 在庫復元
+      // レースコンディション対策: 各予約をID指定でatomic deleteし、
+      // delete成功時のみstockをincrementする。他txが先に削除していたら
+      // count===0となり、二重在庫加算を防止する。
       for (const r of confirmedReservations) {
-        await tx.product.update({
-          where: { id: r.productId },
-          data: { stock: { increment: r.quantity } }
+        const delResult = await tx.stockReservation.deleteMany({
+          where: { id: r.id }
         })
+        if (delResult.count === 1) {
+          await tx.product.update({
+            where: { id: r.productId },
+            data: { stock: { increment: r.quantity } }
+          })
+          releasedReservations++
+        }
       }
 
-      // 予約削除（確認済み・未確認を問わず）
-      const deleteResult = await tx.stockReservation.deleteMany({
-        where: { orderNumber: order.orderNumber }
+      // 未確認の予約も削除（在庫は減っていないので復元不要）
+      const unconfirmedDelete = await tx.stockReservation.deleteMany({
+        where: { orderNumber: order.orderNumber, confirmed: false }
       })
-      releasedReservations += deleteResult.count
+      releasedReservations += unconfirmedDelete.count
 
       // キャンセル理由をnotesに追記（取得時点のnotesに新しいメッセージを append）
       await tx.order.update({

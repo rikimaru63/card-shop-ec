@@ -34,37 +34,61 @@ export async function releaseOrderStock(orderNumber: string): Promise<{
     const releasedItems: { name: string; quantity: number }[] = []
 
     await prisma.$transaction(async (tx) => {
+      // TOCTOU対策: transaction内で条件付きupdateManyを使い、
+      // 「まだキャンセル可能な状態」のときだけatomicにCANCELLED化する。
+      // 外側のチェック後に他プロセス(Cron等)がキャンセル or 出荷した場合は
+      // count===0となり、在庫復元もスキップされる。
+      const cancelResult = await tx.order.updateMany({
+        where: {
+          orderNumber,
+          status: { notIn: ["CANCELLED", "SHIPPED", "DELIVERED"] },
+          paymentStatus: { notIn: ["CANCELLED"] }
+        },
+        data: {
+          status: "CANCELLED",
+          paymentStatus: "CANCELLED",
+          reservationExpiresAt: null
+        }
+      })
+
+      if (cancelResult.count === 0) {
+        // 他プロセスが先に状態を変えている
+        return
+      }
+
       // 確認済みの予約（在庫が減算されたもの）を取得
       const confirmedReservations = await tx.stockReservation.findMany({
         where: { orderNumber, confirmed: true }
       })
 
-      // 各確認済み予約の在庫を復元
+      // レースコンディション対策: ID指定atomic deleteに成功した予約のみ在庫復元。
+      // 他txが先に削除していたらcount===0となり、二重在庫加算を防止する。
       for (const reservation of confirmedReservations) {
-        await tx.product.update({
-          where: { id: reservation.productId },
-          data: { stock: { increment: reservation.quantity } }
+        const delResult = await tx.stockReservation.deleteMany({
+          where: { id: reservation.id }
         })
-
-        const orderItem = order.items.find(i => i.productId === reservation.productId)
-        releasedItems.push({
-          name: orderItem?.product?.name || reservation.productId,
-          quantity: reservation.quantity
-        })
+        if (delResult.count === 1) {
+          await tx.product.update({
+            where: { id: reservation.productId },
+            data: { stock: { increment: reservation.quantity } }
+          })
+          const orderItem = order.items.find(i => i.productId === reservation.productId)
+          releasedItems.push({
+            name: orderItem?.product?.name || reservation.productId,
+            quantity: reservation.quantity
+          })
+        }
       }
 
-      // 未確認の予約も含めてすべて削除
+      // 未確認の予約を削除（在庫は減っていないので復元不要）
       await tx.stockReservation.deleteMany({
-        where: { orderNumber }
+        where: { orderNumber, confirmed: false }
       })
 
-      // 注文をキャンセル
+      // キャンセル理由をnotesに追記
       await tx.order.update({
         where: { orderNumber },
         data: {
-          status: "CANCELLED",
-          paymentStatus: "CANCELLED",
-          reservationExpiresAt: null,
           notes: [
             order.notes,
             `Stock released by admin at ${new Date().toISOString()}`
