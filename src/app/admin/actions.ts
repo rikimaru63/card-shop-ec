@@ -103,6 +103,7 @@ export async function releaseOrderStock(orderNumber: string): Promise<{
       return { success: false, message: "この注文は既にキャンセル済みか、処理中です" }
     }
 
+    revalidatePath("/account/orders")
     revalidatePath("/admin/orders")
     revalidatePath("/admin/products")
     revalidatePath("/products")
