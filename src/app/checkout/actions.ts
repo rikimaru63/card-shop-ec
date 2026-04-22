@@ -498,7 +498,7 @@ export async function confirmPayment(orderNumber: string): Promise<{
     if (updateResult.count === 0) {
       return {
         success: false,
-        message: "Order state changed or reservation expired. Please reload and try again."
+        message: "お支払い期限が切れたか、ご注文の状態が変わりました。お手数ですが、ページを更新して再度お試しください。"
       }
     }
 
