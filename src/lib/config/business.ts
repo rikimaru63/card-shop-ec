@@ -22,6 +22,6 @@ export const businessConfig = {
   },
 
   reservation: {
-    expiryMinutes: 30,
+    expiryMinutes: 60 * 24, // 24時間
   },
 }
