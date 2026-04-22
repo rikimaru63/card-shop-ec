@@ -67,7 +67,8 @@ export function AdminProductsClient({ initialProducts }: AdminProductsClientProp
     try {
       const params = new URLSearchParams()
       // 管理画面にはページネーションUIが無いため、一度に全商品を取得する。
-      // 現状商品数(~2,460)を十分上回る値に設定。将来商品が増えたらページネーション実装を検討。
+      // 現状商品数(~2,460)を十分上回る値に設定。
+      // TODO: 商品数が5,000件を超える見込みになった時点でページネーションUI実装を検討すること。
       params.set("limit", "10000")
       params.set("page", "1")
 
