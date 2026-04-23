@@ -678,7 +678,9 @@ export default function OrdersPage() {
                     {formatDate(order.createdAt)}
                   </TableCell>
                   <TableCell className="text-right space-x-1">
-                    {order.paymentStatus === "PROCESSING" && order.status !== "CANCELLED" && (
+                    {/* 未発送かつ未完了の注文は解放可能 */}
+                    {!["CANCELLED", "SHIPPED", "DELIVERED"].includes(order.status) &&
+                     !["CANCELLED", "COMPLETED", "REFUNDED"].includes(order.paymentStatus) && (
                       <Button
                         variant="outline"
                         size="sm"
