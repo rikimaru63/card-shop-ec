@@ -87,6 +87,18 @@ export async function POST(request: Request) {
 async function cleanupExpiredReservations() {
   const now = new Date()
 
+  // 自動解放はenv切替で有効化する（デフォルト無効、手動解放運用）
+  const autoReleaseEnabled = process.env.AUTO_RELEASE_RESERVATIONS_ENABLED === "true"
+  if (!autoReleaseEnabled) {
+    return {
+      message: "Auto release is disabled (set AUTO_RELEASE_RESERVATIONS_ENABLED=true to enable)",
+      cancelledOrders: 0,
+      releasedReservations: 0,
+      disabled: true,
+      processedAt: now.toISOString()
+    }
+  }
+
   // 24h経過した未決済注文を取得（二重処理防止のためCANCELLED/REFUNDEDは除外）
   // PROCESSING は顧客が決済完了ボタンを押した状態のため Cron キャンセル対象外。
   // confirmPayment が reservationExpiresAt を null にするため、
