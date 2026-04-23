@@ -14,6 +14,7 @@ interface ShippingToastState {
 
 const PIKACHU_PROMO_THRESHOLD = 50000
 const PIKACHU_SHOWN_KEY = "pikachu-promo-shown"
+const PIKACHU_PROMO_ENABLED = process.env.NEXT_PUBLIC_PIKACHU_PROMO_ENABLED === "true"
 
 export function CartNotifications() {
   const [shippingToast, setShippingToast] = useState<ShippingToastState>({
@@ -77,6 +78,7 @@ export function CartNotifications() {
 
         // Pikachu promo check: when total crosses ¥50,000 threshold
         if (
+          PIKACHU_PROMO_ENABLED &&
           event.singleBoxTotal >= PIKACHU_PROMO_THRESHOLD &&
           event.previousSingleBoxTotal < PIKACHU_PROMO_THRESHOLD
         ) {
