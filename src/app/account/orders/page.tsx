@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/hooks/use-toast"
+import { OrderStatusStepper } from "@/components/orders/order-status-stepper"
 
 interface OrderItem {
   id: string
@@ -269,6 +270,14 @@ export default function OrdersPage() {
                   {/* Expanded Details */}
                   {isExpanded && (
                     <div className="border-t">
+                      {/* Progress Stepper */}
+                      <div className="p-4 border-b bg-gray-50/50">
+                        <OrderStatusStepper
+                          orderStatus={order.status as any}
+                          paymentStatus={order.paymentStatus as any}
+                        />
+                      </div>
+
                       {/* Order Items */}
                       <div className="p-4 space-y-3">
                         <h3 className="font-semibold mb-3">Order Items</h3>

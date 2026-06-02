@@ -12,7 +12,8 @@ import {
   Copy,
   Check,
   XCircle,
-  Loader2
+  Loader2,
+  Info,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { confirmPayment, getOrderByNumber, cancelOrder } from "@/app/checkout/actions"
@@ -21,6 +22,7 @@ import { useCartStore } from "@/store/cart-store"
 import { siteConfig } from "@/lib/config/site"
 import { businessConfig } from "@/lib/config/business"
 import { CUSTOMS_RATE } from "@/lib/constants"
+import { OrderStatusStepper } from "@/components/orders/order-status-stepper"
 
 const WISE_PAY_BASE_URL = "https://wise.com/pay/business/kms22"
 
@@ -205,6 +207,13 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-background">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
+        {/* Order Progress Stepper */}
+        <OrderStatusStepper
+          orderStatus={order.status}
+          paymentStatus={order.paymentStatus}
+          className="mb-6"
+        />
+
         {/* Timer Warning */}
         <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${getTimerStyle()}`}>
           {timeRemaining <= 300 ? (
@@ -312,50 +321,77 @@ export default function PaymentPage() {
               </div>
             </div>
 
-            <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">
-              <p className="font-medium mb-2">Payment Instructions:</p>
-              <ol className="list-decimal list-inside space-y-1">
-                <li>Scan the QR code or click the button below to open Wise</li>
-                <li>Send the amount shown above</li>
-                <li>After payment, click the &quot;Payment Complete&quot; button</li>
-              </ol>
+            {/* 柔らかい案内: 顧客に「2 つのステップが必要」と認識してもらう */}
+            <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-900 space-y-1">
+                <p className="font-semibold">お支払いには 2 つのステップがあります</p>
+                <p className="text-blue-800">
+                  Wise でのお振込みが完了したら、必ず下の「支払い完了」ボタンを押してください。
+                  ご不明点があればお気軽にご連絡ください。
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="p-6 bg-gray-50 space-y-3">
-            <a
-              href={wiseUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <Button
-                variant="outline"
-                className="w-full border-green-600 text-green-600 hover:bg-green-50"
+          {/* Action Buttons — 2 ステップカード形式 */}
+          <div className="p-6 bg-gray-50 space-y-4">
+            {/* ステップ ① Wise を開く */}
+            <div className="bg-white rounded-lg border-2 border-green-200 p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-green-600 text-white font-bold flex items-center justify-center">
+                  1
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Wise を開いてお支払い</p>
+                  <p className="text-xs text-gray-500">QR をスキャン、または下のボタンをタップ</p>
+                </div>
+              </div>
+              <a
+                href={wiseUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
               >
-                Open Wise
-                <ExternalLink className="h-4 w-4 ml-2" />
-              </Button>
-            </a>
+                <Button
+                  variant="outline"
+                  className="w-full border-green-600 text-green-600 hover:bg-green-50"
+                >
+                  Wise を開く
+                  <ExternalLink className="h-4 w-4 ml-2" />
+                </Button>
+              </a>
+            </div>
 
-            <Button
-              className="w-full bg-green-600 hover:bg-green-700"
-              onClick={handleConfirmPayment}
-              disabled={confirming}
-            >
-              {confirming ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Payment Complete
-                </>
-              )}
-            </Button>
+            {/* ステップ ② 支払い完了ボタン */}
+            <div className="bg-white rounded-lg border-2 border-green-600 p-4 space-y-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-green-600 text-white font-bold flex items-center justify-center">
+                  2
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">お振込み完了後にクリック</p>
+                  <p className="text-xs text-gray-500">この操作までで注文確定となります</p>
+                </div>
+              </div>
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700 text-base h-12"
+                onClick={handleConfirmPayment}
+                disabled={confirming}
+              >
+                {confirming ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    支払い完了
+                  </>
+                )}
+              </Button>
+            </div>
 
             <Button
               variant="ghost"
