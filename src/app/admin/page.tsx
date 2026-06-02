@@ -276,11 +276,12 @@ export default async function AdminDashboard() {
                   ストアを表示
                 </Button>
               </Link>
-              {/* 応急処置: 元来未配線の飾りボタンだった。本実装まで disabled + 準備中表示で誤クリック誘発を防ぐ */}
-              <Button disabled title="この機能は現在準備中です">
-                <BarChart3 className="h-4 w-4 mr-2 opacity-60" />
-                レポート (準備中)
-              </Button>
+              <Link href="/admin/reports">
+                <Button>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  レポート
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

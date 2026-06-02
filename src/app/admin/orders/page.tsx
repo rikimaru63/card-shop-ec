@@ -44,7 +44,8 @@ import {
   Trash2,
   Save,
   StickyNote,
-  PackageOpen
+  PackageOpen,
+  Download,
 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -512,11 +513,28 @@ export default function OrdersPage() {
     })
   }
 
+  // 現在の検索/フィルタ条件を保持したまま CSV エクスポートする URL を組み立てる。
+  // status のみ /api/admin/orders/export の status クエリに直マッピング、
+  // search/paymentStatus は今後のスコープ。期間は直近 3 ヶ月を既定とし、レポートページ側で精緻に取得可能。
+  const exportHref = (() => {
+    const p = new URLSearchParams({ period: "last3months" })
+    if (statusFilter && statusFilter !== "all") p.set("status", statusFilter)
+    return `/api/admin/orders/export?${p.toString()}`
+  })()
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Order Management</h1>
-        <span className="text-gray-500">{total} orders</span>
+        <div className="flex items-center gap-3">
+          <span className="text-gray-500">{total} orders</span>
+          <a href={exportHref}>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              CSV ダウンロード
+            </Button>
+          </a>
+        </div>
       </div>
 
       {/* Search and Filters */}
