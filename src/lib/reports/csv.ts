@@ -4,7 +4,14 @@
 
 export function escapeCsvField(value: unknown): string {
   if (value === null || value === undefined) return ""
-  const s = String(value)
+  const isNumber = typeof value === "number" || typeof value === "bigint"
+  let s = String(value)
+  // CSV Formula Injection 対策: 文字列フィールドで先頭が = + - @ TAB CR のとき、
+  // Excel/Sheets が数式として評価しないよう先頭にシングルクォートを付与する。
+  // 数値型はそのまま (数値計算用途を壊さない)。
+  if (!isNumber && /^[=+\-@\t\r]/.test(s)) {
+    s = "'" + s
+  }
   if (/[",\n\r]/.test(s)) {
     return `"${s.replace(/"/g, '""')}"`
   }
