@@ -321,13 +321,14 @@ export default function PaymentPage() {
               </div>
             </div>
 
-            {/* 柔らかい案内: 顧客に「2 つのステップが必要」と認識してもらう */}
+            {/* 柔らかい案内: 顧客に「2 つのステップが必要 + 3 日以内目安」を認識してもらう */}
             <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-blue-900 space-y-1">
                 <p className="font-semibold">お支払いには 2 つのステップがあります</p>
                 <p className="text-blue-800">
-                  Wise でのお振込みが完了したら、必ず下の「支払い完了」ボタンを押してください。
+                  Wise でのお振込みは目安として 3 日以内にお願いいたします。
+                  お振込みが完了したら、必ず下の「支払い完了」ボタンを押してください。
                   ご不明点があればお気軽にご連絡ください。
                 </p>
               </div>
