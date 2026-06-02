@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"KEY=$(cat /tmp/sa-key.txt)\\necho \\\"===env 追加 (US=app 1, EU=app 5)===\\\"\\nssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no root@100.114.184.59 \\\"docker exec coolify php artisan tinker --...",
+  "error": "Exit code 1\n===env 追加 (US=app 1, EU=app 5)===\n\nIn ParseErrorException.php line 44:\n                                                                      \n  PHP Parse error: Syntax error, unexpected T_NS_SEPARATOR on line 2",
+  "timestamp": "2026-05-26T12:52:04.654Z",
+  "retry_count": 2
+}
