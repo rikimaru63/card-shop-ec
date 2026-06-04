@@ -64,6 +64,7 @@ const baseCountries = [
   { code: "CY", name: "Cyprus" },
   { code: "GB", name: "United Kingdom" },
   { code: "CH", name: "Switzerland" },
+  { code: "BN", name: "Brunei" },
 ]
 
 const euOnlyCountries = [
