@@ -12,25 +12,36 @@ export async function middleware(req: NextRequest) {
   // POST が届き、Next.js が "Missing origin header from a forwarded Server Actions request."
   // で reject していた (ブルネイ顧客の Confirm Order 無反応の原因)。
   //
-  // CSRF 安全性ガード: `next-action` ヘッダーは非ブラウザクライアント (curl/Node 等) からも
-  // 任意に設定できるため、ヘッダー単独では同一サイト判定に使えない。代わりに、SameSite 属性で
-  // cross-site POST に送られない session cookie の存在を server-verifiable signal として併用する。
-  // NextAuth session cookie (一般ユーザー) または admin-session (管理画面) のいずれかが
-  // 付いてきた POST のみ Origin を補完する。非認証経路の Server Action でこの問題が
-  // 出る場合は別途 Traefik 側で Origin forward を本質的に修正する必要がある。
-  const hasSessionCookie =
-    req.cookies.get('next-auth.session-token') ||
-    req.cookies.get('__Secure-next-auth.session-token') ||
-    req.cookies.get(ADMIN_SESSION_COOKIE);
-  if (
-    req.method === 'POST' &&
-    req.headers.get('next-action') &&
-    !req.headers.get('origin') &&
-    hasSessionCookie
-  ) {
-    const headers = new Headers(req.headers);
-    headers.set('origin', req.nextUrl.origin);
-    return NextResponse.next({ request: { headers } });
+  // CSRF 安全性ガード (多層防御):
+  //   (a) SameSite で cross-site POST に送られない session cookie の存在
+  //   (b) Referer ヘッダーを parse して same-origin であること
+  //   (c) Sec-Fetch-Site が same-origin であること (ブラウザが fetch spec で強制設定、
+  //       JS から偽装不可。古いブラウザでは付かないので OR で fallback)
+  // (b) または (c) のいずれかと (a) の AND を満たした POST のみ Origin を補完する。
+  // 本質的には Coolify/Traefik 側で Origin header の forward を修正すべき (別途検討)。
+  if (req.method === 'POST' && req.headers.get('next-action') && !req.headers.get('origin')) {
+    const hasSessionCookie =
+      req.cookies.get('next-auth.session-token') ||
+      req.cookies.get('__Secure-next-auth.session-token') ||
+      req.cookies.get(ADMIN_SESSION_COOKIE);
+
+    const expectedOrigin = req.nextUrl.origin;
+    let sameOriginByReferer = false;
+    const referer = req.headers.get('referer');
+    if (referer) {
+      try {
+        sameOriginByReferer = new URL(referer).origin === expectedOrigin;
+      } catch {
+        sameOriginByReferer = false;
+      }
+    }
+    const sameOriginBySecFetch = req.headers.get('sec-fetch-site') === 'same-origin';
+
+    if (hasSessionCookie && (sameOriginByReferer || sameOriginBySecFetch)) {
+      const headers = new Headers(req.headers);
+      headers.set('origin', expectedOrigin);
+      return NextResponse.next({ request: { headers } });
+    }
   }
 
   // Admin routes (pages and API) - Basic Auth with session cookie
