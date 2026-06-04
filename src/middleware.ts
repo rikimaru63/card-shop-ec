@@ -7,6 +7,18 @@ const ADMIN_SESSION_COOKIE = 'admin-session';
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Server Action リクエスト時に Origin ヘッダーが欠落していた場合、自サイト Origin で補完する。
+  // 背景: Coolify/Traefik 経由で一部地域 (アジア CDN edge 等) の顧客から Origin が剥がれた
+  // POST が届き、Next.js が "Missing origin header from a forwarded Server Actions request."
+  // で reject していた (ブルネイ顧客の Confirm Order 無反応の原因)。
+  // CSRF 安全性: Server Action は `next-action` カスタムヘッダーで CORS preflight が必要なため、
+  // cross-site 由来の偽装リクエストは preflight で弾かれる。
+  if (req.method === 'POST' && req.headers.get('next-action') && !req.headers.get('origin')) {
+    const headers = new Headers(req.headers);
+    headers.set('origin', req.nextUrl.origin);
+    return NextResponse.next({ request: { headers } });
+  }
+
   // Admin routes (pages and API) - Basic Auth with session cookie
   if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
     const user = process.env.ADMIN_USER || 'admin';
@@ -68,5 +80,9 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*', '/account/:path*', '/checkout/:path*'],
+  // 静的アセット系を除く全パスを対象にする。理由:
+  // (1) Server Action の Origin 補完ロジックを全ページで効かせるため。
+  // (2) 既存の /admin / /account / /checkout 認証ロジックは pathname.startsWith で
+  //     条件分岐しているため、対象外のパスは早期 return されパフォーマンス影響は無視できる。
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
