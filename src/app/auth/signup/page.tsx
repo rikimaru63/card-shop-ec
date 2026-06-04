@@ -36,6 +36,7 @@ const baseCountries = [
   { code: "NZ", name: "New Zealand" },
   { code: "MX", name: "Mexico" },
   { code: "BR", name: "Brazil" },
+  { code: "BN", name: "Brunei" },
 ]
 
 const euOnlyCountries = [
