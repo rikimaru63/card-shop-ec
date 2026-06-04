@@ -6,6 +6,10 @@ import { ProductGrid } from "@/components/home/product-grid"
 import { FilterSidebar } from "@/components/home/filter-sidebar"
 import AnnouncementBanner from "@/components/AnnouncementBanner"
 
+// 1 年キャッシュに過去のエラーレスポンスが固着して 500 を返し続けていた問題への対策。
+// 動的レンダリングに固定して、エラーが永続キャッシュされないようにする。
+export const dynamic = "force-dynamic"
+
 export default function Home() {
   return (
     <>
