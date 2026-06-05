@@ -224,7 +224,18 @@ export default function CheckoutPage() {
   }
 
   const handleConfirmOrder = async () => {
-    if (!session?.user?.email) return
+    if (!session?.user?.email) {
+      // 元実装は silent return で、顧客にはボタン無反応のように見えていた。
+      // session が落ちた状態でも明示的にフィードバック + sign-in 動線を出す。
+      toast({
+        title: "Session expired",
+        description: "Your sign-in session has expired. Please sign in again to confirm your order.",
+        variant: "destructive",
+        duration: 8000,
+      })
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/checkout")}`)
+      return
+    }
 
     const address = getSelectedAddress()
     if (!address) {
