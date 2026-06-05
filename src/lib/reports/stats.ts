@@ -52,6 +52,9 @@ export function resolvePeriod(params: { period?: string; from?: string; to?: str
 }
 
 // 集計対象は「決済完了 (COMPLETED)」のみ。キャンセル率はキャンセル/全注文で算出。
+// NOTE: Order.total は PostgreSQL の money 型で、AVG(money) は未定義 (除算演算子なし)。
+//       Prisma の `_avg` を使うと SQL に AVG(money) が発行されて 500 になるため、
+//       _sum と _count から JavaScript 側で平均を計算する。
 export async function getReportSummary(from: Date, to: Date) {
   const [completedAgg, allCount, cancelledCount] = await Promise.all([
     prisma.order.aggregate({
@@ -61,7 +64,6 @@ export async function getReportSummary(from: Date, to: Date) {
       },
       _sum: { total: true, subtotal: true, shipping: true },
       _count: { _all: true },
-      _avg: { total: true },
     }),
     prisma.order.count({
       where: { createdAt: { gte: from, lte: to } },
@@ -76,7 +78,7 @@ export async function getReportSummary(from: Date, to: Date) {
 
   const totalRevenue = Number(completedAgg._sum.total ?? 0)
   const completedOrders = completedAgg._count._all
-  const avgOrderValue = Number(completedAgg._avg.total ?? 0)
+  const avgOrderValue = completedOrders > 0 ? totalRevenue / completedOrders : 0
   const cancellationRate = allCount > 0 ? (cancelledCount / allCount) * 100 : 0
 
   return {
