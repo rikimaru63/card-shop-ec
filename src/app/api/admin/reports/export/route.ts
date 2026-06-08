@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getReportSummary, getTopProducts, getDailyRevenue, resolvePeriod } from "@/lib/reports/stats"
+import { getReportSummary, getTopProducts, getDailyRevenue, resolvePeriod, type ReportRegion } from "@/lib/reports/stats"
+import { getRegionSummary, getCountryBreakdown } from "@/lib/reports/region-stats"
 import { rowsToCsv, csvResponseHeaders, formatDateKey } from "@/lib/reports/csv"
 
 export const dynamic = "force-dynamic"
+
+function resolveRegion(raw: string | null): ReportRegion | undefined {
+  const v = raw?.toLowerCase()
+  return v === "us" ? "us" : v === "eu" ? "eu" : undefined
+}
 
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams
@@ -11,19 +17,23 @@ export async function GET(request: NextRequest) {
     from: sp.get("from") ?? undefined,
     to: sp.get("to") ?? undefined,
   })
+  const region = resolveRegion(sp.get("region"))
+  const regionLabel = region === "us" ? "アメリカ (US)" : region === "eu" ? "ヨーロッパ (EU)" : "全体"
 
-  const [summary, topProducts, daily] = await Promise.all([
-    getReportSummary(period.from, period.to),
-    getTopProducts(period.from, period.to, 50),
-    getDailyRevenue(period.from, period.to),
+  const [summary, topProducts, daily, regionSummary, countryRows] = await Promise.all([
+    getReportSummary(period.from, period.to, region),
+    getTopProducts(period.from, period.to, 50, region),
+    getDailyRevenue(period.from, period.to, region),
+    getRegionSummary(period.from, period.to),
+    getCountryBreakdown(period.from, period.to, region),
   ])
 
-  // 3 セクション (集計サマリ / 売れ筋 / 日別売上) を 1 ファイルにまとめる
+  // 複数セクションを 1 ファイルにまとめる
   const lines: string[] = []
   lines.push(
     rowsToCsv(
-      ["セクション", "期間ラベル", "開始日", "終了日"],
-      [["集計サマリ", period.label, formatDateKey(period.from), formatDateKey(period.to)]]
+      ["セクション", "期間ラベル", "開始日", "終了日", "地域"],
+      [["集計サマリ", period.label, formatDateKey(period.from), formatDateKey(period.to), regionLabel]]
     )
   )
   lines.push("")
@@ -35,9 +45,39 @@ export async function GET(request: NextRequest) {
         ["決済完了注文数", summary.completedOrders],
         ["総注文数", summary.totalOrders],
         ["キャンセル注文数", summary.cancelledOrders],
-        ["平均注文単価", Math.round(summary.avgOrderValue)],
+        ["客単価 (平均注文単価)", Math.round(summary.avgOrderValue)],
         ["キャンセル率 (%)", summary.cancellationRate.toFixed(2)],
       ]
+    )
+  )
+  lines.push("")
+  lines.push("# リージョン別サマリ (US / EU)")
+  lines.push(
+    rowsToCsv(
+      ["リージョン", "アクセス数", "ユニーク訪問者", "注文数(決済完了)", "売上", "客単価"],
+      regionSummary.map((r) => [
+        r.label,
+        r.visits,
+        r.uniqueVisitors,
+        r.orders,
+        r.revenue,
+        Math.round(r.avgOrderValue),
+      ])
+    )
+  )
+  lines.push("")
+  lines.push("# 流入国別の内訳")
+  lines.push(
+    rowsToCsv(
+      ["国・地域", "国コード", "リーチ数", "注文数", "売上", "客単価"],
+      countryRows.map((c) => [
+        c.name,
+        c.code ?? "",
+        c.visits,
+        c.orders,
+        c.revenue,
+        c.orders > 0 ? Math.round(c.avgOrderValue) : "",
+      ])
     )
   )
   lines.push("")
@@ -57,7 +97,8 @@ export async function GET(request: NextRequest) {
     )
   )
 
-  const filename = `report_${formatDateKey(period.from)}_${formatDateKey(period.to)}.csv`
+  const regionSuffix = region ? `_${region}` : ""
+  const filename = `report_${formatDateKey(period.from)}_${formatDateKey(period.to)}${regionSuffix}.csv`
   return new NextResponse(lines.join("\r\n"), {
     status: 200,
     headers: csvResponseHeaders(filename),

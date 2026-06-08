@@ -186,6 +186,7 @@ model Order {
   discount   Decimal @default(0) @db.Money
   total      Decimal @db.Money
   currency   String  @default("USD")
+  site       String? // 注文が発生したサイト ("us" / "eu")。リージョン別レポート用。記録開始前の注文は null。
 
   // Status
   status        OrderStatus   @default(PENDING)
@@ -219,6 +220,8 @@ model Order {
   @@index([orderNumber])
   @@index([status])
   @@index([createdAt])
+  @@index([site])
+  @@index([site, createdAt])
 }
 
 model OrderItem {
@@ -540,11 +543,14 @@ model PageView {
   userAgent String?  // ブラウザUA
   ipHash    String?  // IPアドレスのSHA-256ハッシュ
   site      String   @default("us") // "us" or "eu"
+  country   String?  // 訪問者の国コード (ISO 3166-1 alpha-2)。CDN の geo ヘッダーから取得。取得不可なら null。
   createdAt DateTime @default(now())
 
   @@index([path])
   @@index([productId])
   @@index([createdAt])
   @@index([site])
+  @@index([country])
+  @@index([site, country])
   @@index([productId, createdAt])
 }

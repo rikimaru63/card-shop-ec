@@ -225,6 +225,9 @@ export async function createOrder(input: CreateOrderInput): Promise<{
           shipping,
           total,
           currency: "JPY",
+          // この注文がどちらのサイトで発生したかを記録 (リージョン別レポート用)。
+          // 各デプロイの NEXT_PUBLIC_REGION ("US"/"EU") から判定。共有 DB のため必須。
+          site: (process.env.NEXT_PUBLIC_REGION || "US").toLowerCase(),
           status: "PENDING",
           paymentStatus: "PENDING",
           paymentMethod: "wise",

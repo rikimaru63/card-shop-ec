@@ -51,27 +51,36 @@ export function resolvePeriod(params: { period?: string; from?: string; to?: str
   return { from: startOfMonth(now), to: endOfMonth(now), key: "thisMonth", label: "今月" }
 }
 
+// レポートのリージョン絞り込み。"us" / "eu" を指定するとそのサイトの注文のみ集計。
+// undefined なら全リージョン (記録開始前の site=null 注文も含む) を集計する。
+export type ReportRegion = "us" | "eu"
+
+// 注文の site フィルタを where 句に展開するヘルパー (undefined なら何も足さない)
+const siteWhere = (site?: ReportRegion) => (site ? { site } : {})
+
 // 集計対象は「決済完了 (COMPLETED)」のみ。キャンセル率はキャンセル/全注文で算出。
 // NOTE: Order.total は PostgreSQL の money 型で、AVG(money) は未定義 (除算演算子なし)。
 //       Prisma の `_avg` を使うと SQL に AVG(money) が発行されて 500 になるため、
 //       _sum と _count から JavaScript 側で平均を計算する。
-export async function getReportSummary(from: Date, to: Date) {
+export async function getReportSummary(from: Date, to: Date, site?: ReportRegion) {
   const [completedAgg, allCount, cancelledCount] = await Promise.all([
     prisma.order.aggregate({
       where: {
         createdAt: { gte: from, lte: to },
         paymentStatus: "COMPLETED",
+        ...siteWhere(site),
       },
       _sum: { total: true, subtotal: true, shipping: true },
       _count: { _all: true },
     }),
     prisma.order.count({
-      where: { createdAt: { gte: from, lte: to } },
+      where: { createdAt: { gte: from, lte: to }, ...siteWhere(site) },
     }),
     prisma.order.count({
       where: {
         createdAt: { gte: from, lte: to },
         OR: [{ status: "CANCELLED" }, { paymentStatus: "CANCELLED" }],
+        ...siteWhere(site),
       },
     }),
   ])
@@ -92,13 +101,14 @@ export async function getReportSummary(from: Date, to: Date) {
 }
 
 // 売れ筋 Top 10 (決済完了注文のみ対象)
-export async function getTopProducts(from: Date, to: Date, limit = 10) {
+export async function getTopProducts(from: Date, to: Date, limit = 10, site?: ReportRegion) {
   const grouped = await prisma.orderItem.groupBy({
     by: ["productId"],
     where: {
       order: {
         createdAt: { gte: from, lte: to },
         paymentStatus: "COMPLETED",
+        ...siteWhere(site),
       },
     },
     _sum: { quantity: true, total: true },
@@ -123,11 +133,12 @@ export async function getTopProducts(from: Date, to: Date, limit = 10) {
 }
 
 // 日別売上 (決済完了のみ、from〜to の各日)
-export async function getDailyRevenue(from: Date, to: Date) {
+export async function getDailyRevenue(from: Date, to: Date, site?: ReportRegion) {
   const orders = await prisma.order.findMany({
     where: {
       createdAt: { gte: from, lte: to },
       paymentStatus: "COMPLETED",
+      ...siteWhere(site),
     },
     select: { createdAt: true, total: true },
     orderBy: { createdAt: "asc" },
