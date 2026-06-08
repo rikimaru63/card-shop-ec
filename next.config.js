@@ -36,6 +36,9 @@ const nextConfig = {
       ],
       bodySizeLimit: '5mb',
     },
+    // geoip-lite は実行時に node_modules 内のデータファイルを fs で読む。
+    // Next がバンドルすると __dirname が壊れデータを見失うため、外部パッケージ扱いにする。
+    serverComponentsExternalPackages: ['geoip-lite'],
   },
 }
 

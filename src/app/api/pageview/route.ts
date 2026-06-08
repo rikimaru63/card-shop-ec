@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createHash } from "crypto"
+import geoip from "geoip-lite"
 import { normalizeCountryCode } from "@/lib/reports/countries"
 
 function hashIP(ip: string): string {
   return createHash("sha256").update(ip + (process.env.IP_HASH_SALT || "card-shop-default")).digest("hex")
+}
+
+// IP アドレスから国コードを判定する (geoip-lite のローカル DB を使用、外部通信なし)。
+// CDN の geo ヘッダーが無い環境向けのフォールバック。プライベート IP / 不正 IP は null。
+function lookupCountryByIp(ip: string): string | null {
+  if (!ip || ip === "unknown") return null
+  try {
+    const geo = geoip.lookup(ip)
+    return normalizeCountryCode(geo?.country)
+  } catch {
+    return null
+  }
 }
 
 // CDN/プロキシが付与する geo ヘッダーから訪問者の国コードを取得する。
@@ -41,7 +54,8 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get("user-agent") || undefined
 
     const site = (process.env.NEXT_PUBLIC_REGION || "US").toLowerCase()
-    const country = detectCountry(request)
+    // CDN の geo ヘッダーを優先 (将来 Cloudflare 等を入れた場合)、無ければ IP から判定。
+    const country = detectCountry(request) ?? lookupCountryByIp(ip)
 
     await prisma.pageView.create({
       data: {
