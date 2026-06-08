@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createHash } from "crypto"
+import { normalizeCountryCode } from "@/lib/reports/countries"
 
 function hashIP(ip: string): string {
   return createHash("sha256").update(ip + (process.env.IP_HASH_SALT || "card-shop-default")).digest("hex")
+}
+
+// CDN/プロキシが付与する geo ヘッダーから訪問者の国コードを取得する。
+// 優先順: Cloudflare → Vercel → 汎用プロキシ。いずれも無ければ null (国別レポートでは「不明」)。
+// 取得には CDN 側の geo 機能 (Cloudflare なら cf-ipcountry、無料) が有効である必要がある。
+function detectCountry(request: NextRequest): string | null {
+  const candidates = [
+    request.headers.get("cf-ipcountry"), // Cloudflare
+    request.headers.get("x-vercel-ip-country"), // Vercel
+    request.headers.get("x-geo-country"), // 汎用
+    request.headers.get("x-country-code"), // 汎用
+  ]
+  for (const c of candidates) {
+    const code = normalizeCountryCode(c)
+    if (code) return code
+  }
+  return null
 }
 
 export async function POST(request: NextRequest) {
@@ -23,6 +41,7 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get("user-agent") || undefined
 
     const site = (process.env.NEXT_PUBLIC_REGION || "US").toLowerCase()
+    const country = detectCountry(request)
 
     await prisma.pageView.create({
       data: {
@@ -31,6 +50,7 @@ export async function POST(request: NextRequest) {
         userAgent,
         ipHash,
         site,
+        country,
       },
     })
 
