@@ -10,50 +10,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, CheckCircle, Mail } from "lucide-react"
+import { getSelectableCountries } from "@/lib/config/countries"
 
-const baseCountries = [
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "AU", name: "Australia" },
-  { code: "CA", name: "Canada" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "IT", name: "Italy" },
-  { code: "ES", name: "Spain" },
-  { code: "NL", name: "Netherlands" },
-  { code: "BE", name: "Belgium" },
-  { code: "CH", name: "Switzerland" },
-  { code: "AT", name: "Austria" },
-  { code: "SE", name: "Sweden" },
-  { code: "NO", name: "Norway" },
-  { code: "DK", name: "Denmark" },
-  { code: "FI", name: "Finland" },
-  { code: "JP", name: "Japan" },
-  { code: "SG", name: "Singapore" },
-  { code: "HK", name: "Hong Kong" },
-  { code: "TW", name: "Taiwan" },
-  { code: "KR", name: "South Korea" },
-  { code: "NZ", name: "New Zealand" },
-  { code: "MX", name: "Mexico" },
-  { code: "BR", name: "Brazil" },
-  { code: "BN", name: "Brunei" },
-]
-
-const euOnlyCountries = [
-  { code: "CZ", name: "Czech Republic" },
-  { code: "HK", name: "Hong Kong" },
-  { code: "ID", name: "Indonesia" },
-  { code: "KR", name: "South Korea" },
-  { code: "MY", name: "Malaysia" },
-  { code: "PH", name: "Philippines" },
-  { code: "SG", name: "Singapore" },
-  { code: "TH", name: "Thailand" },
-]
-
-const region = process.env.NEXT_PUBLIC_REGION || "US"
-const countries = region === "EU"
-  ? [...baseCountries, ...euOnlyCountries].sort((a, b) => a.name.localeCompare(b.name))
-  : baseCountries
+// 選択可能な国は共通モジュールに一本化 (checkout / signup / レポートで定義を共有)。
+const countries = getSelectableCountries()
 
 export default function SignUpPage() {
   const [step, setStep] = useState(1)
