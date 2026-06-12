@@ -31,50 +31,10 @@ import { CustomsNotice } from "@/components/CustomsNotice"
 import { siteConfig } from "@/lib/config/site"
 import { businessConfig } from "@/lib/config/business"
 import { CUSTOMS_RATE } from "@/lib/constants"
+import { getSelectableCountries } from "@/lib/config/countries"
 
-const baseCountries = [
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "AU", name: "Australia" },
-  { code: "CA", name: "Canada" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "IT", name: "Italy" },
-  { code: "ES", name: "Spain" },
-  { code: "NL", name: "Netherlands" },
-  { code: "BE", name: "Belgium" },
-  { code: "CH", name: "Switzerland" },
-  { code: "AT", name: "Austria" },
-  { code: "SE", name: "Sweden" },
-  { code: "NO", name: "Norway" },
-  { code: "DK", name: "Denmark" },
-  { code: "FI", name: "Finland" },
-  { code: "JP", name: "Japan" },
-  { code: "SG", name: "Singapore" },
-  { code: "HK", name: "Hong Kong" },
-  { code: "TW", name: "Taiwan" },
-  { code: "KR", name: "South Korea" },
-  { code: "NZ", name: "New Zealand" },
-  { code: "MX", name: "Mexico" },
-  { code: "BR", name: "Brazil" },
-  { code: "BN", name: "Brunei" },
-]
-
-const euOnlyCountries = [
-  { code: "CZ", name: "Czech Republic" },
-  { code: "HK", name: "Hong Kong" },
-  { code: "ID", name: "Indonesia" },
-  { code: "KR", name: "South Korea" },
-  { code: "MY", name: "Malaysia" },
-  { code: "PH", name: "Philippines" },
-  { code: "SG", name: "Singapore" },
-  { code: "TH", name: "Thailand" },
-]
-
-const region = process.env.NEXT_PUBLIC_REGION || "US"
-const countries = region === "EU"
-  ? [...baseCountries, ...euOnlyCountries].sort((a, b) => a.name.localeCompare(b.name))
-  : baseCountries
+// 選択可能な国は共通モジュールに一本化 (checkout / signup / レポートで定義を共有)。
+const countries = getSelectableCountries()
 
 interface SavedAddress {
   id: string
@@ -170,6 +130,16 @@ export default function CheckoutPage() {
           }
         } catch (error) {
           console.error("Failed to load addresses:", error)
+          // 住所読み込みに失敗すると selectedAddressId が null のままになり、
+          // Confirm Order ボタンが永久に押せなくなる (リピーター顧客の「進まない」原因の一つ)。
+          // 新規入力モードに切り替えて、その場で住所を入力 → 注文を続行できる動線を確保する。
+          setAddressMode("new")
+          toast({
+            title: "Could not load your saved addresses",
+            description: "Please enter your shipping address below to continue.",
+            variant: "destructive",
+            duration: 8000,
+          })
         } finally {
           setLoadingAddresses(false)
         }
@@ -180,6 +150,10 @@ export default function CheckoutPage() {
     }
     if (mounted && status === "authenticated") {
       loadAddresses()
+    } else if (mounted && status === "unauthenticated") {
+      // 未認証が確定したら住所ロードは不要。ローディングを解除してボタンの永久 disabled を防ぐ
+      // (middleware が /auth/signin にリダイレクトするが、念のための防御)。
+      setLoadingAddresses(false)
     }
   }, [session?.user?.id, mounted, status])
 
@@ -770,12 +744,17 @@ export default function CheckoutPage() {
                   className="w-full mb-4"
                   size="lg"
                   onClick={handleConfirmOrder}
-                  disabled={isSubmitting || !isAddressValid() || !boxOrderValid}
+                  disabled={isSubmitting || loadingAddresses || !isAddressValid() || !boxOrderValid}
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Processing...
+                    </>
+                  ) : loadingAddresses ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Loading your details...
                     </>
                   ) : !boxOrderValid ? (
                     `Add ${businessConfig.box.minimumQuantity}+ BOX to continue`
@@ -787,7 +766,7 @@ export default function CheckoutPage() {
                   )}
                 </Button>
 
-                {!isAddressValid() && boxOrderValid && (
+                {!loadingAddresses && !isAddressValid() && boxOrderValid && (
                   <p className="text-sm text-red-500 text-center mb-4">
                     Please enter your shipping address
                   </p>
