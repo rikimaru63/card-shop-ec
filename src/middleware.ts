@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { shouldCompleteOrigin } from '@/lib/security/origin-guard';
 
 // Cookie name for admin session
 const ADMIN_SESSION_COOKIE = 'admin-session';
@@ -10,34 +11,37 @@ export async function middleware(req: NextRequest) {
   // Server Action リクエスト時に Origin ヘッダーが欠落していた場合、自サイト Origin で補完する。
   // 背景: Coolify/Traefik 経由で一部地域 (アジア CDN edge 等) の顧客から Origin が剥がれた
   // POST が届き、Next.js が "Missing origin header from a forwarded Server Actions request."
-  // で reject していた (ブルネイ顧客の Confirm Order 無反応の原因)。
+  // で reject していた (ブルネイ顧客 / リピーター顧客 Adrian の Confirm Order 無反応の原因)。
   //
-  // CSRF 安全性ガード (多層防御):
-  //   (a) SameSite で cross-site POST に送られない session cookie の存在
-  //   (b) Referer ヘッダーを parse して same-origin であること
-  //   (c) Sec-Fetch-Site が same-origin であること (ブラウザが fetch spec で強制設定、
-  //       JS から偽装不可。古いブラウザでは付かないので OR で fallback)
-  // (b) または (c) のいずれかと (a) の AND を満たした POST のみ Origin を補完する。
+  // 補完してよいかの判定は shouldCompleteOrigin (src/lib/security/origin-guard.ts) に集約。
+  // session cookie (SameSite=lax) があり、かつ「明確なクロスサイトの証拠」が無い場合に補完する。
+  // Referer / Sec-Fetch-Site が欠落 (= プロキシ剥がし) のケースでも正規顧客を弾かない。
   // 本質的には Coolify/Traefik 側で Origin header の forward を修正すべき (別途検討)。
   if (req.method === 'POST' && req.headers.get('next-action') && !req.headers.get('origin')) {
-    const hasSessionCookie =
+    const hasSessionCookie = Boolean(
       req.cookies.get('next-auth.session-token') ||
       req.cookies.get('__Secure-next-auth.session-token') ||
-      req.cookies.get(ADMIN_SESSION_COOKIE);
+      req.cookies.get(ADMIN_SESSION_COOKIE)
+    );
 
     const expectedOrigin = req.nextUrl.origin;
-    let sameOriginByReferer = false;
-    const referer = req.headers.get('referer');
-    if (referer) {
-      try {
-        sameOriginByReferer = new URL(referer).origin === expectedOrigin;
-      } catch {
-        sameOriginByReferer = false;
-      }
-    }
-    const sameOriginBySecFetch = req.headers.get('sec-fetch-site') === 'same-origin';
 
-    if (hasSessionCookie && (sameOriginByReferer || sameOriginBySecFetch)) {
+    if (
+      shouldCompleteOrigin({
+        hasSessionCookie,
+        referer: req.headers.get('referer'),
+        secFetchSite: req.headers.get('sec-fetch-site'),
+        expectedOrigin,
+      })
+    ) {
+      // 補完が発動したことを記録 (異常頻度＝攻撃兆候の検知 + 正規顧客の Origin 剥がし把握用)。
+      // 補完は session cookie 有り + 明確なクロスサイト証拠なしのリクエストに限られる。
+      console.warn('[origin-guard] completing missing Origin for Server Action', {
+        path: req.nextUrl.pathname,
+        secFetchSite: req.headers.get('sec-fetch-site'),
+        hasReferer: Boolean(req.headers.get('referer')),
+        ua: req.headers.get('user-agent'),
+      });
       const headers = new Headers(req.headers);
       headers.set('origin', expectedOrigin);
       return NextResponse.next({ request: { headers } });

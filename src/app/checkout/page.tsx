@@ -62,8 +62,14 @@ const baseCountries = [
   { code: "LU", name: "Luxembourg" },
   { code: "MT", name: "Malta" },
   { code: "CY", name: "Cyprus" },
-  { code: "GB", name: "United Kingdom" },
   { code: "CH", name: "Switzerland" },
+  // 2026-06 クライアント要望で追加 (EU)。GR/HU/SK/MT は既存のため除く。
+  { code: "AL", name: "Albania" },
+  { code: "TR", name: "Turkey" },
+  { code: "BY", name: "Belarus" },
+  { code: "MO", name: "Macao" },
+  { code: "BA", name: "Bosnia and Herzegovina" },
+  { code: "UA", name: "Ukraine" },
   { code: "BN", name: "Brunei" },
 ]
 
@@ -177,6 +183,16 @@ export default function CheckoutPage() {
           }
         } catch (error) {
           console.error("Failed to load addresses:", error)
+          // 住所読み込みに失敗すると selectedAddressId が null のままになり、
+          // Confirm Order ボタンが永久に押せなくなる (リピーター顧客の「進まない」原因の一つ)。
+          // 新規入力モードに切り替えて、その場で住所を入力 → 注文を続行できる動線を確保する。
+          setAddressMode("new")
+          toast({
+            title: "Could not load your saved addresses",
+            description: "Please enter your shipping address below to continue.",
+            variant: "destructive",
+            duration: 8000,
+          })
         } finally {
           setLoadingAddresses(false)
         }
@@ -187,6 +203,10 @@ export default function CheckoutPage() {
     }
     if (mounted && status === "authenticated") {
       loadAddresses()
+    } else if (mounted && status === "unauthenticated") {
+      // 未認証が確定したら住所ロードは不要。ローディングを解除してボタンの永久 disabled を防ぐ
+      // (middleware が /auth/signin にリダイレクトするが、念のための防御)。
+      setLoadingAddresses(false)
     }
   }, [session?.user?.id, mounted, status])
 
@@ -778,12 +798,17 @@ export default function CheckoutPage() {
                   className="w-full mb-4"
                   size="lg"
                   onClick={handleConfirmOrder}
-                  disabled={isSubmitting || !isAddressValid() || !boxOrderValid}
+                  disabled={isSubmitting || loadingAddresses || !isAddressValid() || !boxOrderValid}
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Processing...
+                    </>
+                  ) : loadingAddresses ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Loading your details...
                     </>
                   ) : !boxOrderValid ? (
                     `Add ${businessConfig.box.minimumQuantity}+ BOX to continue`
@@ -795,7 +820,7 @@ export default function CheckoutPage() {
                   )}
                 </Button>
 
-                {!isAddressValid() && boxOrderValid && (
+                {!loadingAddresses && !isAddressValid() && boxOrderValid && (
                   <p className="text-sm text-red-500 text-center mb-4">
                     Please enter your shipping address
                   </p>
