@@ -33,6 +33,17 @@ const baseCountries = [
   { code: "KR", name: "South Korea" },
   { code: "NZ", name: "New Zealand" },
   { code: "MX", name: "Mexico" },
+  // 2026-06 クライアント要望で追加 (EU)
+  { code: "AL", name: "Albania" },
+  { code: "TR", name: "Turkey" },
+  { code: "BY", name: "Belarus" },
+  { code: "MT", name: "Malta" },
+  { code: "MO", name: "Macao" },
+  { code: "SK", name: "Slovakia" },
+  { code: "GR", name: "Greece" },
+  { code: "HU", name: "Hungary" },
+  { code: "BA", name: "Bosnia and Herzegovina" },
+  { code: "UA", name: "Ukraine" },
   { code: "BN", name: "Brunei" },
 ]
 
