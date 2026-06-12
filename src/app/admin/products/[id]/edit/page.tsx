@@ -35,6 +35,7 @@ interface Product {
   grade: string | null
   hasShrink: boolean
   description: string | null
+  featured?: boolean
   images: ProductImage[]
 }
 
@@ -88,6 +89,7 @@ export default function EditProductPage() {
     grade: "",
     hasShrink: false,
     description: "",
+    featured: false, // トップに固定（おすすめ表示）
   })
 
   // Options from API
@@ -243,6 +245,7 @@ export default function EditProductPage() {
           grade: data.grade || "",
           hasShrink: data.hasShrink || false,
           description: data.description || "",
+          featured: data.featured || false,
         })
       } else {
         toast({
@@ -428,6 +431,25 @@ export default function EditProductPage() {
                   </select>
                 </div>
               </div>
+            </div>
+
+            {/* 表示設定 */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold border-b pb-2">表示設定</h2>
+              <Label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={formData.featured}
+                  onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                />
+                <span>
+                  トップに固定（おすすめ表示）
+                  <span className="block text-xs text-muted-foreground">
+                    チェックすると、この商品が商品一覧・トップページの先頭に表示されます（在庫切れの場合は在庫あり商品の後ろに表示されます）。
+                  </span>
+                </span>
+              </Label>
             </div>
 
             {/* 状態・グレーディング */}

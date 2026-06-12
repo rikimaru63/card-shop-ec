@@ -30,9 +30,14 @@ interface Product {
     name: string
   }
   image?: string
+  featured?: boolean
   isNewArrival?: boolean
   isRecommended?: boolean
 }
+
+// featured(管理画面の「トップに固定」) を最優先、その次に isRecommended でスコア化する
+// (一覧のクライアント側ソート用)。どちらも無い商品は同点となり、API が返した順を保持する。
+const featuredScore = (p: Product) => (p.featured ? 2 : 0) + (p.isRecommended ? 1 : 0)
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -122,7 +127,9 @@ export default function ProductsPage() {
         break
       case "featured":
       default:
-        filtered.sort((a, b) => (b.isRecommended ? 1 : 0) - (a.isRecommended ? 1 : 0))
+        // featured (管理画面の「トップに固定」) を最優先、その次に isRecommended。
+        // どちらのフラグも持たない商品は API が返した順 (新着順) を保持する (V8 の安定ソート)。
+        filtered.sort((a, b) => featuredScore(b) - featuredScore(a))
     }
 
     return filtered
@@ -147,7 +154,8 @@ export default function ProductsPage() {
     condition: product.condition,
     stock: product.stock,
     isNew: product.isNewArrival,
-    isFeatured: product.isRecommended
+    // featured(トップ固定) も「おすすめ」バッジ表示の対象に含める
+    isFeatured: product.featured || product.isRecommended
   })
 
   if (loading) {
