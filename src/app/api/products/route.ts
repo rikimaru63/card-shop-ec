@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma, Condition, ProductType, Product, Category, ProductImage } from '@prisma/client'
+import { buildProductOrderBy } from '@/lib/products/sort'
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
@@ -127,24 +128,10 @@ export async function GET(request: NextRequest) {
       if (maxPrice) where.price.lte = parseFloat(maxPrice)
     }
 
-    // Determine sort order
-    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' } // Default: newest
-
-    switch (sortBy) {
-      case 'price-asc':
-        orderBy = { price: 'asc' }
-        break
-      case 'price-desc':
-        orderBy = { price: 'desc' }
-        break
-      case 'name-asc':
-        orderBy = { name: 'asc' }
-        break
-      case 'popular':
-        // Could order by number of reviews or sales
-        orderBy = { createdAt: 'desc' }
-        break
-    }
+    // Determine sort order.
+    // 既定 (newest / featured / popular) は featured (トップ固定) を最優先キーにし、
+    // その中は新着順。価格順・名前順は明示選択を尊重する。詳細は buildProductOrderBy 参照。
+    const orderBy: Prisma.ProductOrderByWithRelationInput[] = buildProductOrderBy(sortBy)
 
     // Calculate pagination
     const skip = (page - 1) * limit
