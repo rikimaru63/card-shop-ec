@@ -110,12 +110,12 @@ function modelTyping(products: BenchProduct[], word: string) {
     oldRequests++
     const oldShown = new Set(rawContains(products, q).map((p) => p.sku!))
     oldHeavyRerenders += oldShown.size
-    for (const id of oldShown) if (prevShown.has(id)) oldWastedKept++ // 据え置きなのに再描画
+    oldShown.forEach((id) => { if (prevShown.has(id)) oldWastedKept++ }) // 据え置きなのに再描画
 
     // --- 新方式: ガード付きクライアントフィルタ。memo で据え置き行は再描画ゼロ ---
     const nowShown = new Set(filterProductsBySearch(products, q).map((p) => p.sku!))
-    for (const id of nowShown) if (!prevShown.has(id)) newHeavyMounts++ // 新規mount
-    for (const id of prevShown) if (!nowShown.has(id)) newCheapUnmounts++ // unmount(安価)
+    nowShown.forEach((id) => { if (!prevShown.has(id)) newHeavyMounts++ }) // 新規mount
+    prevShown.forEach((id) => { if (!nowShown.has(id)) newCheapUnmounts++ }) // unmount(安価)
     // 据え置き行(交差)は memo で bailout = 0。newKeptRerenders は常に0(検証目的で明示)。
     prevShown = nowShown
   }
