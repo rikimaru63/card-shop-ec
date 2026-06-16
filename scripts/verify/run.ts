@@ -11,6 +11,10 @@ import { shouldCompleteOrigin } from "../../src/lib/security/origin-guard"
 import { buildProductOrderBy } from "../../src/lib/products/sort"
 import { getSelectableCountries, baseCountries } from "../../src/lib/config/countries"
 import { countryDisplayName } from "../../src/lib/reports/countries"
+import {
+  shouldApplySearch,
+  filterProductsBySearch,
+} from "../../src/lib/admin/product-search"
 
 let passed = 0
 let failed = 0
@@ -126,6 +130,54 @@ const allCodes = Array.from(new Set(usCodes.concat(euCodes)))
 for (const code of allCodes) {
   check(`JA name exists for ${code}`, countryDisplayName(code) !== code && countryDisplayName(code) !== "不明")
 }
+
+// ===== 4) 管理画面 商品テキスト検索 (filterProductsBySearch) =====
+console.log("[4] admin product search (filterProductsBySearch)")
+
+// 短語ガード: 空 / 空白 / 1 文字は絞り込まない、2 文字以上で絞り込む
+check("shouldApplySearch '' -> false", shouldApplySearch("") === false)
+check("shouldApplySearch '   ' -> false", shouldApplySearch("   ") === false)
+check("shouldApplySearch 'a' (1 char) -> false", shouldApplySearch("a") === false)
+check("shouldApplySearch ' a ' (trim 1 char) -> false", shouldApplySearch(" a ") === false)
+check("shouldApplySearch 'ab' -> true", shouldApplySearch("ab") === true)
+check("shouldApplySearch ' ab ' (trim 2 char) -> true", shouldApplySearch(" ab ") === true)
+
+const searchSample = [
+  { name: "Pikachu VMAX", nameJa: "ピカチュウVMAX", cardNumber: "044/185", sku: "PKM-PIKA-001", cardSet: "Vivid Voltage" },
+  { name: "Charizard ex", nameJa: "リザードンex", cardNumber: "006/165", sku: "PKM-CHAR-002", cardSet: "Pokemon 151" },
+  { name: "Luffy Leader", nameJa: null, cardNumber: null, sku: "OP-LUFFY-003", cardSet: "Romance Dawn" },
+]
+const names = (arr: { name: string }[]) => arr.map((p) => p.name)
+
+// name 部分一致 (大文字小文字無視)
+eq("search 'pika' -> Pikachu (name, case-insensitive)",
+  names(filterProductsBySearch(searchSample, "pika")), ["Pikachu VMAX"])
+// nameJa (日本語名) 一致
+eq("search 'リザードン' -> Charizard (nameJa)",
+  names(filterProductsBySearch(searchSample, "リザードン")), ["Charizard ex"])
+// cardNumber 一致
+eq("search '006/165' -> Charizard (cardNumber)",
+  names(filterProductsBySearch(searchSample, "006/165")), ["Charizard ex"])
+// sku 一致 (大文字小文字無視)
+eq("search 'op-luffy' -> Luffy (sku, case-insensitive)",
+  names(filterProductsBySearch(searchSample, "op-luffy")), ["Luffy Leader"])
+// cardSet はテキスト検索対象に含めない (ファセットで絞るため)
+eq("search 'vivid' (cardSet only) -> none",
+  names(filterProductsBySearch(searchSample, "vivid")), [])
+// 一致なし
+eq("search 'zzz' -> none", names(filterProductsBySearch(searchSample, "zzz")), [])
+// null セーフティ: nameJa/cardNumber が null の商品でも落ちない
+eq("search 'luffy' -> Luffy (null nameJa/cardNumber safe)",
+  names(filterProductsBySearch(searchSample, "luffy")), ["Luffy Leader"])
+
+// 短語ガード適用時は「同一参照」で元配列を返す (React.memo bailout の前提)
+check("filter '' returns same array reference", filterProductsBySearch(searchSample, "") === searchSample)
+check("filter 'a' (1 char) returns same array reference", filterProductsBySearch(searchSample, "a") === searchSample)
+check("filter 'a' (1 char) returns all rows", filterProductsBySearch(searchSample, "a").length === searchSample.length)
+
+// 複数一致 (共通部分文字列): name の "ex" と sku の "OP-" など。"pkm" は sku 2件に一致
+eq("search 'pkm' -> 2 products by sku",
+  names(filterProductsBySearch(searchSample, "pkm")), ["Pikachu VMAX", "Charizard ex"])
 
 // ===== 結果 =====
 console.log("")

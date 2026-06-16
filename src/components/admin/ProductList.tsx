@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import Image from 'next/image';
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -44,6 +44,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { filterProductsBySearch } from '@/lib/admin/product-search';
 
 type ProductWithImages = Product & { images: ProductImage[]; category: Category | null };
 
@@ -73,36 +74,33 @@ interface ProductListProps {
     onRefresh?: () => void;
     /** When true, hides the built-in search bar (parent handles search) */
     hideSearch?: boolean;
+    /** Search query supplied by the parent (used when hideSearch is true). Filters in-memory. */
+    searchQuery?: string;
+    /**
+     * Whether manual drag-reorder is allowed. The parent passes false when any
+     * server-side filter/sort is active, because dragging a filtered subset would
+     * corrupt the global sortOrder. Defaults to true (standalone usage).
+     */
+    allowReorder?: boolean;
 }
 
-// Sortable row component
-function SortableRow({
+type RowCallbacks = {
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  onProductUpdate: (productId: string, updates: Partial<Product>) => void;
+};
+
+/**
+ * 1 行ぶんのセル群（ドラッグハンドル列を除く）。インライン編集（価格・在庫）の状態を内包する。
+ * React.memo でラップし、product 参照とコールバックが安定していれば再描画を bailout する。
+ * これにより、検索で絞り込んだ際に「変化した行だけ」を再描画できる。
+ */
+const ProductRowCells = memo(function ProductRowCells({
   product,
   onEdit,
   onDelete,
   onProductUpdate,
-}: {
-  product: ProductWithImages;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
-  onProductUpdate: (productId: string, updates: Partial<Product>) => void;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: product.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    backgroundColor: isDragging ? '#f0f9ff' : undefined,
-  };
-
+}: { product: ProductWithImages } & RowCallbacks) {
   // === Inline edit state ===
   const [editingField, setEditingField] = useState<'price' | 'stock' | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -207,16 +205,7 @@ function SortableRow({
   };
 
   return (
-    <TableRow ref={setNodeRef} style={style}>
-      <TableCell className="w-[40px]">
-        <button
-          className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
-      </TableCell>
+    <>
       <TableCell>
         {product.images.length > 0 && (
           <Image
@@ -322,14 +311,94 @@ function SortableRow({
           Delete
         </Button>
       </TableCell>
+    </>
+  );
+});
+
+// Sortable row component (drag handle + cells). Used only in the default reorder view.
+const SortableRow = memo(function SortableRow({
+  product,
+  onEdit,
+  onDelete,
+  onProductUpdate,
+}: { product: ProductWithImages } & RowCallbacks) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: product.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    backgroundColor: isDragging ? '#f0f9ff' : undefined,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell className="w-[40px]">
+        <button
+          className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </TableCell>
+      <ProductRowCells
+        product={product}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onProductUpdate={onProductUpdate}
+      />
     </TableRow>
   );
-}
+});
 
-export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductListProps) {
+// Plain (non-draggable) row. Used while searching/filtering so dnd-kit's per-row
+// context subscription is removed and React.memo can fully bail out.
+const PlainRow = memo(function PlainRow({
+  product,
+  onEdit,
+  onDelete,
+  onProductUpdate,
+}: { product: ProductWithImages } & RowCallbacks) {
+  return (
+    <TableRow>
+      <TableCell className="w-[40px]">
+        {/* Non-interactive placeholder to keep column alignment with the reorder view */}
+        <span className="inline-flex p-1 text-gray-200" aria-hidden="true">
+          <GripVertical className="h-4 w-4" />
+        </span>
+      </TableCell>
+      <ProductRowCells
+        product={product}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onProductUpdate={onProductUpdate}
+      />
+    </TableRow>
+  );
+});
+
+export function ProductList({
+  initialProducts,
+  onRefresh,
+  hideSearch,
+  searchQuery,
+  allowReorder,
+}: ProductListProps) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
-  const [searchQuery, setSearchQuery] = useState('');
+  // Internal search state is only used in standalone mode (built-in search bar).
+  const [internalSearch, setInternalSearch] = useState('');
+
+  // The effective search term: parent-controlled when hideSearch, else the built-in bar.
+  const effectiveSearch = hideSearch ? (searchQuery ?? '') : internalSearch;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -347,19 +416,20 @@ export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductL
     setProducts(initialProducts);
   }, [initialProducts]);
 
-  // Filter products based on search query
-  const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return products;
-    }
-    const query = searchQuery.toLowerCase().trim();
-    return products.filter((product) => {
-      const name = product.name?.toLowerCase() || '';
-      const cardNumber = product.cardNumber?.toLowerCase() || '';
-      const cardSet = product.cardSet?.toLowerCase() || '';
-      return name.includes(query) || cardNumber.includes(query) || cardSet.includes(query);
-    });
-  }, [products, searchQuery]);
+  // Filter products based on the effective search query (in-memory, instant).
+  // Returns the same array reference when not searching, so memoized rows bail out.
+  const filteredProducts = useMemo(
+    () => filterProductsBySearch(products, effectiveSearch),
+    [products, effectiveSearch]
+  );
+
+  // Stable id list for SortableContext (avoid a new array every render).
+  const itemIds = useMemo(() => filteredProducts.map((p) => p.id), [filteredProducts]);
+
+  // Reorder is only safe in the true default view: no text search AND no
+  // server-side filter/sort active (allowReorder). Otherwise dragging a subset
+  // would persist wrong sortOrder values for the whole catalog.
+  const canReorder = (allowReorder ?? true) && !effectiveSearch.trim();
 
   // Restore scroll position on mount
   useEffect(() => {
@@ -373,18 +443,18 @@ export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductL
     }
   }, []);
 
-  const handleEditClick = (productId: string) => {
+  const handleEditClick = useCallback((productId: string) => {
     sessionStorage.setItem('productListScrollPosition', window.scrollY.toString());
     router.push(`/admin/products/${productId}/edit`);
-  };
+  }, [router]);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [productToDeleteId, setProductToDeleteId] = useState<string | null>(null);
 
-  const handleDeleteClick = (productId: string) => {
+  const handleDeleteClick = useCallback((productId: string) => {
     setProductToDeleteId(productId);
     setIsDeleteDialogOpen(true);
-  };
+  }, []);
 
   const confirmDelete = async () => {
     if (productToDeleteId) {
@@ -410,7 +480,7 @@ export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductL
     }
   };
 
-  // Handle inline edit updates from SortableRow
+  // Handle inline edit updates from a row
   const handleProductUpdate = useCallback((productId: string, updates: Partial<Product>) => {
     setProducts(prev => prev.map(p =>
       p.id === productId ? { ...p, ...updates } : p
@@ -423,11 +493,11 @@ export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductL
 
     if (!over || active.id === over.id) return;
 
-    // Only allow reorder when not searching
-    if (searchQuery.trim()) {
+    // Defensive: reorder only when allowed (UI does not render dnd otherwise).
+    if (!canReorder) {
       toast({
         title: "Note",
-        description: "Clear search to reorder products.",
+        description: "Clear search and filters to reorder products.",
       });
       return;
     }
@@ -468,9 +538,25 @@ export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductL
         variant: "destructive",
       });
     }
-  }, [products, initialProducts, searchQuery]);
+  }, [products, initialProducts, canReorder]);
 
-  const isDragDisabled = !!searchQuery.trim();
+  const tableHeader = (
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[40px]"></TableHead>
+        <TableHead className="w-[80px]">Image</TableHead>
+        <TableHead>Name</TableHead>
+        <TableHead className="w-[100px]">Card No.</TableHead>
+        <TableHead className="w-[80px]">Category</TableHead>
+        <TableHead className="w-[80px]">Type</TableHead>
+        <TableHead className="w-[70px]">Condition</TableHead>
+        <TableHead className="w-[80px]">Price</TableHead>
+        <TableHead className="w-[50px]">Stock</TableHead>
+        <TableHead className="w-[110px]">Updated</TableHead>
+        <TableHead className="text-right w-[140px]">Actions</TableHead>
+      </TableRow>
+    </TableHeader>
+  );
 
   return (
     <>
@@ -482,25 +568,25 @@ export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductL
             <Input
               type="text"
               placeholder="Search by name, card no., card set..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={internalSearch}
+              onChange={(e) => setInternalSearch(e.target.value)}
               className="pl-10 pr-10"
             />
-            {searchQuery && (
+            {internalSearch && (
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => setInternalSearch('')}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <X className="h-4 w-4" />
               </button>
             )}
           </div>
-          {searchQuery && (
+          {internalSearch && (
             <p className="text-sm text-gray-500 mt-2">
               {filteredProducts.length} products found
             </p>
           )}
-          {!searchQuery && (
+          {!internalSearch && (
             <p className="text-xs text-gray-400 mt-2">
               💡 Drag rows to reorder products. Order is saved automatically.
             </p>
@@ -509,46 +595,48 @@ export function ProductList({ initialProducts, onRefresh, hideSearch }: ProductL
       )}
 
       <div className="rounded-md border">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
+        {canReorder ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <Table>
+              {tableHeader}
+              <TableBody>
+                <SortableContext
+                  items={itemIds}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {filteredProducts.map((product) => (
+                    <SortableRow
+                      key={product.id}
+                      product={product}
+                      onEdit={handleEditClick}
+                      onDelete={handleDeleteClick}
+                      onProductUpdate={handleProductUpdate}
+                    />
+                  ))}
+                </SortableContext>
+              </TableBody>
+            </Table>
+          </DndContext>
+        ) : (
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[40px]"></TableHead>
-                <TableHead className="w-[80px]">Image</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="w-[100px]">Card No.</TableHead>
-                <TableHead className="w-[80px]">Category</TableHead>
-                <TableHead className="w-[80px]">Type</TableHead>
-                <TableHead className="w-[70px]">Condition</TableHead>
-                <TableHead className="w-[80px]">Price</TableHead>
-                <TableHead className="w-[50px]">Stock</TableHead>
-                <TableHead className="w-[110px]">Updated</TableHead>
-                <TableHead className="text-right w-[140px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+            {tableHeader}
             <TableBody>
-              <SortableContext
-                items={filteredProducts.map((p) => p.id)}
-                strategy={verticalListSortingStrategy}
-                disabled={isDragDisabled}
-              >
-                {filteredProducts.map((product) => (
-                  <SortableRow
-                    key={product.id}
-                    product={product}
-                    onEdit={handleEditClick}
-                    onDelete={handleDeleteClick}
-                    onProductUpdate={handleProductUpdate}
-                  />
-                ))}
-              </SortableContext>
+              {filteredProducts.map((product) => (
+                <PlainRow
+                  key={product.id}
+                  product={product}
+                  onEdit={handleEditClick}
+                  onDelete={handleDeleteClick}
+                  onProductUpdate={handleProductUpdate}
+                />
+              ))}
             </TableBody>
           </Table>
-        </DndContext>
+        )}
       </div>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
