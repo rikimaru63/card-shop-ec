@@ -28,6 +28,7 @@ interface Product {
   category?: {
     id: string
     name: string
+    slug: string
   }
   image?: string
   featured?: boolean
@@ -87,8 +88,10 @@ export default function ProductsPage() {
     let filtered = [...products]
 
     // カテゴリーフィルター
+    // フィルタUI(product-filters)が送る値は categorySlug(例: "pokemon-cards")なので、
+    // category.name ではなく category.slug と突き合わせる(検索ページと同じ実装)。
     if (filters.categories.length > 0) {
-      filtered = filtered.filter(p => p.category && filters.categories.includes(p.category.name))
+      filtered = filtered.filter(p => p.category && filters.categories.includes(p.category.slug))
     }
 
     // 価格フィルター
