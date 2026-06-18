@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import {
@@ -40,6 +40,31 @@ export function Header() {
     setMounted(true)
   }, [])
 
+  // ホバーメニューの hover-intent 制御。
+  // トリガーとドロップダウンの間でカーソルが一瞬外れても即閉じしないよう、
+  // 閉じる動作を 150ms 遅延させ、再度カーソル/フォーカスが入ったらキャンセルする。
+  const closeMenuTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const openCategoryMenu = (name: string) => {
+    if (closeMenuTimer.current) {
+      clearTimeout(closeMenuTimer.current)
+      closeMenuTimer.current = null
+    }
+    setActiveCategory(name)
+  }
+
+  const scheduleCategoryClose = () => {
+    if (closeMenuTimer.current) clearTimeout(closeMenuTimer.current)
+    closeMenuTimer.current = setTimeout(() => setActiveCategory(null), 150)
+  }
+
+  // アンマウント時にタイマーを掃除する
+  useEffect(() => {
+    return () => {
+      if (closeMenuTimer.current) clearTimeout(closeMenuTimer.current)
+    }
+  }, [])
+
   const languages = [
     { code: "en", name: "English", flag: "🇺🇸" },
     { code: "ja", name: "日本語", flag: "🇯🇵" },
@@ -74,11 +99,18 @@ export function Header() {
               <div
                 key={category.name}
                 className="relative flex-shrink-0"
-                onMouseEnter={() => setActiveCategory(category.name)}
-                onMouseLeave={() => setActiveCategory(null)}
+                onMouseEnter={() => openCategoryMenu(category.name)}
+                onMouseLeave={scheduleCategoryClose}
+                onFocus={() => openCategoryMenu(category.name)}
+                onBlur={scheduleCategoryClose}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setActiveCategory(null)
+                }}
               >
                 <Link
                   href={category.href}
+                  aria-haspopup="true"
+                  aria-expanded={activeCategory === category.name}
                   className="block px-4 py-2 text-sm font-semibold text-foreground hover:text-primary transition-colors duration-150 flex items-center gap-1 whitespace-nowrap"
                   style={{
                     minWidth: 'fit-content',
@@ -90,7 +122,7 @@ export function Header() {
                 </Link>
 
                 {activeCategory === category.name && (
-                  <div className="absolute top-full left-0 w-56 bg-white rounded-lg shadow-lg border mt-1 py-2">
+                  <div className="absolute top-full left-0 w-56 bg-white rounded-lg shadow-lg border py-2">
                     {category.subcategories.map((sub) => (
                       <Link
                         key={sub.name}
