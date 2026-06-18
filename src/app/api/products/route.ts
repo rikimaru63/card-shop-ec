@@ -46,10 +46,15 @@ export async function GET(request: NextRequest) {
       where.isRecommended = true
     }
 
-    // Category filter
+    // Category filter (supports multiple comma-separated slugs)
+    // 一覧ページの複数カテゴリ選択(例 "pokemon-cards,onepiece-cards")に対応。
+    // 単一値は従来どおり { slug } で動作する(ホーム/カテゴリ導線との後方互換)。
     if (category) {
-      where.category = {
-        slug: category
+      const categorySlugs = category.split(',').filter(Boolean)
+      if (categorySlugs.length === 1) {
+        where.category = { slug: categorySlugs[0] }
+      } else if (categorySlugs.length > 1) {
+        where.category = { slug: { in: categorySlugs } }
       }
     }
 
@@ -99,9 +104,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Product type filter (SINGLE or BOX)
+    // Product type filter (SINGLE / BOX / OTHER, supports multiple comma-separated)
     if (productType) {
-      where.productType = productType as ProductType
+      const productTypes = productType.split(',').filter(Boolean) as ProductType[]
+      if (productTypes.length === 1) {
+        where.productType = productTypes[0]
+      } else if (productTypes.length > 1) {
+        where.productType = { in: productTypes }
+      }
     }
 
     // In stock filter
