@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
+import { categorySlugToCardType } from "@/lib/admin/category-map"
 import ImageUpload from "@/components/admin/ImageUpload"
 
 interface ProductImage {
@@ -226,7 +227,7 @@ export default function EditProductPage() {
         setProduct(data)
         setImages(data.images || [])
         // Determine card type from category
-        const cardType = data.category?.slug === "onepiece-cards" ? "onepiece" : "pokemon"
+        const cardType = categorySlugToCardType(data.category?.slug)
         setFormData({
           name: data.name || "",
           cardType: cardType,

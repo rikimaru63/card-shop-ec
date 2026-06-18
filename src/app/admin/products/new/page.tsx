@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ImagePreview } from "@/components/admin/ImagePreview"
 import { toast } from "@/hooks/use-toast"
+import { cardTypeToCategorySlug, cardTypeToSkuPrefix } from "@/lib/admin/category-map"
 
 // Types for API data
 interface OptionItem {
@@ -182,8 +183,8 @@ export default function NewProductPage() {
     e.preventDefault()
     setLoading(true)
 
-    const skuPrefix = formData.cardType === "pokemon" ? "PKM" : "OPC"
-    const categorySlug = formData.cardType === "pokemon" ? "pokemon-cards" : "onepiece-cards"
+    const skuPrefix = cardTypeToSkuPrefix(formData.cardType)
+    const categorySlug = cardTypeToCategorySlug(formData.cardType)
 
     try {
       setUploadProgress("商品を作成中...")
