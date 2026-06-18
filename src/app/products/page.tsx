@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { ProductCard } from "@/components/products/product-card"
 import { ProductFilters } from "@/components/products/product-filters"
 import { ProductSort } from "@/components/products/product-sort"
@@ -36,12 +36,22 @@ interface Product {
   isRecommended?: boolean
 }
 
-// featured(管理画面の「トップに固定」) を最優先、その次に isRecommended でスコア化する
-// (一覧のクライアント側ソート用)。どちらも無い商品は同点となり、API が返した順を保持する。
-const featuredScore = (p: Product) => (p.featured ? 2 : 0) + (p.isRecommended ? 1 : 0)
+interface PaginationData {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasMore: boolean
+}
+
+// 価格スライダー上限(ProductFilters の MAX_PRICE_LIMIT と揃える)。
+// これ以上のときは maxPrice を送らない＝上限なし扱い。
+const PRICE_MAX = 10000000
+const ITEMS_PER_PAGE = 24
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [pagination, setPagination] = useState<PaginationData | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
@@ -51,99 +61,67 @@ export default function ProductsPage() {
   // Filter state
   const [filters, setFilters] = useState({
     categories: [] as string[],
-    priceRange: [0, 10000000],
+    priceRange: [0, PRICE_MAX],
     rarities: [] as string[],
     conditions: [] as string[],
     productTypes: [] as string[],
     inStock: false
   })
 
-  // Reset to page 1 when filters change
+  // フィルタ/ソート/ページが変わるたび、API にサーバー側フィルタ+ページングを依頼する。
+  // (従来は全件取得→クライアント絞り込みで既定12件しか読めず、One Piece/Other が0件になっていた)
   useEffect(() => {
-    setCurrentPage(1)
-  }, [filters])
+    const controller = new AbortController()
 
-  // 商品データを取得
-  useEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true)
       try {
-        const response = await fetch('/api/products')
+        const params = new URLSearchParams({
+          page: String(currentPage),
+          limit: String(ITEMS_PER_PAGE),
+          sortBy
+        })
+        if (filters.categories.length > 0) params.set('category', filters.categories.join(','))
+        if (filters.rarities.length > 0) params.set('rarity', filters.rarities.join(','))
+        if (filters.conditions.length > 0) params.set('condition', filters.conditions.join(','))
+        if (filters.productTypes.length > 0) params.set('productType', filters.productTypes.join(','))
+        if (filters.priceRange[0] > 0) params.set('minPrice', String(filters.priceRange[0]))
+        if (filters.priceRange[1] < PRICE_MAX) params.set('maxPrice', String(filters.priceRange[1]))
+        if (filters.inStock) params.set('inStock', 'true')
+
+        const response = await fetch(`/api/products?${params.toString()}`, { signal: controller.signal })
         if (response.ok) {
           const data = await response.json()
           setProducts(data.products || [])
+          setPagination(data.pagination || null)
         }
       } catch (error) {
-        console.error('Failed to fetch products:', error)
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          console.error('Failed to fetch products:', error)
+        }
       } finally {
-        setLoading(false)
+        // 中断された(より新しいリクエストに置き換わった)場合は loading を触らない。
+        // 進行中の最新リクエスト側がローディング表示を維持し、ちらつきを防ぐ。
+        if (!controller.signal.aborted) setLoading(false)
       }
     }
+
     fetchProducts()
-  }, [])
+    return () => controller.abort()
+  }, [filters, sortBy, currentPage])
 
-  const itemsPerPage = 12
+  // フィルタ変更時は1ページ目へ戻してから再取得する
+  const handleFiltersChange = (next: typeof filters) => {
+    setFilters(next)
+    setCurrentPage(1)
+  }
+  const handleSortChange = (value: string) => {
+    setSortBy(value)
+    setCurrentPage(1)
+  }
 
-  // フィルタリングとソート
-  const filteredAndSortedProducts = useMemo(() => {
-    let filtered = [...products]
-
-    // カテゴリーフィルター
-    // フィルタUI(product-filters)が送る値は categorySlug(例: "pokemon-cards")なので、
-    // category.name ではなく category.slug と突き合わせる(検索ページと同じ実装)。
-    if (filters.categories.length > 0) {
-      filtered = filtered.filter(p => p.category && filters.categories.includes(p.category.slug))
-    }
-
-    // 価格フィルター
-    filtered = filtered.filter(
-      p => p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]
-    )
-
-    // レアリティフィルター
-    if (filters.rarities.length > 0) {
-      filtered = filtered.filter(p => p.rarity && filters.rarities.includes(p.rarity))
-    }
-
-    // コンディションフィルター
-    if (filters.conditions.length > 0) {
-      filtered = filtered.filter(p => p.condition && filters.conditions.includes(p.condition))
-    }
-
-    // 在庫フィルター
-    if (filters.inStock) {
-      filtered = filtered.filter(p => p.stock > 0)
-    }
-
-    // ソート
-    switch (sortBy) {
-      case "price-asc":
-        filtered.sort((a, b) => a.price - b.price)
-        break
-      case "price-desc":
-        filtered.sort((a, b) => b.price - a.price)
-        break
-      case "name":
-        filtered.sort((a, b) => a.name.localeCompare(b.name))
-        break
-      case "newest":
-        filtered.sort((a, b) => (b.isNewArrival ? 1 : 0) - (a.isNewArrival ? 1 : 0))
-        break
-      case "featured":
-      default:
-        // featured (管理画面の「トップに固定」) を最優先、その次に isRecommended。
-        // どちらのフラグも持たない商品は API が返した順 (新着順) を保持する (V8 の安定ソート)。
-        filtered.sort((a, b) => featuredScore(b) - featuredScore(a))
-    }
-
-    return filtered
-  }, [products, filters, sortBy])
-
-  // ページネーション
-  const totalPages = Math.ceil(filteredAndSortedProducts.length / itemsPerPage)
-  const paginatedProducts = filteredAndSortedProducts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
+  const totalCount = pagination?.total ?? 0
+  const totalPages = pagination?.totalPages ?? 1
 
   // 商品データをProductCard用に変換
   const transformProduct = (product: Product) => ({
@@ -161,12 +139,16 @@ export default function ProductsPage() {
     isFeatured: product.featured || product.isRecommended
   })
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    )
+  const clearFilters = () => {
+    setFilters({
+      categories: [],
+      priceRange: [0, PRICE_MAX],
+      rarities: [],
+      conditions: [],
+      productTypes: [],
+      inStock: false
+    })
+    setCurrentPage(1)
   }
 
   return (
@@ -181,7 +163,7 @@ export default function ProductsPage() {
           </div>
           <h1 className="text-3xl font-bold">All Products</h1>
           <p className="text-muted-foreground mt-2">
-            {filteredAndSortedProducts.length} products found
+            {loading ? 'Loading...' : `${totalCount.toLocaleString()} products found`}
           </p>
         </div>
       </div>
@@ -192,7 +174,7 @@ export default function ProductsPage() {
           <aside className="hidden lg:block w-64 flex-shrink-0">
             <ProductFilters
               filters={filters}
-              onFiltersChange={setFilters}
+              onFiltersChange={handleFiltersChange}
             />
           </aside>
 
@@ -215,7 +197,7 @@ export default function ProductsPage() {
 
                   <ProductSort
                     value={sortBy}
-                    onChange={setSortBy}
+                    onChange={handleSortChange}
                   />
                 </div>
 
@@ -244,19 +226,23 @@ export default function ProductsPage() {
               <div className="lg:hidden mb-6">
                 <ProductFilters
                   filters={filters}
-                  onFiltersChange={setFilters}
+                  onFiltersChange={handleFiltersChange}
                 />
               </div>
             )}
 
-            {/* Product Grid/List */}
-            {paginatedProducts.length > 0 ? (
+            {/* Product Area: Loading / Grid / Empty */}
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              </div>
+            ) : products.length > 0 ? (
               <div className={cn(
                 viewMode === "grid"
                   ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
                   : "space-y-4"
               )}>
-                {paginatedProducts.map((product) => (
+                {products.map((product) => (
                   <ProductCard key={product.id} {...transformProduct(product)} />
                 ))}
               </div>
@@ -266,14 +252,7 @@ export default function ProductsPage() {
                 <Button
                   variant="outline"
                   className="mt-4"
-                  onClick={() => setFilters({
-                    categories: [],
-                    priceRange: [0, 10000000],
-                    rarities: [],
-                    conditions: [],
-                    productTypes: [],
-                    inStock: false
-                  })}
+                  onClick={clearFilters}
                 >
                   Clear Filters
                 </Button>
@@ -281,7 +260,7 @@ export default function ProductsPage() {
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {!loading && totalPages > 1 && (
               <div className="mt-8 flex justify-center">
                 <div className="flex items-center gap-2">
                   <Button
