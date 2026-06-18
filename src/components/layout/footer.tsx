@@ -12,34 +12,14 @@ import {
 } from "lucide-react"
 import { siteConfig, getCopyright, getActiveSocialLinks } from "@/lib/config/site"
 
+// 実在するページのみをリンクする。Support/Company/Legal の各リンク先(/contact /about
+// /privacy 等)は未実装で全て 404 のため、ページが用意できるまでフッターから除外する。
 const footerLinks = {
   shop: [
     { name: "All Products", href: "/products" },
     { name: "New Arrivals", href: "/products?sort=newest" },
     { name: "Graded Cards", href: "/products?graded=true" },
     { name: "Featured Cards", href: "/products?featured=true" }
-  ],
-  support: [
-    { name: "Contact Us", href: "/contact" },
-    { name: "FAQs", href: "/faqs" },
-    { name: "Shipping Information", href: "/shipping" },
-    { name: "Returns & Exchanges", href: "/returns" },
-    { name: "Size Guide", href: "/size-guide" },
-    { name: "Track Order", href: "/track-order" }
-  ],
-  company: [
-    { name: "About Us", href: "/about" },
-    { name: "Blog", href: "/blog" },
-    { name: "Careers", href: "/careers" },
-    { name: "Press", href: "/press" },
-    { name: "Affiliates", href: "/affiliates" },
-    { name: "Reviews", href: "/reviews" }
-  ],
-  legal: [
-    { name: "Privacy Policy", href: "/privacy" },
-    { name: "Terms of Service", href: "/terms" },
-    { name: "Cookie Policy", href: "/cookies" },
-    { name: "Accessibility", href: "/accessibility" }
   ]
 }
 
@@ -82,9 +62,9 @@ export function Footer() {
 
       {/* メインフッター */}
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* ブランド情報 */}
-          <div className="lg:col-span-2">
+          <div className="md:col-span-2">
             <Link href="/" className="flex items-center space-x-2 mb-4">
               <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-lg">C</span>
@@ -139,54 +119,6 @@ export function Footer() {
             </ul>
           </div>
 
-          <div>
-            <h3 className="font-semibold mb-4">Support</h3>
-            <ul className="space-y-2">
-              {footerLinks.support.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-4">Company</h3>
-            <ul className="space-y-2">
-              {footerLinks.company.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-4">Newsletter</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Subscribe to get special offers and new releases
-            </p>
-            <form className="space-y-2">
-              <input
-                type="email"
-                placeholder="Your email"
-                className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-              <button className="w-full px-3 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:bg-primary/90 transition-colors">
-                Subscribe
-              </button>
-            </form>
-          </div>
         </div>
 
         {/* ボトムセクション */}
