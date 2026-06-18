@@ -214,6 +214,8 @@ const ProductRowCells = memo(function ProductRowCells({
             width={60}
             height={60}
             className="object-cover rounded-md"
+            unoptimized
+            loading="lazy"
           />
         )}
       </TableCell>
@@ -423,8 +425,33 @@ export function ProductList({
     [products, effectiveSearch]
   );
 
-  // Stable id list for SortableContext (avoid a new array every render).
-  const itemIds = useMemo(() => filteredProducts.map((p) => p.id), [filteredProducts]);
+  // ===== ページネーション =====
+  // 商品が 4,000 件超のため、全行の <Image> を一度に描画すると next/image の最適化要求が
+  // 一斉発火し、サーバー(next-server)のイベントループを固着させる。表示行をページ単位に
+  // 限定して、一度に描画するサムネ枚数を抑える（2026-06-18 障害の恒久対策）。
+  const [pageSize, setPageSize] = useState(50);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+
+  // 検索/フィルタやページサイズが変わったら先頭ページへ戻す（並べ替え・編集では戻さない）。
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [effectiveSearch, pageSize]);
+
+  // 件数が減ってページ範囲を超えたら最終ページへ丸める（削除・絞り込み時）。
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  // 現在ページに表示する行だけを切り出す。
+  const pagedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
+
+  // Stable id list for SortableContext — 現在ページの行のみ並べ替え対象にする。
+  const itemIds = useMemo(() => pagedProducts.map((p) => p.id), [pagedProducts]);
 
   // Reorder is only safe in the true default view: no text search AND no
   // server-side filter/sort active (allowReorder). Otherwise dragging a subset
@@ -608,7 +635,7 @@ export function ProductList({
                   items={itemIds}
                   strategy={verticalListSortingStrategy}
                 >
-                  {filteredProducts.map((product) => (
+                  {pagedProducts.map((product) => (
                     <SortableRow
                       key={product.id}
                       product={product}
@@ -625,7 +652,7 @@ export function ProductList({
           <Table>
             {tableHeader}
             <TableBody>
-              {filteredProducts.map((product) => (
+              {pagedProducts.map((product) => (
                 <PlainRow
                   key={product.id}
                   product={product}
@@ -638,6 +665,46 @@ export function ProductList({
           </Table>
         )}
       </div>
+
+      {/* ページネーション操作（1ページの表示件数を絞り、サムネ一斉描画を防ぐ） */}
+      {filteredProducts.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm">
+          <div className="text-gray-500">
+            {filteredProducts.length} 件中 {(currentPage - 1) * pageSize + 1}–
+            {Math.min(currentPage * pageSize, filteredProducts.length)} 件を表示
+          </div>
+          <div className="flex items-center gap-2">
+            <label htmlFor="admin-page-size" className="text-gray-500">表示件数</label>
+            <select
+              id="admin-page-size"
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="border rounded px-2 py-1 bg-background"
+            >
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              前へ
+            </Button>
+            <span className="px-1 tabular-nums">{currentPage} / {totalPages}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              次へ
+            </Button>
+          </div>
+        </div>
+      )}
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
