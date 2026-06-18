@@ -81,13 +81,12 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         // It might miss 'features' and 'specifications' if they aren't in DB.
         // We can add defaults.
 
+        // rating / reviewCount / sold は DB に存在しないため固定値で上書きしない
+        // (景表法・ステマ規制リスク)。実レビュー機能が入るまで未設定のままにする。
         setProduct({
           ...data,
-          rating: 4.8, // Mock rating
-          reviewCount: 12, // Mock reviews
-          sold: 5, // Mock sold
-          features: [ // Default features if missing
-            "Authentic Pokemon TCG Card",
+          features: [ // Default features if missing (カテゴリ非依存の汎用表現)
+            "Authentic Trading Card",
             "Verified Condition",
             "Secure Packaging"
           ],
@@ -270,29 +269,36 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 </Button>
               </div>
 
-              {/* Rating */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={cn(
-                        "h-4 w-4",
-                        i < Math.floor(product.rating || 0)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      )}
-                    />
-                  ))}
-                  <span className="text-sm ml-1">{product.rating}</span>
+              {/* Rating — 実データ(rating/reviewCount/sold)が存在する場合のみ表示。
+                  値が無いときは偽の評価を出さず、ブロックごと非表示にする。 */}
+              {product.rating != null && (
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={cn(
+                          "h-4 w-4",
+                          i < Math.floor(product.rating || 0)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                        )}
+                      />
+                    ))}
+                    <span className="text-sm ml-1">{product.rating}</span>
+                  </div>
+                  {product.reviewCount != null && (
+                    <span className="text-sm text-muted-foreground">
+                      ({product.reviewCount} reviews)
+                    </span>
+                  )}
+                  {product.sold != null && (
+                    <span className="text-sm text-muted-foreground">
+                      {product.sold} sold
+                    </span>
+                  )}
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  ({product.reviewCount} reviews)
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {product.sold} sold
-                </span>
-              </div>
+              )}
 
               {/* Attributes */}
               <div className="flex flex-wrap gap-2">
@@ -420,7 +426,9 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               <TabsTrigger value="description">Description</TabsTrigger>
               <TabsTrigger value="specifications">Specifications</TabsTrigger>
               <TabsTrigger value="shipping">Shipping</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews ({product.reviewCount})</TabsTrigger>
+              <TabsTrigger value="reviews">
+                Reviews{product.reviewCount != null ? ` (${product.reviewCount})` : ''}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="description" className="mt-6">
