@@ -102,7 +102,7 @@ const ProductRowCells = memo(function ProductRowCells({
   onProductUpdate,
 }: { product: ProductWithImages } & RowCallbacks) {
   // === Inline edit state ===
-  const [editingField, setEditingField] = useState<'price' | 'stock' | null>(null);
+  const [editingField, setEditingField] = useState<'price' | 'stock' | 'name' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -116,18 +116,73 @@ const ProductRowCells = memo(function ProductRowCells({
   }, [editingField]);
 
   // Start editing
-  const startEdit = (field: 'price' | 'stock') => {
+  const startEdit = (field: 'price' | 'stock' | 'name') => {
     setEditingField(field);
     setEditValue(
       field === 'price'
         ? String(Number(product.price))
-        : String(product.stock)
+        : field === 'stock'
+          ? String(product.stock)
+          : product.name
     );
   };
 
   // Save edit
   const saveEdit = async () => {
     if (!editingField) return;
+
+    // === 商品名（文字列）の保存 ===
+    // 価格・在庫と異なり数値検証は行わず、空文字禁止と上限チェックのみ。
+    // 商品名を変えても更新APIは slug(URL) を再生成しないため、既存リンク/SEOは不変。
+    if (editingField === 'name') {
+      const trimmed = editValue.trim();
+      if (trimmed.length === 0 || trimmed.length > 200) {
+        toast({
+          title: "Invalid value",
+          description: trimmed.length === 0
+            ? "Product name cannot be empty."
+            : "Product name is too long (max 200).",
+          variant: "destructive",
+        });
+        setEditingField(null);
+        return;
+      }
+      // 変更が無ければ保存しない
+      if (trimmed === product.name) {
+        setEditingField(null);
+        return;
+      }
+
+      setSaving(true);
+      try {
+        const response = await fetch(`/api/admin/products/${product.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: trimmed }),
+        });
+
+        if (!response.ok) throw new Error('Failed to save');
+
+        const updated = await response.json();
+
+        onProductUpdate(product.id, {
+          name: updated.name,
+          updatedAt: updated.updatedAt,
+        });
+
+        toast({ title: "Saved", description: "Name updated." });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to save changes.",
+          variant: "destructive",
+        });
+      } finally {
+        setSaving(false);
+        setEditingField(null);
+      }
+      return;
+    }
 
     const numValue = editingField === 'price' ? parseFloat(editValue) : parseInt(editValue, 10);
     if (isNaN(numValue) || (editingField === 'price' && numValue <= 0) || (editingField === 'stock' && numValue < 0)) {
@@ -219,8 +274,28 @@ const ProductRowCells = memo(function ProductRowCells({
           />
         )}
       </TableCell>
-      <TableCell className="font-medium max-w-[300px] truncate" title={product.name}>
-        {product.name}
+      {/* Name - inline editable */}
+      <TableCell
+        className="font-medium max-w-[300px] cursor-pointer hover:bg-blue-50 transition-colors"
+        onDoubleClick={() => startEdit('name')}
+      >
+        {editingField === 'name' ? (
+          <Input
+            ref={inputRef}
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={saveEdit}
+            className="h-7 w-full text-sm"
+            disabled={saving}
+            maxLength={200}
+          />
+        ) : (
+          <span className="block truncate" title={product.name}>
+            {product.name}
+          </span>
+        )}
       </TableCell>
       <TableCell className="text-sm text-gray-600">
         {product.cardNumber || '-'}
