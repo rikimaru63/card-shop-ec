@@ -2,14 +2,23 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Save, Loader2 } from "lucide-react"
+import { ArrowLeft, Save, Loader2, Copy, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ImagePreview } from "@/components/admin/ImagePreview"
+import { CopyProductModal } from "@/components/admin/CopyProductModal"
 import { toast } from "@/hooks/use-toast"
 import { cardTypeToCategorySlug, cardTypeToSkuPrefix } from "@/lib/admin/category-map"
+import {
+  buildCopyFormData,
+  selectCopyImageRefs,
+  type CopyImageRef,
+  type CopyOptions,
+  type CopySourceProduct,
+} from "@/lib/admin/product-copy"
 
 // Types for API data
 interface OptionItem {
@@ -39,6 +48,8 @@ export default function NewProductPage() {
   const [optionsLoading, setOptionsLoading] = useState(true)
   const [images, setImages] = useState<File[]>([])
   const [uploadProgress, setUploadProgress] = useState<string>("")
+  const [showCopyModal, setShowCopyModal] = useState(false)
+  const [copiedImages, setCopiedImages] = useState<CopyImageRef[]>([])
   const [formData, setFormData] = useState({
     name: "",
     cardType: "pokemon", // pokemon or onepiece
@@ -179,6 +190,16 @@ export default function NewProductPage() {
     "なし", "PSA", "BGS", "CGC", "ACE"
   ]
 
+  // 既存商品からコピー: 詳細をフォームへ流し込み、引き継ぎ画像を控える。
+  const handleApplyCopy = (source: CopySourceProduct, options: CopyOptions) => {
+    setFormData(buildCopyFormData(source, options))
+    setCopiedImages(selectCopyImageRefs(source, options))
+    toast({
+      title: "コピーしました",
+      description: "内容を確認し、必要な箇所（カード番号・状態など）を修正して登録してください。",
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -219,6 +240,21 @@ export default function NewProductPage() {
       }
 
       const product = await response.json()
+
+      // Step 1.5: コピー元から引き継いだ画像を複製（独立した実体として再アップロード）。
+      // 先に複製しておくことで、引き継ぎ画像が先頭（メイン）の並び順になる。
+      if (copiedImages.length > 0) {
+        setUploadProgress(`引き継ぎ画像を複製中 (${copiedImages.length}枚)...`)
+        try {
+          await fetch(`/api/admin/products/${product.id}/images/copy`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ images: copiedImages }),
+          })
+        } catch (error) {
+          console.error("Failed to copy images:", error)
+        }
+      }
 
       // Step 2: Upload images if any
       if (images.length > 0) {
@@ -267,18 +303,28 @@ export default function NewProductPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/admin/products">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold">新規商品登録</h1>
-              <p className="text-sm text-muted-foreground">
-                ポケモンカードの商品情報を入力してください
-              </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Link href="/admin/products">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold">新規商品登録</h1>
+                <p className="text-sm text-muted-foreground">
+                  ポケモンカードの商品情報を入力してください
+                </p>
+              </div>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowCopyModal(true)}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              商品情報をコピー
+            </Button>
           </div>
         </div>
       </header>
@@ -547,9 +593,48 @@ export default function NewProductPage() {
               </div>
             </div>
 
+            {/* 引き継いだ画像（コピー元から） */}
+            {copiedImages.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold border-b pb-2">引き継いだ画像（コピー元から）</h2>
+                <p className="text-xs text-gray-500">
+                  登録時にこの商品用として別途複製されます（コピー元の画像には影響しません）。不要なものは × で外せます。下の「商品画像」から新しい画像を追加することもできます。
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {copiedImages.map((img, index) => (
+                    <div
+                      key={`${img.url}-${index}`}
+                      className="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden border"
+                    >
+                      <Image
+                        src={img.url}
+                        alt={img.alt}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                      />
+                      {index === 0 && (
+                        <span className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded">
+                          メイン
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setCopiedImages(copiedImages.filter((_, i) => i !== index))}
+                        className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 画像プレビュー */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold border-b pb-2">商品画像</h2>
+              <h2 className="text-lg font-semibold border-b pb-2">商品画像{copiedImages.length > 0 ? "（新規追加）" : ""}</h2>
               <ImagePreview
                 images={images}
                 onImagesChange={setImages}
@@ -583,6 +668,12 @@ export default function NewProductPage() {
           </div>
         </form>
       </div>
+
+      <CopyProductModal
+        open={showCopyModal}
+        onOpenChange={setShowCopyModal}
+        onApply={handleApplyCopy}
+      />
     </div>
   )
 }
