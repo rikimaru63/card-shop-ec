@@ -53,6 +53,9 @@ export const baseCountries: Country[] = [
   { code: "HU", name: "Hungary" },
   { code: "BA", name: "Bosnia and Herzegovina" },
   { code: "UA", name: "Ukraine" },
+  // 2026-07 クライアント要望で追加 (US/EU 両対応)
+  { code: "PH", name: "Philippines" }, // 従来は euOnly のみ→US でも要望が出たため base(両対応)へ昇格
+  { code: "IN", name: "India" },
 ]
 
 export const euOnlyCountries: Country[] = [
@@ -61,7 +64,6 @@ export const euOnlyCountries: Country[] = [
   { code: "ID", name: "Indonesia" },
   { code: "KR", name: "South Korea" },
   { code: "MY", name: "Malaysia" },
-  { code: "PH", name: "Philippines" },
   { code: "SG", name: "Singapore" },
   { code: "TH", name: "Thailand" },
 ]
