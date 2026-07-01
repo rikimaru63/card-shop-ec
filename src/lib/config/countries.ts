@@ -66,6 +66,20 @@ export const euOnlyCountries: Country[] = [
   { code: "MY", name: "Malaysia" },
   { code: "SG", name: "Singapore" },
   { code: "TH", name: "Thailand" },
+  // 2026-07 EU 加盟国 (EU 版のみ表示・US では非表示)。EU の DB 統一時に欧州の国が
+  // 消えないよう、base ではなく euOnly に登録する (US の baseCountries には波及しない)。
+  { code: "PT", name: "Portugal" },
+  { code: "IE", name: "Ireland" },
+  { code: "PL", name: "Poland" },
+  { code: "RO", name: "Romania" },
+  { code: "BG", name: "Bulgaria" },
+  { code: "HR", name: "Croatia" },
+  { code: "SI", name: "Slovenia" },
+  { code: "LT", name: "Lithuania" },
+  { code: "LV", name: "Latvia" },
+  { code: "EE", name: "Estonia" },
+  { code: "LU", name: "Luxembourg" },
+  { code: "CY", name: "Cyprus" },
 ]
 
 /**
