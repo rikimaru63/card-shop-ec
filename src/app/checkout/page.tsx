@@ -82,6 +82,8 @@ const euOnlyCountries = [
   { code: "PH", name: "Philippines" },
   { code: "SG", name: "Singapore" },
   { code: "TH", name: "Thailand" },
+  // 2026-07 クライアント要望で追加 (India)
+  { code: "IN", name: "India" },
 ]
 
 const region = process.env.NEXT_PUBLIC_REGION || "US"
