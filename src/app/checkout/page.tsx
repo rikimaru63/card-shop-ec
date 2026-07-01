@@ -31,10 +31,10 @@ import { CustomsNotice } from "@/components/CustomsNotice"
 import { siteConfig } from "@/lib/config/site"
 import { businessConfig } from "@/lib/config/business"
 import { CUSTOMS_RATE } from "@/lib/constants"
-import { getSelectableCountries } from "@/lib/config/countries"
+import { getSelectableCountries, type Country } from "@/lib/config/countries"
 
-// 選択可能な国は共通モジュールに一本化 (checkout / signup / レポートで定義を共有)。
-const countries = getSelectableCountries()
+// 国リストの初期値(フォールバック)。マウント後に /api/shipping-countries(DB) の値で上書きする。
+const fallbackCountries = getSelectableCountries()
 
 interface SavedAddress {
   id: string
@@ -82,6 +82,8 @@ export default function CheckoutPage() {
   } = useCartStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mounted, setMounted] = useState(false)
+  // 選択可能な国。初期値はフォールバック(即時表示)、マウント後に公開APIでDB値へ更新する。
+  const [countries, setCountries] = useState<Country[]>(fallbackCountries)
 
   // Address state
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
@@ -109,6 +111,16 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  // 公開APIから選択可能な国リストを取得(管理画面での編集を反映)。失敗時はフォールバックを維持。
+  useEffect(() => {
+    fetch("/api/shipping-countries")
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d?.countries) && d.countries.length > 0) setCountries(d.countries)
+      })
+      .catch(() => { /* フォールバックの国リストを維持 */ })
   }, [])
 
   // Load saved addresses

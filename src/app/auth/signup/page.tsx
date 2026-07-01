@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,13 +10,23 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, CheckCircle, Mail } from "lucide-react"
-import { getSelectableCountries } from "@/lib/config/countries"
+import { getSelectableCountries, type Country } from "@/lib/config/countries"
 
-// 選択可能な国は共通モジュールに一本化 (checkout / signup / レポートで定義を共有)。
-const countries = getSelectableCountries()
+// 国リストの初期値(フォールバック)。マウント後に /api/shipping-countries(DB) の値で上書きする。
+const fallbackCountries = getSelectableCountries()
 
 export default function SignUpPage() {
   const [step, setStep] = useState(1)
+  // 選択可能な国。初期値はフォールバック(即時表示)、マウント後に公開APIでDB値へ更新する。
+  const [countries, setCountries] = useState<Country[]>(fallbackCountries)
+  useEffect(() => {
+    fetch("/api/shipping-countries")
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d?.countries) && d.countries.length > 0) setCountries(d.countries)
+      })
+      .catch(() => { /* フォールバックの国リストを維持 */ })
+  }, [])
   const [formData, setFormData] = useState({
     // Account info
     email: "",
