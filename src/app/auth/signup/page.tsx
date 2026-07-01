@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,63 +10,23 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, CheckCircle, Mail } from "lucide-react"
+import { getSelectableCountries, type Country } from "@/lib/config/countries"
 
-const baseCountries = [
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "AU", name: "Australia" },
-  { code: "CA", name: "Canada" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "IT", name: "Italy" },
-  { code: "ES", name: "Spain" },
-  { code: "NL", name: "Netherlands" },
-  { code: "BE", name: "Belgium" },
-  { code: "CH", name: "Switzerland" },
-  { code: "AT", name: "Austria" },
-  { code: "DK", name: "Denmark" },
-  { code: "PT", name: "Portugal" },
-  { code: "JP", name: "Japan" },
-  { code: "SG", name: "Singapore" },
-  { code: "HK", name: "Hong Kong" },
-  { code: "TW", name: "Taiwan" },
-  { code: "KR", name: "South Korea" },
-  { code: "NZ", name: "New Zealand" },
-  { code: "MX", name: "Mexico" },
-  // 2026-06 クライアント要望で追加 (EU)
-  { code: "AL", name: "Albania" },
-  { code: "TR", name: "Turkey" },
-  { code: "BY", name: "Belarus" },
-  { code: "MT", name: "Malta" },
-  { code: "MO", name: "Macao" },
-  { code: "SK", name: "Slovakia" },
-  { code: "GR", name: "Greece" },
-  { code: "HU", name: "Hungary" },
-  { code: "BA", name: "Bosnia and Herzegovina" },
-  { code: "UA", name: "Ukraine" },
-  { code: "BN", name: "Brunei" },
-]
-
-const euOnlyCountries = [
-  { code: "CZ", name: "Czech Republic" },
-  { code: "HK", name: "Hong Kong" },
-  { code: "ID", name: "Indonesia" },
-  { code: "KR", name: "South Korea" },
-  { code: "MY", name: "Malaysia" },
-  { code: "PH", name: "Philippines" },
-  { code: "SG", name: "Singapore" },
-  { code: "TH", name: "Thailand" },
-  // 2026-07 クライアント要望で追加 (India)
-  { code: "IN", name: "India" },
-]
-
-const region = process.env.NEXT_PUBLIC_REGION || "US"
-const countries = region === "EU"
-  ? [...baseCountries, ...euOnlyCountries].sort((a, b) => a.name.localeCompare(b.name))
-  : baseCountries
+// 国リストの初期値(フォールバック)。マウント後に /api/shipping-countries(DB) の値で上書きする。
+const fallbackCountries = getSelectableCountries()
 
 export default function SignUpPage() {
   const [step, setStep] = useState(1)
+  // 選択可能な国。初期値はフォールバック(即時表示)、マウント後に公開APIでDB値へ更新する。
+  const [countries, setCountries] = useState<Country[]>(fallbackCountries)
+  useEffect(() => {
+    fetch("/api/shipping-countries")
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d?.countries) && d.countries.length > 0) setCountries(d.countries)
+      })
+      .catch(() => { /* フォールバックの国リストを維持 */ })
+  }, [])
   const [formData, setFormData] = useState({
     // Account info
     email: "",

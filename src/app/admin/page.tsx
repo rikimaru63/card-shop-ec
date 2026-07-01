@@ -12,6 +12,7 @@ import {
   Settings,
   Minus,
   Eye,
+  Globe,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { prisma } from "@/lib/prisma"
@@ -434,6 +435,12 @@ export default async function AdminDashboard() {
             <Button className="w-full" variant="outline">
               <Settings className="h-4 w-4 mr-2" />
               設定
+            </Button>
+          </Link>
+          <Link href="/admin/settings/shipping-countries">
+            <Button className="w-full" variant="outline">
+              <Globe className="h-4 w-4 mr-2" />
+              配送先の国
             </Button>
           </Link>
         </div>

@@ -31,65 +31,10 @@ import { CustomsNotice } from "@/components/CustomsNotice"
 import { siteConfig } from "@/lib/config/site"
 import { businessConfig } from "@/lib/config/business"
 import { CUSTOMS_RATE } from "@/lib/constants"
+import { getSelectableCountries, type Country } from "@/lib/config/countries"
 
-const baseCountries = [
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "AU", name: "Australia" },
-  { code: "CA", name: "Canada" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "IT", name: "Italy" },
-  { code: "ES", name: "Spain" },
-  { code: "NL", name: "Netherlands" },
-  { code: "BE", name: "Belgium" },
-  { code: "AT", name: "Austria" },
-  { code: "DK", name: "Denmark" },
-  { code: "PT", name: "Portugal" },
-  { code: "IE", name: "Ireland" },
-  { code: "PL", name: "Poland" },
-  { code: "CZ", name: "Czech Republic" },
-  { code: "GR", name: "Greece" },
-  { code: "HU", name: "Hungary" },
-  { code: "RO", name: "Romania" },
-  { code: "BG", name: "Bulgaria" },
-  { code: "HR", name: "Croatia" },
-  { code: "SK", name: "Slovakia" },
-  { code: "SI", name: "Slovenia" },
-  { code: "LT", name: "Lithuania" },
-  { code: "LV", name: "Latvia" },
-  { code: "EE", name: "Estonia" },
-  { code: "LU", name: "Luxembourg" },
-  { code: "MT", name: "Malta" },
-  { code: "CY", name: "Cyprus" },
-  { code: "CH", name: "Switzerland" },
-  // 2026-06 クライアント要望で追加 (EU)。GR/HU/SK/MT は既存のため除く。
-  { code: "AL", name: "Albania" },
-  { code: "TR", name: "Turkey" },
-  { code: "BY", name: "Belarus" },
-  { code: "MO", name: "Macao" },
-  { code: "BA", name: "Bosnia and Herzegovina" },
-  { code: "UA", name: "Ukraine" },
-  { code: "BN", name: "Brunei" },
-]
-
-const euOnlyCountries = [
-  { code: "CZ", name: "Czech Republic" },
-  { code: "HK", name: "Hong Kong" },
-  { code: "ID", name: "Indonesia" },
-  { code: "KR", name: "South Korea" },
-  { code: "MY", name: "Malaysia" },
-  { code: "PH", name: "Philippines" },
-  { code: "SG", name: "Singapore" },
-  { code: "TH", name: "Thailand" },
-  // 2026-07 クライアント要望で追加 (India)
-  { code: "IN", name: "India" },
-]
-
-const region = process.env.NEXT_PUBLIC_REGION || "US"
-const countries = region === "EU"
-  ? [...baseCountries, ...euOnlyCountries].sort((a, b) => a.name.localeCompare(b.name))
-  : baseCountries
+// 国リストの初期値(フォールバック)。マウント後に /api/shipping-countries(DB) の値で上書きする。
+const fallbackCountries = getSelectableCountries()
 
 interface SavedAddress {
   id: string
@@ -137,6 +82,8 @@ export default function CheckoutPage() {
   } = useCartStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mounted, setMounted] = useState(false)
+  // 選択可能な国。初期値はフォールバック(即時表示)、マウント後に公開APIでDB値へ更新する。
+  const [countries, setCountries] = useState<Country[]>(fallbackCountries)
 
   // Address state
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
@@ -164,6 +111,16 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  // 公開APIから選択可能な国リストを取得(管理画面での編集を反映)。失敗時はフォールバックを維持。
+  useEffect(() => {
+    fetch("/api/shipping-countries")
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d?.countries) && d.countries.length > 0) setCountries(d.countries)
+      })
+      .catch(() => { /* フォールバックの国リストを維持 */ })
   }, [])
 
   // Load saved addresses

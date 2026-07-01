@@ -517,6 +517,27 @@ model ConditionOption {
   @@index([order])
 }
 
+// ==================== Shipping Countries (配送先国マスタ) ====================
+
+// 配送先・会員登録で選択できる国。管理画面から追加/編集/削除できる。
+// US/EU は同一DBを共有するため enabledUS / enabledEU の2フラグで表示範囲を分離する。
+// DB が空/障害のときは src/lib/config/countries.ts のハードコード定義にフォールバックする。
+model ShippingCountry {
+  id        String   @id @default(cuid())
+  code      String   @unique // ISO 3166-1 alpha-2 (US, GB, PH, IN, ...)
+  name      String   // English display name
+  nameJa    String?  // 日本語表示名 (レポート用)
+  enabledUS Boolean  @default(true) // US ストアで選択可能か
+  enabledEU Boolean  @default(true) // EU ストアで選択可能か
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([order])
+}
+
 // ==================== Testimonials (Customer Reviews) ====================
 
 model Testimonial {
